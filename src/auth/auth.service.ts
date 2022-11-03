@@ -1,14 +1,12 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { AuthConfig } from './auth.config';
+import { Injectable } from '@nestjs/common';
 import {
   AuthenticationDetails,
   CognitoUser,
+  CognitoUserAttribute,
   CognitoUserPool,
 } from 'amazon-cognito-identity-js';
-import { authConfig } from './auth.module';
 import { ConfigService } from '@nestjs/config';
-
-authConfig;
+import { LoginDto, SignupDto } from './dto';
 
 @Injectable()
 export class AuthService {
@@ -20,30 +18,52 @@ export class AuthService {
     });
   }
 
-  authenticateUser(user: { name: string; password: string }) {
-    const { name, password } = user;
+  authenticateUser(loginDto: LoginDto) {
+    const { name, password } = loginDto;
 
-    const authenticationDetails = new AuthenticationDetails({
+    const userCredentials = new AuthenticationDetails({
       Username: name,
       Password: password,
     });
 
-    const userData = {
+    const user = new CognitoUser({
       Username: name,
       Pool: this.userPool,
-    };
-
-    const newUser = new CognitoUser(userData);
+    });
 
     return new Promise((resolve, reject) => {
-      return newUser.authenticateUser(authenticationDetails, {
+      return user.authenticateUser(userCredentials, {
         onSuccess: (result) => {
+          console.log(result);
           resolve(result);
         },
         onFailure: (err) => {
+          console.log(err);
+          reject(err);
+        },
+        newPasswordRequired: (err) => {
+          console.log(err);
           reject(err);
         },
       });
+    });
+  }
+
+  signup(signupDto: SignupDto) {
+    return new Promise((resolve, reject) => {
+      this.userPool.signUp(
+        signupDto.name,
+        signupDto.password,
+        [
+          new CognitoUserAttribute({ Name: 'given_name', Value: 'John' }),
+          new CognitoUserAttribute({ Name: 'family_name', Value: 'Doe' }),
+        ],
+        [],
+        (err, res) => {
+          res && resolve(res);
+          err && reject(err);
+        },
+      );
     });
   }
 }
