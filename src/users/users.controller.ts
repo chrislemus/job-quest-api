@@ -16,6 +16,6 @@ export class UsersController {
   @Get()
   @SkipAuth()
   getAllUsers() {
-    return this.usersService.getAllUsers();
+    return this.usersService.findMany();
   }
 }
