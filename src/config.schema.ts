@@ -5,7 +5,7 @@ import { IsString, validateSync } from 'class-validator';
  * Environment variables DTO.
  * Includes class validator/class transformer annotations.
  */
-class EnvironmentVariables {
+export class EnvironmentVariables {
   /** Jwt secret key for auth. */
   @IsString()
   JWT_SECRET: string;
