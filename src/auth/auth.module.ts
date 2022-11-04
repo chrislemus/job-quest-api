@@ -1,20 +1,32 @@
 import { Module } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
-import { ConfigModule, registerAs } from '@nestjs/config';
-
-export const authConfig = registerAs('database', () => ({
-  host: process.env.DATABASE_HOST,
-  port: process.env.DATABASE_PORT || 5432,
-}));
+import { UsersModule } from '@app/users/users.module';
+import { PassportModule } from '@nestjs/passport';
+import { JwtModule } from '@nestjs/jwt';
+import { jwtConstants } from './constants';
+import { JwtStrategy, LocalStrategy } from './strategies';
+import { APP_GUARD } from '@nestjs/core';
+import { JwtAuthGuard } from './guards';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({
-      load: [authConfig],
+    UsersModule,
+    PassportModule,
+    JwtModule.register({
+      secret: jwtConstants.secret,
+      signOptions: { expiresIn: '10h' },
     }),
   ],
-  providers: [AuthService],
   controllers: [AuthController],
+  providers: [
+    AuthService,
+    LocalStrategy,
+    JwtStrategy,
+    {
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard,
+    },
+  ],
 })
 export class AuthModule {}

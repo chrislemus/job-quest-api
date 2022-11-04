@@ -1,22 +1,24 @@
-import { BadRequestException, Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
-import { LoginDto, SignupDto } from './dto';
+import { Public } from './decorators';
+import { LoginDto } from './dto';
+import { LocalAuthGuard } from './guards';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(private authService: AuthService) {}
 
+  @Public()
+  @UseGuards(LocalAuthGuard)
   @Post('login')
-  login(@Body() loginDto: LoginDto) {
-    return this.authService.authenticateUser(loginDto).catch((e) => {
-      throw new BadRequestException(e.message);
-    });
+  async login(@Body() user: LoginDto, @Req() req: any) {
+    return this.authService.login(req.user);
   }
 
-  @Post('signup')
-  signup(@Body() signupDto: SignupDto) {
-    return this.authService.signup(signupDto).catch((e) => {
-      throw new BadRequestException(e.message);
-    });
+  @Get('profile')
+  @ApiBearerAuth()
+  getProfile(@Req() req) {
+    return req.user;
   }
 }

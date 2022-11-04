@@ -9,9 +9,11 @@ async function bootstrap() {
     .setTitle('Job Quest API')
     .setDescription('Job Quest API Docs')
     .setVersion('1.0')
+    .addBearerAuth()
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
+
   SwaggerModule.setup('', app, document);
 
   await app.listen(3000);
