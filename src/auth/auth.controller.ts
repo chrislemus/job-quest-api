@@ -1,8 +1,9 @@
+import { CreateUserDto } from '@app/users/dto';
 import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { SkipAuth } from './decorators';
-import { LoginDto } from './dto';
+import { UserLoginReqDto } from './dto';
 import { LocalAuthGuard } from './guards';
 
 @Controller('auth')
@@ -13,8 +14,14 @@ export class AuthController {
   @SkipAuth()
   @UseGuards(LocalAuthGuard)
   @Post('login')
-  async login(@Body() user: LoginDto, @Req() req: any) {
-    return this.authService.login(req.user);
+  login(@Body() _user: UserLoginReqDto, @Req() req: any) {
+    return this.authService.createJwt(req.user);
+  }
+
+  @SkipAuth()
+  @Post('signup')
+  signup(@Body() user: CreateUserDto) {
+    return this.authService.signup(user);
   }
 
   @Get('profile')

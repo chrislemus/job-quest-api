@@ -10,7 +10,7 @@ export const JwtModule = _JwtModule.registerAsync({
 
     return {
       secret,
-      signOptions: { expiresIn: '10h' },
+      signOptions: { expiresIn: '1h' },
     };
   },
   inject: [ConfigService],
