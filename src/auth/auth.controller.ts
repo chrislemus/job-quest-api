@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
-import { Public } from './decorators';
+import { SkipAuth } from './decorators';
 import { LoginDto } from './dto';
 import { LocalAuthGuard } from './guards';
 
@@ -9,7 +9,7 @@ import { LocalAuthGuard } from './guards';
 export class AuthController {
   constructor(private authService: AuthService) {}
 
-  @Public()
+  @SkipAuth()
   @UseGuards(LocalAuthGuard)
   @Post('login')
   async login(@Body() user: LoginDto, @Req() req: any) {
