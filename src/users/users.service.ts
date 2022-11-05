@@ -8,16 +8,16 @@ import { CreateUserDto } from './dto';
 export class UsersService {
   constructor(private prisma: PrismaService) {}
 
-  findUniqueByEmail(email: string): Promise<UserEntity | null> {
-    return this.prisma.user.findUnique({ where: { email } });
-  }
+  // findUniqueByEmail(email: string): Promise<UserEntity | null> {
+  //   return this.prisma.user.findUnique({ where: { email } });
+  // }
 
-  async createUser(user: CreateUserDto) {
-    const salt = await bcrypt.genSalt(10);
-    const password = await bcrypt.hash(user.password, salt);
+  // async createUser(user: CreateUserDto) {
+  //   const salt = await bcrypt.genSalt(10);
+  //   const password = await bcrypt.hash(user.password, salt);
 
-    return this.prisma.user.create({
-      data: { ...user, password },
-    });
-  }
+  //   return this.prisma.user.create({
+  //     data: { ...user, password },
+  //   });
+  // }
 }

@@ -1,24 +1,31 @@
-import { ForbiddenException, Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { UsersService } from '@app/users/users.service';
 import { AuthUser } from './dto';
 import { CreateUserDto } from '@app/users/dto';
 import * as bcrypt from 'bcrypt';
-import { AuthTokens, JwtPayload } from './types';
+import { AuthTokens } from './types';
 import { PrismaService } from '@app/prisma';
 import { ConfigService } from '@nestjs/config';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class AuthService {
+  private logger = new Logger(AuthService.name);
   constructor(
-    private usersService: UsersService,
     private jwtService: JwtService,
     private prisma: PrismaService,
     private configService: ConfigService,
   ) {}
 
   async validateUser(email: string, pass: string): Promise<AuthUser | null> {
-    const user = await this.usersService.findUniqueByEmail(email);
+    const user = await this.prisma.user.findUnique({ where: { email } });
+
     const userHashPassword = user?.password;
     if (userHashPassword) {
       const isMatch = await bcrypt.compare(pass, userHashPassword);
@@ -31,38 +38,29 @@ export class AuthService {
     return null;
   }
 
-  createJwt(user: { id: number; email: string }) {
-    const payload = { sub: user.id, email: user.email };
-    return {
-      access_token: this.jwtService.sign(payload),
-    };
+  async localLogin(user: { id: number; email: string }): Promise<AuthTokens> {
+    const tokens = await this.getTokens(user.id, user.email);
+    return tokens;
   }
 
   async refreshJwt(userId: number, refreshToken: string): Promise<AuthTokens> {
     const user = await this.prisma.user.findUnique({
-      where: {
-        id: userId,
-      },
+      where: { id: userId },
     });
+
     if (!user?.refreshToken) throw new ForbiddenException('Access Denied');
 
     const isMatch = await bcrypt.compare(refreshToken, user.refreshToken);
     if (!isMatch) throw new ForbiddenException('Access Denied');
 
     const tokens = await this.getTokens(user.id, user.email);
-    await this.updateRtHash(user.id, tokens.refreshToken);
-
     return tokens;
   }
 
-  async updateRtHash(userId: number, rt: string): Promise<void> {
+  async hashValue(value: string): Promise<string> {
     const salt = await bcrypt.genSalt(10);
-    const refreshToken = await bcrypt.hash(rt, salt);
-
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: { refreshToken },
-    });
+    const hash = await bcrypt.hash(value, salt);
+    return hash;
   }
 
   async getTokens(userId: number, email: string): Promise<AuthTokens> {
@@ -71,7 +69,7 @@ export class AuthService {
       email: email,
     };
 
-    const [accessToken, refreshToken] = await Promise.all([
+    const [access_token, refresh_token] = await Promise.all([
       this.jwtService.signAsync(jwtPayload, {
         secret: this.configService.get<string>('JWT_SECRET'),
         expiresIn: '15m',
@@ -82,11 +80,37 @@ export class AuthService {
       }),
     ]);
 
-    return { accessToken, refreshToken };
+    // update refresh token in DB
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { refreshToken: refresh_token },
+    });
+
+    return { access_token, refresh_token };
   }
 
   async signup(newUserData: CreateUserDto) {
-    const user = await this.usersService.createUser(newUserData);
-    return this.createJwt(user);
+    const password = await this.hashValue(newUserData.password);
+
+    try {
+      const user = await this.prisma.user.create({
+        data: { ...newUserData, password },
+      });
+
+      return this.getTokens(user.id, user.email);
+    } catch (error) {
+      this.logger.error(error);
+
+      const isPrismaError =
+        error instanceof Prisma.PrismaClientKnownRequestError;
+
+      if (isPrismaError && error.code === 'P2002') {
+        const errorMsg =
+          'There is a unique constraint violation, a new user cannot be created with this email';
+        throw new ConflictException(errorMsg);
+      }
+
+      throw new InternalServerErrorException();
+    }
   }
 }

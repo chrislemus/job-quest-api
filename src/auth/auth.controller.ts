@@ -16,8 +16,8 @@ export class AuthController {
   @SkipAuth()
   @UseGuards(LocalAuthGuard)
   @Post('login')
-  login(@Body() _user: UserLoginReqDto, @Req() req: any) {
-    return this.authService.createJwt(req.user);
+  login(@Body() _user: UserLoginReqDto, @Req() req: any): Promise<AuthTokens> {
+    return this.authService.localLogin(req.user);
   }
 
   @SkipAuth()
