@@ -4,7 +4,7 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { SkipAuth } from './decorators';
 import { UserLoginReqDto } from './dto';
-import { LocalAuthGuard } from './guards';
+import { JwtRefreshAuthGuard, LocalAuthGuard } from './guards';
 
 @Controller('auth')
 @ApiTags('auth')
