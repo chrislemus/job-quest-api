@@ -1,16 +1,15 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 import { Request } from 'express';
-import { JwtPayload, JwtPayloadWithRefreshToken } from '@app/auth/types';
+import { JwtPayload } from '@app/auth/types';
 
-// /** Extracts current authorized user data. */
+// /** Extracts authorized user jwt payload data. */
 export const AuthUser = createParamDecorator(
   (
-    /** user property to access */
-    prop: keyof JwtPayloadWithRefreshToken | undefined,
+    data: keyof JwtPayload | 'id' | undefined,
     context: ExecutionContext,
-  ): JwtPayload[keyof JwtPayload] | JwtPayload => {
+  ): JwtPayload => {
     const request = context.switchToHttp().getRequest<Request>();
-    const user = request.user as JwtPayload;
-    return prop ? user[prop] : user;
+    const { user } = request;
+    return data ? user[data] : user;
   },
 );

@@ -6,7 +6,6 @@ import {
   Logger,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { AuthUser } from './dto';
 import { CreateUserDto } from '@app/users/dto';
 import * as bcrypt from 'bcrypt';
 import { AuthTokens } from './types';
@@ -23,23 +22,8 @@ export class AuthService {
     private configService: ConfigService,
   ) {}
 
-  async validateUser(email: string, pass: string): Promise<AuthUser | null> {
-    const user = await this.prisma.user.findUnique({ where: { email } });
-
-    const userHashPassword = user?.password;
-    if (userHashPassword) {
-      const isMatch = await bcrypt.compare(pass, userHashPassword);
-      if (isMatch) {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { password, ...authUser } = user;
-        return authUser;
-      }
-    }
-    return null;
-  }
-
-  async localLogin(user: { id: number; email: string }): Promise<AuthTokens> {
-    const tokens = await this.getTokens(user.id, user.email);
+  async localLogin(userId: number, userEmail: string): Promise<AuthTokens> {
+    const tokens = await this.getTokens(userId, userEmail);
     return tokens;
   }
 
@@ -72,7 +56,7 @@ export class AuthService {
     const [access_token, refresh_token] = await Promise.all([
       this.jwtService.signAsync(jwtPayload, {
         secret: this.configService.get<string>('JWT_SECRET'),
-        expiresIn: '15m',
+        expiresIn: '20m',
       }),
       this.jwtService.signAsync(jwtPayload, {
         secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
@@ -80,13 +64,32 @@ export class AuthService {
       }),
     ]);
 
-    // update refresh token in DB
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: { refreshToken: refresh_token },
-    });
-
+    await this.syncRefreshToken(userId, refresh_token);
     return { access_token, refresh_token };
+  }
+
+  async syncRefreshToken(userId: number, refreshToken: string) {
+    try {
+      const hashRt = await this.hashValue(refreshToken);
+      await this.prisma.user.update({
+        where: { id: userId },
+        data: { refreshToken: hashRt },
+      });
+    } catch (error) {
+      this.logger.error('Unable to sync refresh token to database:::', error);
+      throw new InternalServerErrorException();
+    }
+  }
+
+  async logout(userId: number): Promise<boolean> {
+    await this.prisma.user.updateMany({
+      where: {
+        id: userId,
+        refreshToken: { not: null },
+      },
+      data: { refreshToken: null },
+    });
+    return true;
   }
 
   async signup(newUserData: CreateUserDto) {
