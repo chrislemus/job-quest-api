@@ -9,6 +9,9 @@ export class EnvironmentVariables {
   /** Jwt secret key for auth. */
   @IsString()
   JWT_SECRET: string;
+  /** Jwt refresh token secret key for auth. */
+  @IsString()
+  JWT_REFRESH_SECRET: string;
 }
 
 /**
