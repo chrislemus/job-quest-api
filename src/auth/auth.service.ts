@@ -68,7 +68,7 @@ export class AuthService {
     return { access_token, refresh_token };
   }
 
-  async syncRefreshToken(userId: number, refreshToken: string) {
+  async syncRefreshToken(userId: number, refreshToken: string): Promise<void> {
     try {
       const hashRt = await this.hashValue(refreshToken);
       await this.prisma.user.update({

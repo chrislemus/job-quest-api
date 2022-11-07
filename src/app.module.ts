@@ -4,8 +4,10 @@ import { ConfigModule } from '@nestjs/config';
 import { UsersModule } from './users/users.module';
 import { validate } from './config.schema';
 import { PrismaModule } from './prisma';
+import { AppController } from './app.controller';
 
 @Module({
+  controllers: [AppController],
   imports: [
     AuthModule,
     ConfigModule.forRoot({ validate }),

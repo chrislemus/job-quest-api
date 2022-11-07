@@ -1,4 +1,4 @@
-import { AuthUserId, AuthUser } from '@app/common/decorators';
+import { AuthUserId } from '@app/common/decorators';
 import { CreateUserDto } from '@app/users/dto';
 import {
   Body,
@@ -23,12 +23,14 @@ import { AuthTokens, JwtPayloadWithRefreshToken, LocalPayload } from './types';
 export class AuthController {
   constructor(private authService: AuthService) {}
 
+  /**
+   * User Log In
+   */
   @SkipAuth()
   @UseGuards(LocalAuthGuard)
   @Post('login')
   login(
-    // body added for validation / documentation(swagger ui)
-    @Body() _user: UserLoginReqDto,
+    @Body() _user: UserLoginReqDto, // body added for validation / documentation(swagger ui)
     @Req() req: Request,
   ): Promise<AuthTokens> {
     const user = req.user as LocalPayload;
