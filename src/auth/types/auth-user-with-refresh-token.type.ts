@@ -1,4 +1,4 @@
-import { AuthUser } from './auth-user.type';
+import { AuthUser } from '../dto';
 
 /**
  * Authorized user with refresh token.

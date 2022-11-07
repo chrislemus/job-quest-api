@@ -8,10 +8,10 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { CreateUserDto } from '@app/users/dto';
 import * as bcrypt from 'bcrypt';
-import { AuthTokens } from './types';
 import { PrismaService } from '@app/prisma';
 import { ConfigService } from '@nestjs/config';
 import { Prisma } from '@prisma/client';
+import { AuthTokens } from './dto';
 
 @Injectable()
 export class AuthService {

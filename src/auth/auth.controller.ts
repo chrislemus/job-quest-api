@@ -10,18 +10,12 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { Request } from 'express';
+import { ApiBearerAuth, ApiBody, ApiTags } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { SkipAuth } from './decorators';
-import { UserLoginReqDto } from './dto';
+import { AuthTokens, AuthUser, UserLoginReqDto } from './dto';
 import { JwtRefreshAuthGuard, LocalAuthGuard } from './guards';
-import {
-  AuthTokens,
-  AuthUser,
-  AuthUserWithRefreshToken,
-  LocalPayload,
-} from './types';
+import { AuthUserWithRefreshToken } from './types';
 
 @Controller('auth')
 @ApiTags('auth')
@@ -34,11 +28,8 @@ export class AuthController {
   @SkipAuth()
   @UseGuards(LocalAuthGuard)
   @Post('login')
-  login(
-    @Body() _user: UserLoginReqDto, // body added for validation / documentation(swagger ui)
-    @Req() req: Request,
-  ): Promise<AuthTokens> {
-    const user = req.user as LocalPayload;
+  @ApiBody({ type: UserLoginReqDto })
+  login(@GetAuthUser() user: AuthUser): Promise<AuthTokens> {
     return this.authService.localLogin(user.id, user.email);
   }
 

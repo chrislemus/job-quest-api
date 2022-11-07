@@ -1,6 +1,7 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 import { Request } from 'express';
-import { AuthUser, JwtPayload } from '@app/auth/types';
+import { JwtPayload } from '@app/auth/types';
+import { AuthUser } from '@app/auth/dto';
 
 // /** Extracts authorized user jwt payload data. */
 export const GetAuthUser = createParamDecorator(
