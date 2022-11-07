@@ -1,4 +1,4 @@
-import { AuthUserId } from '@app/common/decorators';
+import { GetAuthUser } from '@app/common/decorators';
 import { CreateUserDto } from '@app/users/dto';
 import {
   Body,
@@ -16,7 +16,12 @@ import { AuthService } from './auth.service';
 import { SkipAuth } from './decorators';
 import { UserLoginReqDto } from './dto';
 import { JwtRefreshAuthGuard, LocalAuthGuard } from './guards';
-import { AuthTokens, JwtPayloadWithRefreshToken, LocalPayload } from './types';
+import {
+  AuthTokens,
+  AuthUser,
+  AuthUserWithRefreshToken,
+  LocalPayload,
+} from './types';
 
 @Controller('auth')
 @ApiTags('auth')
@@ -39,7 +44,7 @@ export class AuthController {
 
   @SkipAuth()
   @Post('signup')
-  signup(@Body() user: CreateUserDto) {
+  signup(@Body() user: CreateUserDto): Promise<AuthTokens> {
     return this.authService.signup(user);
   }
 
@@ -47,23 +52,20 @@ export class AuthController {
   @UseGuards(JwtRefreshAuthGuard)
   @Post('refresh')
   refreshTokens(
-    @AuthUserId() userId: number,
-    @Req() req: Request,
+    @GetAuthUser() user: AuthUserWithRefreshToken,
   ): Promise<AuthTokens> {
-    /** {@link JwtPayloadWithRefreshToken} is injected by {@link JwtRefreshAuthGuard} */
-    const user = req.user as JwtPayloadWithRefreshToken;
-    return this.authService.refreshJwt(userId, user.refreshToken);
+    return this.authService.refreshJwt(user.id, user.refreshToken);
   }
 
   @Post('logout')
   @HttpCode(HttpStatus.OK)
-  logout(@AuthUserId() userId: number): Promise<boolean> {
-    return this.authService.logout(userId);
+  logout(@GetAuthUser('id') id: number): Promise<boolean> {
+    return this.authService.logout(id);
   }
 
   @Get('profile')
   @ApiBearerAuth()
-  getProfile(@Req() req) {
-    return req.user;
+  getProfile(@GetAuthUser() user: AuthUser): AuthUser {
+    return user;
   }
 }
