@@ -17,6 +17,7 @@ import { JwtRefreshAuthGuard, LocalAuthGuard } from './guards';
 import { AuthUserWithRefreshToken } from './types';
 
 @Controller('auth')
+@ApiBearerAuth()
 @ApiTags('auth')
 export class AuthController {
   constructor(private authService: AuthService) {}
@@ -54,7 +55,6 @@ export class AuthController {
   }
 
   @Get('profile')
-  @ApiBearerAuth()
   getProfile(@GetAuthUser() user: AuthUser): AuthUser {
     return user;
   }
