@@ -8,6 +8,8 @@ async function bootstrap() {
 
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
 
+  app.enableCors({ origin: '*', methods: '*' });
+
   const config = new DocumentBuilder()
     .setTitle('Job Quest API')
     .setDescription('Job Quest API Docs')

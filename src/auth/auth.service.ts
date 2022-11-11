@@ -11,7 +11,7 @@ import * as bcrypt from 'bcrypt';
 import { PrismaService } from '@app/prisma';
 import { ConfigService } from '@nestjs/config';
 import { Prisma } from '@prisma/client';
-import { AuthTokens } from './dto';
+import { AuthTokens, AuthUser, UserProfile } from './dto';
 
 @Injectable()
 export class AuthService {
@@ -115,5 +115,15 @@ export class AuthService {
 
       throw new InternalServerErrorException();
     }
+  }
+
+  async getUserProfile(userId: number): Promise<UserProfile> {
+    const profile = await this.prisma.user.findUnique({
+      where: {
+        id: userId,
+      },
+    });
+    const { id, email, firstName, lastName } = profile;
+    return { id, email, firstName, lastName };
   }
 }

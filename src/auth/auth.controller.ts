@@ -12,7 +12,7 @@ import {
 import { ApiBearerAuth, ApiBody, ApiTags } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { SkipAuth } from './decorators';
-import { AuthTokens, AuthUser, UserLoginReqDto } from './dto';
+import { AuthTokens, AuthUser, UserLoginReqDto, UserProfile } from './dto';
 import { JwtRefreshAuthGuard, LocalAuthGuard } from './guards';
 import { AuthUserWithRefreshToken } from './types';
 
@@ -55,7 +55,7 @@ export class AuthController {
   }
 
   @Get('profile')
-  getProfile(@GetAuthUser() user: AuthUser): AuthUser {
-    return user;
+  getProfile(@GetAuthUser('id') userId: number): Promise<UserProfile> {
+    return this.authService.getUserProfile(userId);
   }
 }
