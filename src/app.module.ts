@@ -9,7 +9,10 @@ import { JobModule } from './job/job.module';
 import { JobListModule } from './job-list/job-list.module';
 import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { HttpTransformResponseInterceptor } from './common/interceptors';
-import { GlobalExceptionsFilter } from './common/filters';
+import {
+  GlobalExceptionsFilter,
+  PrismaClientExceptionFilter,
+} from './common/filters';
 
 @Module({
   controllers: [AppController],
@@ -24,6 +27,7 @@ import { GlobalExceptionsFilter } from './common/filters';
   providers: [
     { provide: APP_INTERCEPTOR, useClass: HttpTransformResponseInterceptor },
     { provide: APP_FILTER, useClass: GlobalExceptionsFilter },
+    { provide: APP_FILTER, useClass: PrismaClientExceptionFilter },
   ],
 })
 export class AppModule {}

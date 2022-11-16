@@ -15,31 +15,26 @@ export class JobListService {
     userId: number,
     createJobListDto: CreateJobListDto,
   ): Promise<JobListEntity> {
-    try {
-      let newJobListOrder: undefined | number = createJobListDto?.order;
+    let newJobListOrder: undefined | number = createJobListDto?.order;
 
-      if (!newJobListOrder) {
-        const lastJobList = await this.prisma.jobList.findFirst({
-          orderBy: { order: 'desc' },
-          select: { order: true },
-        });
-
-        newJobListOrder = lastJobList.order + 1;
-      }
-
-      const jobList = await this.prisma.jobList.create({
-        data: {
-          label: createJobListDto.label,
-          ownerId: userId,
-          order: newJobListOrder,
-        },
+    if (!newJobListOrder) {
+      const lastJobList = await this.prisma.jobList.findFirst({
+        orderBy: { order: 'desc' },
+        select: { order: true },
       });
 
-      return jobList;
-    } catch (error) {
-      this.logger.error(error);
-      throw new Error(error);
+      newJobListOrder = lastJobList.order + 1;
     }
+
+    const jobList = await this.prisma.jobList.create({
+      data: {
+        label: createJobListDto.label,
+        ownerId: userId,
+        order: newJobListOrder,
+      },
+    });
+
+    return jobList;
   }
 
   async findAll(): Promise<JobListEntity[]> {
