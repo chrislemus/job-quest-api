@@ -1,11 +1,20 @@
+import { PrismaService } from '@app/prisma';
 import { Injectable } from '@nestjs/common';
 import { CreateJobListDto } from './dto/create-job-list.dto';
 import { UpdateJobListDto } from './dto/update-job-list.dto';
 
 @Injectable()
 export class JobListService {
-  create(createJobListDto: CreateJobListDto) {
-    return 'This action adds a new jobList';
+  constructor(private prisma: PrismaService) {}
+
+  async create(userId: number, createJobListDto: CreateJobListDto) {
+    const userJobLists = await this.prisma.jobList.findFirst({
+      orderBy: { order: 'asc' },
+    });
+    return userJobLists;
+    // return this.prisma.jobList.create({
+    //   data: { label: createJobListDto.label, ownerId: userId },
+    // });
   }
 
   findAll() {

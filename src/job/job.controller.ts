@@ -11,8 +11,10 @@ import { JobService } from './job.service';
 import { CreateJobDto } from './dto/create-job.dto';
 import { UpdateJobDto } from './dto/update-job.dto';
 import { SkipAuth } from '@app/auth/decorators';
+import { ApiTags } from '@nestjs/swagger';
 
 @Controller('job')
+@ApiTags('job')
 export class JobController {
   constructor(private readonly jobService: JobService) {}
 
@@ -21,7 +23,6 @@ export class JobController {
     return this.jobService.create(createJobDto);
   }
 
-  @SkipAuth()
   @Get()
   findAll() {
     return this.jobService.findAll();

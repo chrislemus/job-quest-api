@@ -11,7 +11,7 @@ import * as bcrypt from 'bcrypt';
 import { PrismaService } from '@app/prisma';
 import { ConfigService } from '@nestjs/config';
 import { Prisma } from '@prisma/client';
-import { AuthTokens, AuthUser, UserProfile } from './dto';
+import { AuthTokens, UserProfile } from './dto';
 
 @Injectable()
 export class AuthService {
@@ -97,7 +97,20 @@ export class AuthService {
 
     try {
       const user = await this.prisma.user.create({
-        data: { ...newUserData, password },
+        data: {
+          ...newUserData,
+          password,
+          jobLists: {
+            createMany: {
+              data: [
+                { label: 'Queue', order: 1 },
+                { label: 'Applied', order: 2 },
+                { label: 'Interview', order: 3 },
+                { label: 'Offer', order: 4 },
+              ],
+            },
+          },
+        },
       });
 
       return this.getTokens(user.id, user.email);
@@ -108,9 +121,7 @@ export class AuthService {
         error instanceof Prisma.PrismaClientKnownRequestError;
 
       if (isPrismaError && error.code === 'P2002') {
-        const errorMsg =
-          'There is a unique constraint violation, a new user cannot be created with this email';
-        throw new ConflictException(errorMsg);
+        throw new ConflictException('There is a unique constraint violation');
       }
 
       throw new InternalServerErrorException();

@@ -1,15 +1,31 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+} from '@nestjs/common';
 import { JobListService } from './job-list.service';
 import { CreateJobListDto } from './dto/create-job-list.dto';
 import { UpdateJobListDto } from './dto/update-job-list.dto';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { GetAuthUser } from '@app/common/decorators';
+import { AuthUser } from '@app/auth/dto';
 
+@ApiBearerAuth()
 @Controller('job-list')
+@ApiTags('job-list')
 export class JobListController {
   constructor(private readonly jobListService: JobListService) {}
 
   @Post()
-  create(@Body() createJobListDto: CreateJobListDto) {
-    return this.jobListService.create(createJobListDto);
+  create(
+    @Body() createJobListDto: CreateJobListDto,
+    @GetAuthUser('id') userId: number,
+  ) {
+    return this.jobListService.create(userId, createJobListDto);
   }
 
   @Get()
