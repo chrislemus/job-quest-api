@@ -6,6 +6,7 @@ import {
   Patch,
   Param,
   Delete,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import { JobListService } from './job-list.service';
 import { CreateJobListDto } from './dto/create-job-list.dto';
@@ -26,11 +27,31 @@ export class JobListController {
     @Body() createJobListDto: CreateJobListDto,
     @GetAuthUser('id') userId: number,
   ): Promise<JobListEntity> {
+    // {
+    //   "statusCode": 400,
+    //   "message": [
+    //     "label should not be empty",
+    //     "label must be a string"
+    //   ],
+    //   "error": "Bad Request"
+    // }
     return this.jobListService.create(userId, createJobListDto);
   }
 
   @Get()
   findAll() {
+    // throw new Error('dewin');
+    // {
+    //   "statusCode": 500,
+    //   "message": "Internal server error"
+    // }
+    // throw new InternalServerErrorException('dewoi');
+    // {
+    //   "statusCode": 500,
+    //   "message": "dewoi",
+    //   "error": "Internal Server Error"
+    // }
+
     return this.jobListService.findAll();
   }
 
