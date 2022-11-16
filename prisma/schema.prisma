@@ -19,3 +19,23 @@ model User {
   password String
   refreshToken String?
 }
+
+model Job {
+  id Int @default(autoincrement()) @id
+  title String
+  company String
+  location String?
+  url String?
+  salary String?
+  description String?
+  color String?
+  jobList JobList @relation(fields: [jobListId], references: [id])
+  jobListId Int
+}
+
+model JobList{
+  id Int  @default(autoincrement()) @id
+  label String
+  order Int @unique()
+  jobs Job[]
+}

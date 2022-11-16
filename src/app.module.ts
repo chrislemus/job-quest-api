@@ -5,6 +5,8 @@ import { UsersModule } from './users/users.module';
 import { validate } from './config.schema';
 import { PrismaModule } from './prisma';
 import { AppController } from './app.controller';
+import { JobModule } from './job/job.module';
+import { JobListModule } from './job-list/job-list.module';
 
 @Module({
   controllers: [AppController],
@@ -13,6 +15,8 @@ import { AppController } from './app.controller';
     ConfigModule.forRoot({ validate }),
     PrismaModule,
     UsersModule,
+    JobModule,
+    JobListModule,
   ],
 })
 export class AppModule {}
