@@ -13,6 +13,7 @@ import { UpdateJobListDto } from './dto/update-job-list.dto';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { GetAuthUser } from '@app/common/decorators';
 import { AuthUser } from '@app/auth/dto';
+import { JobListEntity } from './entities/job-list.entity';
 
 @ApiBearerAuth()
 @Controller('job-list')
@@ -24,7 +25,7 @@ export class JobListController {
   create(
     @Body() createJobListDto: CreateJobListDto,
     @GetAuthUser('id') userId: number,
-  ) {
+  ): Promise<JobListEntity> {
     return this.jobListService.create(userId, createJobListDto);
   }
 
