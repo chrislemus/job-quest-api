@@ -1,7 +1,9 @@
+import { Page, pageQuery, PaginatedQuery } from '@app/common/pagination';
 import { PrismaService } from '@app/prisma';
 import { Injectable, Logger } from '@nestjs/common';
-import { JobList } from '@prisma/client';
+import { Job, JobList } from '@prisma/client';
 import { CreateJobListDto } from './dto/create-job-list.dto';
+import { GetAllJobListsDto } from './dto/get-all-job-list.dto';
 import { UpdateJobListDto } from './dto/update-job-list.dto';
 import { JobListEntity } from './entities/job-list.entity';
 
@@ -37,14 +39,12 @@ export class JobListService {
     return jobList;
   }
 
-  async findAll(): Promise<JobListEntity[]> {
-    try {
-      const jobLists = await this.prisma.jobList.findMany();
-      return jobLists;
-    } catch (error) {
-      this.logger.error(error);
-      throw new Error(error);
-    }
+  async findAll(query: PaginatedQuery): Promise<Page<JobListEntity>> {
+    return pageQuery({
+      pageConfig: query,
+      queryFn: this.prisma.jobList.findMany,
+      countFn: this.prisma.jobList.count,
+    });
   }
 
   findOne(id: number) {

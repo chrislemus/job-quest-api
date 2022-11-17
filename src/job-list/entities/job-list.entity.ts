@@ -5,4 +5,7 @@ export class JobListEntity implements JobList {
   label: string;
   order: number;
   ownerId: number;
+  constructor(partial: Partial<JobListEntity>) {
+    Object.assign(this, partial);
+  }
 }
