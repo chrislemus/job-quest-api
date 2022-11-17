@@ -10,4 +10,5 @@ export class JobEntity implements Job {
   description: string | null;
   color: string | null;
   jobListId: number;
+  userId: number;
 }

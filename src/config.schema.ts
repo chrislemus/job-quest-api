@@ -12,6 +12,12 @@ export class EnvironmentVariables {
   /** Jwt refresh token secret key for auth. */
   @IsString()
   JWT_REFRESH_SECRET: string;
+  /** Database URL. */
+  @IsString()
+  DATABASE_URL: string;
+  /** Single use admin user registration key */
+  @IsString()
+  ADMIN_REGISTER_KEY: string;
 }
 
 /**

@@ -31,7 +31,7 @@ export class JobListService {
     const jobList = await this.prisma.jobList.create({
       data: {
         label: createJobListDto.label,
-        ownerId: userId,
+        userId,
         order: newJobListOrder,
       },
     });
@@ -39,10 +39,14 @@ export class JobListService {
     return jobList;
   }
 
-  async findAll(query: PaginatedQuery): Promise<Page<JobListEntity>> {
+  async findAll(
+    userId: number,
+    query: PaginatedQuery,
+  ): Promise<Page<JobListEntity>> {
     return pageQuery({
       pageConfig: query,
       queryFn: this.prisma.jobList.findMany,
+      queryArgs: { where: { userId } },
       countFn: this.prisma.jobList.count,
     });
   }

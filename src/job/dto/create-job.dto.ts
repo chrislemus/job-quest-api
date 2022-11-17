@@ -22,4 +22,7 @@ export class CreateJobDto implements Omit<Job, 'id'> {
   @IsNumber()
   @IsNotEmpty()
   jobListId: number;
+  @IsNumber()
+  @IsNotEmpty()
+  userId: number;
 }

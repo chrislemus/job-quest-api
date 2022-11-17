@@ -3,16 +3,24 @@ import { CreateUserDto } from '@app/users/dto';
 import {
   Body,
   Controller,
+  ForbiddenException,
   Get,
   HttpCode,
   HttpStatus,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiBody, ApiTags } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { SkipAuth } from './decorators';
-import { AuthTokens, AuthUser, UserLoginReqDto, UserProfile } from './dto';
+import {
+  RegisterAdminDto,
+  AuthTokens,
+  AuthUser,
+  UserLoginReqDto,
+  UserProfile,
+} from './dto';
 import { JwtRefreshAuthGuard, LocalAuthGuard } from './guards';
 import { AuthUserWithRefreshToken } from './types';
 
@@ -52,6 +60,23 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   logout(@GetAuthUser('id') id: number): Promise<boolean> {
     return this.authService.logout(id);
+  }
+
+  @Post('register-admin')
+  @HttpCode(HttpStatus.OK)
+  async registerAdmin(
+    @Body() registerAdminDto: RegisterAdminDto,
+    @GetAuthUser('id') id: number,
+  ): Promise<UserProfile> {
+    try {
+      const admin = await this.authService.registerAdmin(
+        id,
+        registerAdminDto.adminKey,
+      );
+      return admin;
+    } catch (_error) {
+      throw new ForbiddenException();
+    }
   }
 
   @Get('profile')

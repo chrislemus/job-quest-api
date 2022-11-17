@@ -18,7 +18,14 @@ model User {
   lastName  String?
   password String
   refreshToken String?
+  role Role 
+  jobs Job[]
   jobLists JobList[]
+}
+
+enum Role {
+  SUBSCRIBER
+  ADMIN
 }
 
 model Job {
@@ -30,6 +37,8 @@ model Job {
   salary String?
   description String?
   color String?
+  user User @relation(fields: [userId], references: [id])
+  userId Int
   jobList JobList @relation(fields: [jobListId], references: [id])
   jobListId Int
 }
@@ -38,9 +47,9 @@ model JobList{
   id Int  @default(autoincrement()) @id
   label String
   order Int 
-  owner User @relation(fields: [ownerId], references: [id])
-  ownerId Int
+  user User @relation(fields: [userId], references: [id])
+  userId Int
   jobs Job[]
 
-  @@unique([order, ownerId])
+  @@unique([order, userId])
 }

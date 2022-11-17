@@ -1,3 +1,6 @@
+-- CreateEnum
+CREATE TYPE "Role" AS ENUM ('SUBSCRIBER', 'ADMIN');
+
 -- CreateTable
 CREATE TABLE "User" (
     "id" SERIAL NOT NULL,
@@ -7,6 +10,7 @@ CREATE TABLE "User" (
     "lastName" TEXT,
     "password" TEXT NOT NULL,
     "refreshToken" TEXT,
+    "role" "Role" NOT NULL,
 
     CONSTRAINT "User_pkey" PRIMARY KEY ("id")
 );
@@ -21,6 +25,7 @@ CREATE TABLE "Job" (
     "salary" TEXT,
     "description" TEXT,
     "color" TEXT,
+    "userId" INTEGER NOT NULL,
     "jobListId" INTEGER NOT NULL,
 
     CONSTRAINT "Job_pkey" PRIMARY KEY ("id")
@@ -31,7 +36,7 @@ CREATE TABLE "JobList" (
     "id" SERIAL NOT NULL,
     "label" TEXT NOT NULL,
     "order" INTEGER NOT NULL,
-    "ownerId" INTEGER NOT NULL,
+    "userId" INTEGER NOT NULL,
 
     CONSTRAINT "JobList_pkey" PRIMARY KEY ("id")
 );
@@ -40,10 +45,13 @@ CREATE TABLE "JobList" (
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "JobList_order_ownerId_key" ON "JobList"("order", "ownerId");
+CREATE UNIQUE INDEX "JobList_order_userId_key" ON "JobList"("order", "userId");
+
+-- AddForeignKey
+ALTER TABLE "Job" ADD CONSTRAINT "Job_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Job" ADD CONSTRAINT "Job_jobListId_fkey" FOREIGN KEY ("jobListId") REFERENCES "JobList"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "JobList" ADD CONSTRAINT "JobList_ownerId_fkey" FOREIGN KEY ("ownerId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "JobList" ADD CONSTRAINT "JobList_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

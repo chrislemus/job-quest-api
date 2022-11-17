@@ -23,7 +23,6 @@ export class JwtRefreshTokenStrategy extends PassportStrategy(
       ?.get('authorization')
       ?.replace('Bearer', '')
       .trim();
-
     if (!refreshToken) throw new ForbiddenException('Refresh token malformed');
 
     return {

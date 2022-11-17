@@ -32,8 +32,11 @@ export class JobListController {
 
   @Get()
   @ApiPageResponse(JobListEntity)
-  findAll(@Query() query: PaginatedQuery): Promise<Page<JobListEntity>> {
-    return this.jobListService.findAll(query);
+  findAll(
+    @Query() query: PaginatedQuery,
+    @GetAuthUser('id') userId: number,
+  ): Promise<Page<JobListEntity>> {
+    return this.jobListService.findAll(userId, query);
   }
 
   @Get(':id')

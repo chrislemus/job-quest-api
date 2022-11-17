@@ -99,6 +99,7 @@ export class AuthService {
       const user = await this.prisma.user.create({
         data: {
           ...newUserData,
+          role: 'SUBSCRIBER',
           password,
           jobLists: {
             createMany: {
@@ -134,7 +135,30 @@ export class AuthService {
         id: userId,
       },
     });
-    const { id, email, firstName, lastName } = profile;
-    return { id, email, firstName, lastName };
+    return new UserProfile(profile);
+    // const { id, email, firstName, lastName } = profile;
+    // return { id, email, firstName, lastName };
+  }
+
+  async registerAdmin(userId: number, adminKey: string): Promise<UserProfile> {
+    const existingAdminUser = await this.prisma.user.findFirst({
+      where: { role: 'ADMIN' },
+    });
+
+    const noAdminRegistered = existingAdminUser === null;
+    if (!noAdminRegistered) throw new Error('Admin already registered');
+
+    const expectedAdminKey =
+      this.configService.get<string>('ADMIN_REGISTER_KEY');
+
+    const validAdminKey = expectedAdminKey === adminKey;
+    if (!validAdminKey) throw new Error('Invalid admin key');
+
+    const adminUser = await this.prisma.user.update({
+      data: { role: 'ADMIN' },
+      where: { id: userId },
+    });
+
+    return new UserProfile(adminUser);
   }
 }
