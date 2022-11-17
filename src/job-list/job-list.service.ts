@@ -51,7 +51,7 @@ export class JobListService {
     });
   }
 
-  findOne(id: number): Promise<JobListEntity> {
+  findOne(id: number): Promise<JobListEntity | null> {
     return this.prisma.jobList.findUnique({ where: { id: id } });
   }
 

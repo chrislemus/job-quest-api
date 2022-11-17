@@ -8,6 +8,7 @@ import {
   Delete,
   Query,
   NotFoundException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { JobListService } from './job-list.service';
 import { CreateJobListDto } from './dto/create-job-list.dto';
@@ -42,9 +43,14 @@ export class JobListController {
 
   @Get(':id')
   @ApiOkResponse(JobListEntity)
-  async findOne(@Param('id') id: number): Promise<JobListEntity> {
+  async findOne(
+    @Param('id') id: number,
+    @GetAuthUser('id') userId: number,
+  ): Promise<JobListEntity> {
     const jobList = await this.jobListService.findOne(id);
-    if (jobList === null) throw new NotFoundException();
+    if (jobList === null || jobList.userId !== userId)
+      throw new NotFoundException();
+
     return jobList;
   }
 
