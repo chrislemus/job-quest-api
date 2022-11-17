@@ -7,12 +7,13 @@ import {
   Param,
   Delete,
   Query,
+  NotFoundException,
 } from '@nestjs/common';
 import { JobListService } from './job-list.service';
 import { CreateJobListDto } from './dto/create-job-list.dto';
 import { UpdateJobListDto } from './dto/update-job-list.dto';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { GetAuthUser } from '@app/common/decorators';
+import { ApiOkResponse, GetAuthUser } from '@app/common/decorators';
 import { JobListEntity } from './entities/job-list.entity';
 import { ApiPageResponse, Page, PaginatedQuery } from '@app/common/pagination';
 
@@ -40,13 +41,20 @@ export class JobListController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.jobListService.findOne(+id);
+  @ApiOkResponse(JobListEntity)
+  async findOne(@Param('id') id: number): Promise<JobListEntity> {
+    const jobList = await this.jobListService.findOne(id);
+    if (jobList === null) throw new NotFoundException();
+    return jobList;
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateJobListDto: UpdateJobListDto) {
-    return this.jobListService.update(+id, updateJobListDto);
+  async update(
+    @Param('id') id: string,
+    @Body() updateJobListDto: UpdateJobListDto,
+  ) {
+    const jobList = await this.jobListService.update(+id, updateJobListDto);
+    return jobList;
   }
 
   @Delete(':id')
