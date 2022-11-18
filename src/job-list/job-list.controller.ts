@@ -26,6 +26,7 @@ import { CreateJobListDto, UpdateJobListDto } from './dto';
 export class JobListController {
   constructor(private readonly jobListService: JobListService) {}
 
+  /** Create a new Job List */
   @Post()
   @ApiCreatedResponse(JobListEntity)
   create(
@@ -35,6 +36,7 @@ export class JobListController {
     return this.jobListService.create(createJobListDto, userId);
   }
 
+  /** Get all Job Lists */
   @Get()
   @ApiPageResponse(JobListEntity)
   findAll(
@@ -44,6 +46,7 @@ export class JobListController {
     return this.jobListService.findAll(query, userId);
   }
 
+  /** Get Job List by ID */
   @Get(':id')
   @ApiOkResponse(JobListEntity)
   @ApiNotFoundResponse()
@@ -56,6 +59,7 @@ export class JobListController {
     return jobList;
   }
 
+  /** Update a Job List */
   @Patch(':id')
   @ApiNotFoundResponse()
   async updateJobList(
@@ -73,6 +77,7 @@ export class JobListController {
     return jobList;
   }
 
+  /** Delete a Job List */
   @Delete(':id')
   @ApiOkResponse(JobListEntity)
   async remove(

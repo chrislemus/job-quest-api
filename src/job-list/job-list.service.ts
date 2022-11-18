@@ -8,6 +8,7 @@ import { JobListEntity } from './entities/job-list.entity';
 export class JobListService {
   constructor(private prisma: PrismaService) {}
 
+  /** Create a Job List */
   async create(
     createJobListDto: CreateJobListDto,
     userId: number,
@@ -29,6 +30,7 @@ export class JobListService {
     return jobList;
   }
 
+  /** Find all Job Lists that belongs to a user */
   async findAll(
     query: PaginatedQuery,
     userId: number,
@@ -47,10 +49,7 @@ export class JobListService {
     return jobList;
   }
 
-  /**
-   * Replace JobList's data
-   * @returns updated JobList data
-   */
+  /** Update a Job List */
   async updateJobList(
     jobListId: number,
     jobListDto: UpdateJobListDto,
@@ -70,6 +69,7 @@ export class JobListService {
     return updatedJobList;
   }
 
+  /** Remove a Job List */
   async remove(jobListId: number, userId: number): Promise<JobListEntity> {
     const jobList = await this.prisma.jobList.findUnique({
       where: { id: jobListId },
