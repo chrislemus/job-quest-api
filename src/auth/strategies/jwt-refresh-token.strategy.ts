@@ -24,11 +24,11 @@ export class JwtRefreshTokenStrategy extends PassportStrategy(
       ?.replace('Bearer', '')
       .trim();
     if (!refreshToken) throw new ForbiddenException('Refresh token malformed');
-
     return {
       id: payload.sub,
       email: payload.email,
       refreshToken,
+      role: payload.role,
     };
   }
 }

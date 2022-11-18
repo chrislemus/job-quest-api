@@ -38,7 +38,7 @@ export class AuthController {
   @Post('login')
   @ApiBody({ type: UserLoginReqDto })
   login(@GetAuthUser() user: AuthUser): Promise<AuthTokens> {
-    return this.authService.localLogin(user.id, user.email);
+    return this.authService.localLogin(user);
   }
 
   @SkipAuth()

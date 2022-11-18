@@ -6,13 +6,13 @@ export class UserProfile {
   email: string;
   firstName: string;
   lastName: string;
+  role: string;
   @Exclude()
   password: string;
   @Exclude()
   refreshToken?: string;
   @Exclude()
   createdAt?: Date;
-  role: string;
 
   constructor(partial: Partial<UserProfile>) {
     Object.assign(this, partial);

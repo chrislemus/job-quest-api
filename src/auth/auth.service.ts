@@ -1,5 +1,4 @@
 import {
-  ConflictException,
   ForbiddenException,
   Injectable,
   InternalServerErrorException,
@@ -10,8 +9,7 @@ import { CreateUserDto } from '@app/users/dto';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '@app/prisma';
 import { ConfigService } from '@nestjs/config';
-import { Prisma } from '@prisma/client';
-import { AuthTokens, UserProfile } from './dto';
+import { AuthTokens, AuthUser, UserProfile } from './dto';
 
 @Injectable()
 export class AuthService {
@@ -22,8 +20,8 @@ export class AuthService {
     private configService: ConfigService,
   ) {}
 
-  async localLogin(userId: number, userEmail: string): Promise<AuthTokens> {
-    const tokens = await this.getTokens(userId, userEmail);
+  async localLogin(user: AuthUser): Promise<AuthTokens> {
+    const tokens = await this.getTokens(user);
     return tokens;
   }
 
@@ -37,7 +35,7 @@ export class AuthService {
     const isMatch = await bcrypt.compare(refreshToken, user.refreshToken);
     if (!isMatch) throw new ForbiddenException('Access Denied');
 
-    const tokens = await this.getTokens(user.id, user.email);
+    const tokens = await this.getTokens(user);
     return tokens;
   }
 
@@ -47,10 +45,11 @@ export class AuthService {
     return hash;
   }
 
-  async getTokens(userId: number, email: string): Promise<AuthTokens> {
+  async getTokens(user: AuthUser): Promise<AuthTokens> {
     const jwtPayload: any = {
-      sub: userId,
-      email: email,
+      sub: user.id,
+      email: user.email,
+      role: user.role,
     };
 
     const [access_token, refresh_token] = await Promise.all([
@@ -64,7 +63,7 @@ export class AuthService {
       }),
     ]);
 
-    await this.syncRefreshToken(userId, refresh_token);
+    await this.syncRefreshToken(user.id, refresh_token);
     return { access_token, refresh_token };
   }
 
@@ -113,7 +112,7 @@ export class AuthService {
       },
     });
 
-    const tokens = await this.getTokens(user.id, user.email);
+    const tokens = await this.getTokens(user);
     return tokens;
   }
 

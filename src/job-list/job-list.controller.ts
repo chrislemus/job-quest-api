@@ -12,16 +12,11 @@ import {
   Delete,
   Query,
   NotFoundException,
-  Put,
   Patch,
 } from '@nestjs/common';
-import {
-  ApiBearerAuth,
-  ApiConflictResponse,
-  ApiNotFoundResponse,
-  ApiTags,
-} from '@nestjs/swagger';
+import { ApiBearerAuth, ApiNotFoundResponse, ApiTags } from '@nestjs/swagger';
 import { UpdateJobListDto } from './dto/update-job-list.dto';
+import { AuthUser } from '@app/auth/dto';
 
 @ApiBearerAuth()
 @Controller('job-list')
@@ -41,9 +36,9 @@ export class JobListController {
   @ApiPageResponse(JobListEntity)
   findAll(
     @Query() query: PaginatedQuery,
-    @GetAuthUser('id') userId: number,
+    @GetAuthUser() authUser: AuthUser,
   ): Promise<Page<JobListEntity>> {
-    return this.jobListService.findAll(userId, query);
+    return this.jobListService.findAll(authUser.id, query);
   }
 
   @Get(':id')

@@ -17,7 +17,7 @@ export class LocalStrategy extends PassportStrategy(Strategy) {
     if (user?.password) {
       const isMatch = await bcrypt.compare(password, user.password);
       if (isMatch) {
-        return { id: user.id, email: user.email };
+        return { id: user.id, email: user.email, role: user.role };
       }
     }
     throw new UnauthorizedException();
