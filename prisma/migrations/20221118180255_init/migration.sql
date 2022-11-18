@@ -35,7 +35,7 @@ CREATE TABLE "Job" (
 CREATE TABLE "JobList" (
     "id" SERIAL NOT NULL,
     "label" TEXT NOT NULL,
-    "order" INTEGER NOT NULL,
+    "order" SERIAL NOT NULL,
     "userId" INTEGER NOT NULL,
 
     CONSTRAINT "JobList_pkey" PRIMARY KEY ("id")
@@ -43,9 +43,6 @@ CREATE TABLE "JobList" (
 
 -- CreateIndex
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
-
--- CreateIndex
-CREATE UNIQUE INDEX "JobList_order_userId_key" ON "JobList"("order", "userId");
 
 -- AddForeignKey
 ALTER TABLE "Job" ADD CONSTRAINT "Job_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

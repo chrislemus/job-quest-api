@@ -46,7 +46,7 @@ model Job {
 model JobList{
   id Int  @default(autoincrement()) @id
   label String
-  order Int 
+  order Int  
   user User @relation(fields: [userId], references: [id])
   userId Int
   jobs Job[]

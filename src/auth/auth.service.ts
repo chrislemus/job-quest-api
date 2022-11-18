@@ -95,38 +95,26 @@ export class AuthService {
   async signup(newUserData: CreateUserDto) {
     const password = await this.hashValue(newUserData.password);
 
-    try {
-      const user = await this.prisma.user.create({
-        data: {
-          ...newUserData,
-          role: 'SUBSCRIBER',
-          password,
-          jobLists: {
-            createMany: {
-              data: [
-                { label: 'Queue', order: 1 },
-                { label: 'Applied', order: 2 },
-                { label: 'Interview', order: 3 },
-                { label: 'Offer', order: 4 },
-              ],
-            },
+    const user = await this.prisma.user.create({
+      data: {
+        ...newUserData,
+        role: 'SUBSCRIBER',
+        password,
+        jobLists: {
+          createMany: {
+            data: [
+              { label: 'Queue', order: 1 },
+              { label: 'Applied', order: 2 },
+              { label: 'Interview', order: 3 },
+              { label: 'Offer', order: 4 },
+            ],
           },
         },
-      });
+      },
+    });
 
-      return this.getTokens(user.id, user.email);
-    } catch (error) {
-      this.logger.error(error);
-
-      const isPrismaError =
-        error instanceof Prisma.PrismaClientKnownRequestError;
-
-      if (isPrismaError && error.code === 'P2002') {
-        throw new ConflictException('There is a unique constraint violation');
-      }
-
-      throw new InternalServerErrorException();
-    }
+    const tokens = await this.getTokens(user.id, user.email);
+    return tokens;
   }
 
   async getUserProfile(userId: number): Promise<UserProfile> {
@@ -136,8 +124,6 @@ export class AuthService {
       },
     });
     return new UserProfile(profile);
-    // const { id, email, firstName, lastName } = profile;
-    // return { id, email, firstName, lastName };
   }
 
   async registerAdmin(userId: number, adminKey: string): Promise<UserProfile> {

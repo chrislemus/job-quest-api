@@ -13,6 +13,7 @@ import {
   Query,
   NotFoundException,
   Put,
+  Patch,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -20,6 +21,7 @@ import {
   ApiNotFoundResponse,
   ApiTags,
 } from '@nestjs/swagger';
+import { UpdateJobListDto } from './dto/update-job-list.dto';
 
 @ApiBearerAuth()
 @Controller('job-list')
@@ -28,7 +30,6 @@ export class JobListController {
   constructor(private readonly jobListService: JobListService) {}
 
   @Post()
-  @ApiConflictResponse()
   create(
     @Body() createJobListDto: CreateJobListDto,
     @GetAuthUser('id') userId: number,
@@ -59,23 +60,31 @@ export class JobListController {
     return jobList;
   }
 
-  @Put(':id')
-  async replaceJobList(
+  @Patch(':id')
+  @ApiNotFoundResponse()
+  async updateJobList(
     @Param('id') jobListId: number,
     @GetAuthUser('id') userId: number,
-    @Body() jobListDto: CreateJobListDto,
+    @Body() jobListDto: UpdateJobListDto,
   ) {
-    const jobList = await this.jobListService.replaceJobList(
+    const jobList = await this.jobListService.updateJobList(
       jobListId,
       userId,
       jobListDto,
     );
+
     if (jobList === null) throw new NotFoundException();
     return jobList;
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.jobListService.remove(+id);
+  @ApiOkResponse(JobListEntity)
+  async remove(
+    @Param('id') jobListId: number,
+    @GetAuthUser('id') userId: number,
+  ): Promise<JobListEntity> {
+    const deletedJobList = await this.jobListService.remove(jobListId, userId);
+    if (deletedJobList === null) throw new NotFoundException();
+    return deletedJobList;
   }
 }
