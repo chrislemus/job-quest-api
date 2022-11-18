@@ -10,7 +10,6 @@ import {
 import { JobService } from './job.service';
 import { CreateJobDto } from './dto/create-job.dto';
 import { UpdateJobDto } from './dto/update-job.dto';
-import { SkipAuth } from '@app/auth/decorators';
 import { ApiTags } from '@nestjs/swagger';
 
 @Controller('job')

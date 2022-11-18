@@ -66,7 +66,7 @@ export class JobListController {
     @Param('id') jobListId: number,
     @GetAuthUser('id') userId: number,
     @Body() jobListDto: UpdateJobListDto,
-  ) {
+  ): Promise<JobListEntity> {
     const jobList = await this.jobListService.updateJobList(
       jobListId,
       jobListDto,
