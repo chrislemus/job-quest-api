@@ -1,16 +1,13 @@
 import { applyDecorators, Type } from '@nestjs/common';
-import {
-  ApiOkResponse as _ApiOkResponse,
-  ApiResponseSchemaHost,
-  getSchemaPath,
-} from '@nestjs/swagger';
+import { ApiResponseSchemaHost, getSchemaPath } from '@nestjs/swagger';
+import { ApiCreatedResponse as _ApiCreatedResponse } from '@nestjs/swagger';
 
-export const ApiOkResponse = <TModel extends Type<any>>(
+export const ApiCreatedResponse = <TModel extends Type<any>>(
   model: TModel,
   options?: Omit<ApiResponseSchemaHost, 'schema'>,
 ) => {
   return applyDecorators(
-    _ApiOkResponse({
+    _ApiCreatedResponse({
       ...options,
       schema: {
         properties: {

@@ -1,20 +1,16 @@
 import { Page, pageQuery, PaginatedQuery } from '@app/common/pagination';
-import { UpdateJobDto } from '@app/job/dto/update-job.dto';
 import { PrismaService } from '@app/prisma';
-import { Injectable, Logger } from '@nestjs/common';
-import { CreateJobListDto } from './dto/create-job-list.dto';
-import { UpdateJobListDto } from './dto/update-job-list.dto';
+import { Injectable } from '@nestjs/common';
+import { CreateJobListDto, UpdateJobListDto } from './dto';
 import { JobListEntity } from './entities/job-list.entity';
 
 @Injectable()
 export class JobListService {
-  private logger = new Logger(JobListService.name);
-
   constructor(private prisma: PrismaService) {}
 
   async create(
-    userId: number,
     createJobListDto: CreateJobListDto,
+    userId: number,
   ): Promise<JobListEntity> {
     const lastJobList = await this.prisma.jobList.findFirst({
       orderBy: { order: 'desc' },
@@ -34,8 +30,8 @@ export class JobListService {
   }
 
   async findAll(
-    userId: number,
     query: PaginatedQuery,
+    userId: number,
   ): Promise<Page<JobListEntity>> {
     return pageQuery({
       pageConfig: query,
@@ -45,8 +41,10 @@ export class JobListService {
     });
   }
 
-  findOne(id: number): Promise<JobListEntity | null> {
-    return this.prisma.jobList.findUnique({ where: { id: id } });
+  async findOne(id: number, userId: number): Promise<JobListEntity | null> {
+    const jobList = await this.prisma.jobList.findUnique({ where: { id: id } });
+    if (jobList.userId !== userId) return null;
+    return jobList;
   }
 
   /**
@@ -55,8 +53,8 @@ export class JobListService {
    */
   async updateJobList(
     jobListId: number,
-    userId: number,
     jobListDto: UpdateJobListDto,
+    userId: number,
   ): Promise<JobListEntity> {
     const jobList = await this.prisma.jobList.findUnique({
       where: { id: jobListId },

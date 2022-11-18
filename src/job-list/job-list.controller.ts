@@ -1,8 +1,12 @@
 import { JobListService } from './job-list.service';
-import { CreateJobListDto } from './dto/create-job-list.dto';
-import { ApiOkResponse, GetAuthUser } from '@app/common/decorators';
+import {
+  ApiCreatedResponse,
+  ApiOkResponse,
+  GetAuthUser,
+} from '@app/common/decorators';
 import { JobListEntity } from './entities/job-list.entity';
 import { ApiPageResponse, Page, PaginatedQuery } from '@app/common/pagination';
+import { ApiBearerAuth, ApiNotFoundResponse, ApiTags } from '@nestjs/swagger';
 import {
   Controller,
   Get,
@@ -14,9 +18,7 @@ import {
   NotFoundException,
   Patch,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiNotFoundResponse, ApiTags } from '@nestjs/swagger';
-import { UpdateJobListDto } from './dto/update-job-list.dto';
-import { AuthUser } from '@app/auth/dto';
+import { CreateJobListDto, UpdateJobListDto } from './dto';
 
 @ApiBearerAuth()
 @Controller('job-list')
@@ -25,20 +27,21 @@ export class JobListController {
   constructor(private readonly jobListService: JobListService) {}
 
   @Post()
+  @ApiCreatedResponse(JobListEntity)
   create(
     @Body() createJobListDto: CreateJobListDto,
     @GetAuthUser('id') userId: number,
   ): Promise<JobListEntity> {
-    return this.jobListService.create(userId, createJobListDto);
+    return this.jobListService.create(createJobListDto, userId);
   }
 
   @Get()
   @ApiPageResponse(JobListEntity)
   findAll(
     @Query() query: PaginatedQuery,
-    @GetAuthUser() authUser: AuthUser,
+    @GetAuthUser('id') userId: number,
   ): Promise<Page<JobListEntity>> {
-    return this.jobListService.findAll(authUser.id, query);
+    return this.jobListService.findAll(query, userId);
   }
 
   @Get(':id')
@@ -48,10 +51,8 @@ export class JobListController {
     @Param('id') id: number,
     @GetAuthUser('id') userId: number,
   ): Promise<JobListEntity> {
-    const jobList = await this.jobListService.findOne(id);
-    if (jobList === null || jobList.userId !== userId)
-      throw new NotFoundException();
-
+    const jobList = await this.jobListService.findOne(id, userId);
+    if (jobList === null) throw new NotFoundException();
     return jobList;
   }
 
@@ -64,8 +65,8 @@ export class JobListController {
   ) {
     const jobList = await this.jobListService.updateJobList(
       jobListId,
-      userId,
       jobListDto,
+      userId,
     );
 
     if (jobList === null) throw new NotFoundException();
