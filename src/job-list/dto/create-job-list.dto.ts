@@ -1,4 +1,10 @@
-import { IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Min,
+} from 'class-validator';
 
 export class CreateJobListDto {
   @IsString()
@@ -7,5 +13,6 @@ export class CreateJobListDto {
 
   @IsOptional()
   @IsNumber()
+  @Min(1)
   order?: number;
 }

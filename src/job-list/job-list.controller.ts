@@ -1,22 +1,25 @@
+import { JobListService } from './job-list.service';
+import { CreateJobListDto } from './dto/create-job-list.dto';
+import { ApiOkResponse, GetAuthUser } from '@app/common/decorators';
+import { JobListEntity } from './entities/job-list.entity';
+import { ApiPageResponse, Page, PaginatedQuery } from '@app/common/pagination';
 import {
   Controller,
   Get,
   Post,
   Body,
-  Patch,
   Param,
   Delete,
   Query,
   NotFoundException,
-  ForbiddenException,
+  Put,
 } from '@nestjs/common';
-import { JobListService } from './job-list.service';
-import { CreateJobListDto } from './dto/create-job-list.dto';
-import { UpdateJobListDto } from './dto/update-job-list.dto';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { ApiOkResponse, GetAuthUser } from '@app/common/decorators';
-import { JobListEntity } from './entities/job-list.entity';
-import { ApiPageResponse, Page, PaginatedQuery } from '@app/common/pagination';
+import {
+  ApiBearerAuth,
+  ApiConflictResponse,
+  ApiNotFoundResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 
 @ApiBearerAuth()
 @Controller('job-list')
@@ -25,6 +28,7 @@ export class JobListController {
   constructor(private readonly jobListService: JobListService) {}
 
   @Post()
+  @ApiConflictResponse()
   create(
     @Body() createJobListDto: CreateJobListDto,
     @GetAuthUser('id') userId: number,
@@ -43,6 +47,7 @@ export class JobListController {
 
   @Get(':id')
   @ApiOkResponse(JobListEntity)
+  @ApiNotFoundResponse()
   async findOne(
     @Param('id') id: number,
     @GetAuthUser('id') userId: number,
@@ -54,12 +59,18 @@ export class JobListController {
     return jobList;
   }
 
-  @Patch(':id')
-  async update(
-    @Param('id') id: string,
-    @Body() updateJobListDto: UpdateJobListDto,
+  @Put(':id')
+  async replaceJobList(
+    @Param('id') jobListId: number,
+    @GetAuthUser('id') userId: number,
+    @Body() jobListDto: CreateJobListDto,
   ) {
-    const jobList = await this.jobListService.update(+id, updateJobListDto);
+    const jobList = await this.jobListService.replaceJobList(
+      jobListId,
+      userId,
+      jobListDto,
+    );
+    if (jobList === null) throw new NotFoundException();
     return jobList;
   }
 

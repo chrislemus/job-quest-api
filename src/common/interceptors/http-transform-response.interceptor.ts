@@ -3,10 +3,9 @@ import {
   NestInterceptor,
   ExecutionContext,
   CallHandler,
-  InternalServerErrorException,
 } from '@nestjs/common';
-import { Observable, throwError } from 'rxjs';
-import { catchError, map } from 'rxjs/operators';
+import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 
 export interface Response<T> {
   data: T;
@@ -17,7 +16,7 @@ export class HttpTransformResponseInterceptor<T>
   implements NestInterceptor<T, Response<T>>
 {
   intercept(
-    context: ExecutionContext,
+    _context: ExecutionContext,
     next: CallHandler,
   ): Observable<Response<T>> {
     return next.handle().pipe(

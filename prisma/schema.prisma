@@ -50,6 +50,4 @@ model JobList{
   user User @relation(fields: [userId], references: [id])
   userId Int
   jobs Job[]
-
-  @@unique([order, userId])
 }

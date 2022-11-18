@@ -15,9 +15,8 @@ export class PrismaClientExceptionFilter extends BaseExceptionFilter {
 
   catch(exception: Prisma.PrismaClientKnownRequestError, host: ArgumentsHost) {
     this.logger.error(exception);
-
     switch (exception.code) {
-      case 'P2001':
+      case 'P2002':
         const messageRaw = exception.message.replace(/\n/g, '');
         const msgStart = `Unique constraint failed`;
         const msgEnd = messageRaw.split('Unique constraint failed')?.[1];
