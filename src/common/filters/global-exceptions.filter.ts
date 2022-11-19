@@ -37,6 +37,10 @@ export class GlobalExceptionsFilter implements ExceptionFilter {
       }
     }
 
+    if (messages.length === 0) {
+      messages.push('Internal Server Error');
+    }
+
     const responseBody = { statusCode, error, messages };
     httpAdapter.reply(ctx.getResponse(), responseBody, statusCode);
   }
