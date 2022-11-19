@@ -20,9 +20,9 @@ import {
 } from '@nestjs/common';
 import { CreateJobListDto, UpdateJobListDto } from './dto';
 
-@ApiBearerAuth()
 @Controller('job-list')
 @ApiTags('job-list')
+@ApiBearerAuth()
 export class JobListController {
   constructor(private readonly jobListService: JobListService) {}
 
@@ -80,6 +80,7 @@ export class JobListController {
   /** Delete a Job List */
   @Delete(':id')
   @ApiOkResponse(JobListEntity)
+  @ApiNotFoundResponse()
   async remove(
     @Param('id') jobListId: number,
     @GetAuthUser('id') userId: number,
