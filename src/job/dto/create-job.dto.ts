@@ -1,13 +1,15 @@
-import {
-  IsNotEmpty,
-  IsNumber,
-  IsOptional,
-  IsString,
-  IsUrl,
-} from 'class-validator';
+import { IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
 import { JobEntity } from '../entities';
 
-export class CreateJobDto implements Omit<JobEntity, 'id' | 'userId'> {
+export class CreateJobDto
+  // todo: figure out how to allow undefined for null Prisma values.
+  // We still would like the type safety of the data type
+  implements
+    Omit<
+      JobEntity,
+      'id' | 'userId' | 'location' | 'url' | 'salary' | 'description' | 'color'
+    >
+{
   /**
    * Job Title
    * @example 'Software Engineer'
@@ -28,33 +30,33 @@ export class CreateJobDto implements Omit<JobEntity, 'id' | 'userId'> {
    */
   @IsOptional()
   @IsString()
-  location: string | null;
+  location?: string | null;
   /**
    * Job post URL
    */
   @IsString()
   @IsOptional()
-  url: string | null;
+  url?: string | null;
   /**
    * Job salary
    * @example 56k
    */
   @IsOptional()
   @IsString()
-  salary: string | null;
+  salary?: string | null;
   /**
    * Job description
    */
   @IsOptional()
   @IsString()
-  description: string | null;
+  description?: string | null;
   /**
    * Hexadecimal color to be used in UI when displaying job content
-   * @example #ffff
+   * @example #e91e63
    */
   @IsOptional()
   @IsString()
-  color: string | null;
+  color?: string | null;
   /**
    * Job List ID belonging to this Job
    */
