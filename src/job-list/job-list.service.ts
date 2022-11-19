@@ -1,6 +1,6 @@
 import { Page, pageQuery, PaginatedQuery } from '@app/common/pagination';
 import { PrismaService } from '@app/prisma';
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateJobListDto, UpdateJobListDto } from './dto';
 import { JobListEntity } from './entities/job-list.entity';
 
@@ -43,9 +43,9 @@ export class JobListService {
     });
   }
 
-  async findOne(id: number, userId: number): Promise<JobListEntity | null> {
+  async findOne(id: number, userId: number): Promise<JobListEntity> {
     const jobList = await this.prisma.jobList.findUnique({ where: { id: id } });
-    if (jobList.userId !== userId) return null;
+    if (jobList.userId !== userId) throw new NotFoundException();
     return jobList;
   }
 
@@ -59,7 +59,7 @@ export class JobListService {
       where: { id: jobListId },
     });
 
-    if (jobList?.userId !== userId) return null;
+    if (jobList?.userId !== userId) throw new NotFoundException();
 
     const updatedJobList = await this.prisma.jobList.update({
       where: { id: jobList.id },
@@ -76,7 +76,7 @@ export class JobListService {
       select: { userId: true },
     });
 
-    if (jobList?.userId !== userId) return null;
+    if (jobList?.userId !== userId) throw new NotFoundException();
 
     const res = await this.prisma.jobList.delete({ where: { id: jobListId } });
     return res;

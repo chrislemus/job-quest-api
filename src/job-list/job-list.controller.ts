@@ -1,12 +1,13 @@
+import { JobListEntity } from './entities/job-list.entity';
+import { ApiPageResponse, Page, PaginatedQuery } from '@app/common/pagination';
+import { ApiBearerAuth, ApiNotFoundResponse, ApiTags } from '@nestjs/swagger';
+import { CreateJobListDto, UpdateJobListDto } from './dto';
 import { JobListService } from './job-list.service';
 import {
   ApiCreatedResponse,
   ApiOkResponse,
   GetAuthUser,
 } from '@app/common/decorators';
-import { JobListEntity } from './entities/job-list.entity';
-import { ApiPageResponse, Page, PaginatedQuery } from '@app/common/pagination';
-import { ApiBearerAuth, ApiNotFoundResponse, ApiTags } from '@nestjs/swagger';
 import {
   Controller,
   Get,
@@ -15,10 +16,8 @@ import {
   Param,
   Delete,
   Query,
-  NotFoundException,
   Patch,
 } from '@nestjs/common';
-import { CreateJobListDto, UpdateJobListDto } from './dto';
 
 @Controller('job-list')
 @ApiTags('job-list')
@@ -55,7 +54,6 @@ export class JobListController {
     @GetAuthUser('id') userId: number,
   ): Promise<JobListEntity> {
     const jobList = await this.jobListService.findOne(id, userId);
-    if (jobList === null) throw new NotFoundException();
     return jobList;
   }
 
@@ -73,7 +71,6 @@ export class JobListController {
       userId,
     );
 
-    if (jobList === null) throw new NotFoundException();
     return jobList;
   }
 
@@ -86,7 +83,6 @@ export class JobListController {
     @GetAuthUser('id') userId: number,
   ): Promise<JobListEntity> {
     const deletedJobList = await this.jobListService.remove(jobListId, userId);
-    if (deletedJobList === null) throw new NotFoundException();
     return deletedJobList;
   }
 }
