@@ -1,7 +1,8 @@
 version: '3.9'
 services:
-  local-api:
-    container_name: local-api
+  # ====== API ======
+  api-local:
+    container_name: api-local
     build:
       context: .
       target: development
@@ -10,41 +11,34 @@ services:
       - 3001:3001
     env_file:
       - .env
-    command: >
-      sh -c "npx prisma migrate dev && npm run start:dev"
+    command: 'npm run start:dev'
     volumes:
-      - ./src:/src
-      - ./prisma:/prisma
-      - /usr/node_modules
+      - ./src:/app/src
+      - ./prisma:/app/prisma
+      - /app/node_modules
     depends_on:
-      - local-db
-  local-db-studio:
-    container_name: local-db-studio
+      - db-local
+  api-prod:
+    container_name: api-prod
     build:
       context: .
-      target: development
+      target: production
     restart: always
     ports:
-      - 5555:5555
-    env_file:
-      - .env
-    command: >
-      sh -c "npm run prisma:studio"
-    volumes:
-      - ./src:/src
-      - /usr/node_modules
+      - 3001:3001
     depends_on:
-      - local-db
-  local-db:
+      - db-local
+  # ====== DB ======
+  db-local:
     image: postgres:13
-    container_name: local-db
+    container_name: db-local
     restart: always
     ports:
       - 5432:5432
     env_file:
       - .env
     volumes:
-      - local-db:/var/lib/postgresql/data
+      - db-local:/var/lib/postgresql/data
 volumes:
-  local-db:
+  db-local:
     driver: local
