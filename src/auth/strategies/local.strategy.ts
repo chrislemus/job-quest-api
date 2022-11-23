@@ -2,7 +2,7 @@ import { Strategy } from 'passport-local';
 import { PassportStrategy } from '@nestjs/passport';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from '@app/prisma';
-import * as bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import { LocalPayload } from '../types';
 
 @Injectable()

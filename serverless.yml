@@ -19,7 +19,7 @@ package:
 
 functions:
   main:
-    handler: dist/main-serverless.handler
+    handler: dist/main.handler
     events:
       - http:
           method: ANY
