@@ -17,9 +17,17 @@ package:
     - '!node_modules/prisma/libquery_engine-*'
     - '!node_modules/@prisma/engines/**'
 
+custom:
+  appSecrets: ${ssm:/aws/reference/secretsmanager/JobQuestApi}
+
 functions:
   main:
     handler: dist/main.handler
+    environment:
+      DATABASE_URL: ${self:custom.appSecrets.DATABASE_URL}
+      JWT_SECRET: ${self:custom.appSecrets.JWT_SECRET}
+      JWT_REFRESH_SECRET: ${self:custom.appSecrets.JWT_REFRESH_SECRET}
+      ADMIN_REGISTER_KEY: ${self:custom.appSecrets.ADMIN_REGISTER_KEY}
     events:
       - http:
           method: ANY
