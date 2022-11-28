@@ -1,5 +1,11 @@
 import { plainToInstance } from 'class-transformer';
-import { IsBoolean, IsOptional, IsString, validateSync } from 'class-validator';
+import {
+  IsBoolean,
+  IsNumber,
+  IsOptional,
+  IsString,
+  validateSync,
+} from 'class-validator';
 
 /**
  * Environment variables DTO.
@@ -30,6 +36,18 @@ export class EnvironmentVariables {
   @IsOptional()
   @IsBoolean()
   NOT_SERVERLESS_BUILD?: boolean;
+  /**
+   * Max number of jobs a user can create
+   * @important TODO: config variable should be extracted for easy customization from client side
+   */
+  @IsNumber()
+  JOB_CREATE_LIMIT: number;
+  /**
+   * Max number of job lists a user can create
+   * @important TODO: config variable should be extracted for easy customization from client side
+   */
+  @IsNumber()
+  JOB_LIST_CREATE_LIMIT: number;
 }
 
 /**
