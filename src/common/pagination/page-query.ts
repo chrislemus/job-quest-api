@@ -6,7 +6,10 @@ import { Page } from './page.dto';
 /** Wraps tha DB query and injects pagination parameters when calling DB with {@link Prisma} */
 export const pageQuery = async <
   ReturnT,
-  BaseFn extends PrismaService['jobList'] | PrismaService['job'],
+  BaseFn extends
+    | PrismaService['jobList']
+    | PrismaService['job']
+    | PrismaService['user'],
   QueryFn extends BaseFn['findMany'],
   CountFn extends BaseFn['count'],
 >(config: {
