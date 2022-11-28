@@ -1,6 +1,10 @@
 import { Page, pageQuery, PaginatedQuery } from '@app/common/pagination';
 import { PrismaService } from '@app/prisma';
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { CreateJobListDto, UpdateJobListDto } from './dto';
 import { JobListEntity } from './entities/job-list.entity';
@@ -17,6 +21,16 @@ export class JobListService {
     createJobListDto: CreateJobListDto,
     userId: number,
   ): Promise<JobListEntity> {
+    const createLimit = this.configService.get<number>('JOB_LIST_CREATE_LIMIT');
+    const userJobListCount = await this.prisma.jobList.count({
+      where: { userId },
+    });
+    if (userJobListCount >= createLimit) {
+      throw new ConflictException(
+        `Exceeded Job List limit (${createLimit}). Consider deleting Job Lists to free up some space.`,
+      );
+    }
+
     const lastJobList = await this.prisma.jobList.findFirst({
       orderBy: { order: 'desc' },
     });
