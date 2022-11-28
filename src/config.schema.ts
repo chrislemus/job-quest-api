@@ -1,11 +1,5 @@
-import { plainToInstance, Transform } from 'class-transformer';
-import {
-  IsBoolean,
-  IsBooleanString,
-  IsOptional,
-  IsString,
-  validateSync,
-} from 'class-validator';
+import { plainToInstance } from 'class-transformer';
+import { IsBoolean, IsOptional, IsString, validateSync } from 'class-validator';
 
 /**
  * Environment variables DTO.
