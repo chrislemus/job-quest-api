@@ -38,7 +38,7 @@ model Job {
   salary String?
   description String?
   color String?
-  user User @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId Int
   jobList JobList @relation(fields: [jobListId], references: [id])
   jobListId Int
@@ -48,7 +48,7 @@ model JobList{
   id Int  @default(autoincrement()) @id
   label String
   order Int  
-  user User @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId Int
   jobs Job[]
 }

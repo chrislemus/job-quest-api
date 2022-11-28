@@ -2,7 +2,7 @@ import { Page, pageQuery } from '@app/common/pagination';
 import { PrismaService } from '@app/prisma';
 import { UserEntity } from '@app/user/user.entity';
 import { Injectable } from '@nestjs/common';
-import { FindAllUsersDto } from './dto';
+import { DeleteUserResDto, FindAllUsersDto } from './dto';
 
 @Injectable()
 export class UserService {
@@ -17,14 +17,10 @@ export class UserService {
     });
   }
 
-  // async deleteMany(userIds: number[]) {
-  //   // const user = await this.prisma.user.findUnique({
-  //   //   where: { id: config.userId },
-  //   //   select: { id: true },
-  //   // });
-  //   // const canDelete =
-  //   // if (user?.id !== config.authUserId.id) throw new NotFoundException();
-  //   // const deletedJOb = await this.prisma.job.deleteMany({ where: { id: jobId } });
-  //   // return deletedJOb;
-  // }
+  async delete(userId: number): Promise<DeleteUserResDto> {
+    const deletedUser = await this.prisma.user.delete({
+      where: { id: userId },
+    });
+    return new DeleteUserResDto(deletedUser);
+  }
 }

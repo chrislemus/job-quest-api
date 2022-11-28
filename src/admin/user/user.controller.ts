@@ -2,10 +2,17 @@ import { Roles } from '@app/auth/decorators';
 import { RolesGuard } from '@app/auth/guards';
 import { Page } from '@app/common/pagination';
 import { UserEntity } from '@app/user/user.entity';
-import { Get, Controller, UseGuards, Delete, Query } from '@nestjs/common';
+import {
+  Get,
+  Controller,
+  UseGuards,
+  Delete,
+  Query,
+  Param,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
-import { DeleteManyUsersQueryDto, FindAllUsersDto } from './dto';
+import { DeleteUserResDto, FindAllUsersDto } from './dto';
 import { UserService } from './user.service';
 
 @ApiBearerAuth()
@@ -24,10 +31,9 @@ export class UserController {
     return this.userService.findAll(findAllUsers);
   }
 
-  // /** Delete many users by ID */
-  // @Delete('delete-many')
-  // // @ApiOkResponse(UserEntity)
-  // remove(@Query() deleteManyUsersQueryDto: DeleteManyUsersQueryDto) {
-  //   return this.userService.deleteMany(deleteManyUsersQueryDto.userIds);
-  // }
+  /** Delete a user */
+  @Delete(':id')
+  delete(@Param('id') userId: number): Promise<DeleteUserResDto> {
+    return this.userService.delete(userId);
+  }
 }
