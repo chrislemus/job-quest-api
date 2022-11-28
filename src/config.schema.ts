@@ -1,5 +1,11 @@
-import { plainToInstance } from 'class-transformer';
-import { IsString, validateSync } from 'class-validator';
+import { plainToInstance, Transform } from 'class-transformer';
+import {
+  IsBoolean,
+  IsBooleanString,
+  IsOptional,
+  IsString,
+  validateSync,
+} from 'class-validator';
 
 /**
  * Environment variables DTO.
@@ -18,6 +24,18 @@ export class EnvironmentVariables {
   /** Single use admin user registration key */
   @IsString()
   ADMIN_REGISTER_KEY: string;
+  /**
+   * Dictates build type
+   * - When `true` app will build in local development mode
+   * actively listening for changes and running the same app instance
+   * to handle all requests.
+   * - when `false` or not provided, the app build not actively listen in a specific port.
+   * Instead the serverless environment is responsible for invoking the `handler` function
+   * to handle requests.
+   */
+  @IsOptional()
+  @IsBoolean()
+  NOT_SERVERLESS_BUILD?: boolean;
 }
 
 /**
