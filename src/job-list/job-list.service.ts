@@ -1,12 +1,16 @@
 import { Page, pageQuery, PaginatedQuery } from '@app/common/pagination';
 import { PrismaService } from '@app/prisma';
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { CreateJobListDto, UpdateJobListDto } from './dto';
 import { JobListEntity } from './entities/job-list.entity';
 
 @Injectable()
 export class JobListService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private configService: ConfigService,
+  ) {}
 
   /** Create a Job List */
   async create(

@@ -5,6 +5,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { FindAllJobsQueryDto } from './dto';
 import { CreateJobDto } from './dto/create-job.dto';
 import { UpdateJobDto } from './dto/update-job.dto';
@@ -12,7 +13,10 @@ import { JobEntity } from './entities/job.entity';
 
 @Injectable()
 export class JobService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private configService: ConfigService,
+  ) {}
 
   async create(createJobDto: CreateJobDto, userId: number): Promise<JobEntity> {
     const jobList = await this.prisma.jobList.findUnique({
