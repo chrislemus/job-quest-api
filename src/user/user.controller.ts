@@ -8,10 +8,10 @@ import { UserService } from './user.service';
 @Controller('user')
 @ApiTags('user')
 export class UserController {
-  constructor(private usersService: UserService) {}
+  constructor(private userService: UserService) {}
 
   @Get('profile')
   getProfile(@GetAuthUser('id') userId: number): Promise<UserProfile> {
-    return this.usersService.userProfile(userId);
+    return this.userService.userProfile(userId);
   }
 }

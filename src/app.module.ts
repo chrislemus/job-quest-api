@@ -13,10 +13,12 @@ import {
   GlobalExceptionsFilter,
   PrismaClientExceptionFilter,
 } from './common/filters';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   controllers: [AppController],
   imports: [
+    AdminModule,
     AuthModule,
     ConfigModule.forRoot({ validate }),
     PrismaModule,
