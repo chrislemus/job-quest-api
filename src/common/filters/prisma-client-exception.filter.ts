@@ -5,6 +5,7 @@ import {
   HttpStatus,
   InternalServerErrorException,
   Logger,
+  NotFoundException,
 } from '@nestjs/common';
 import { BaseExceptionFilter } from '@nestjs/core';
 import { Prisma } from '@prisma/client';
@@ -14,17 +15,31 @@ export class PrismaClientExceptionFilter extends BaseExceptionFilter {
   private logger = new Logger(PrismaClientExceptionFilter.name);
 
   catch(exception: Prisma.PrismaClientKnownRequestError, host: ArgumentsHost) {
-    this.logger.error(exception);
     switch (exception.code) {
-      case 'P2002':
+      case 'P2025': {
         const messageRaw = exception.message.replace(/\n/g, '');
-        const msgStart = `Unique constraint failed`;
-        const msgEnd = messageRaw.split('Unique constraint failed')?.[1];
+        const msgStart = 'An operation failed';
+        const msgEnd = messageRaw.split(msgStart)?.[1];
 
         const messages: string[] = [];
-        if (msgEnd) {
-          messages.push(`${msgStart}${msgEnd}`);
-        }
+        if (msgEnd) messages.push(`${msgStart}${msgEnd}`);
+
+        const httpError = new NotFoundException({
+          statusCode: HttpStatus.NOT_FOUND,
+          error: NotFoundException.name,
+          messages,
+        });
+
+        super.catch(httpError, host);
+        break;
+      }
+      case 'P2002': {
+        const messageRaw = exception.message.replace(/\n/g, '');
+        const msgStart = 'Unique constraint failed';
+        const msgEnd = messageRaw.split(msgStart)?.[1];
+
+        const messages: string[] = [];
+        if (msgEnd) messages.push(`${msgStart}${msgEnd}`);
 
         const httpError = new ConflictException({
           statusCode: HttpStatus.CONFLICT,
@@ -34,6 +49,7 @@ export class PrismaClientExceptionFilter extends BaseExceptionFilter {
 
         super.catch(httpError, host);
         break;
+      }
       default:
         const baseError = new InternalServerErrorException({
           statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
