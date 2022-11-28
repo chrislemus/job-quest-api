@@ -1,28 +1,20 @@
 import { GetAuthUser } from '@app/common/decorators';
-import { CreateUserDto } from '@app/users/dto';
+import { CreateUserDto, UserProfile } from '@app/user/dto';
+import { ApiBearerAuth, ApiBody, ApiTags } from '@nestjs/swagger';
+import { AuthService } from './auth.service';
+import { SkipAuth } from './decorators';
+import { RegisterAdminDto, AuthTokens, AuthUser, UserLoginReqDto } from './dto';
+import { JwtRefreshAuthGuard, LocalAuthGuard } from './guards';
+import { AuthUserWithRefreshToken } from './types';
 import {
   Body,
   Controller,
   ForbiddenException,
-  Get,
   HttpCode,
   HttpStatus,
   Post,
-  Query,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiBody, ApiTags } from '@nestjs/swagger';
-import { AuthService } from './auth.service';
-import { SkipAuth } from './decorators';
-import {
-  RegisterAdminDto,
-  AuthTokens,
-  AuthUser,
-  UserLoginReqDto,
-  UserProfile,
-} from './dto';
-import { JwtRefreshAuthGuard, LocalAuthGuard } from './guards';
-import { AuthUserWithRefreshToken } from './types';
 
 @Controller('auth')
 @ApiBearerAuth()
@@ -77,10 +69,5 @@ export class AuthController {
     } catch (_error) {
       throw new ForbiddenException();
     }
-  }
-
-  @Get('profile')
-  getProfile(@GetAuthUser('id') userId: number): Promise<UserProfile> {
-    return this.authService.getUserProfile(userId);
   }
 }

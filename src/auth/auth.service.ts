@@ -5,11 +5,11 @@ import {
   Logger,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { CreateUserDto } from '@app/users/dto';
+import { CreateUserDto, UserProfile } from '@app/user/dto';
 import bcrypt from 'bcryptjs';
 import { PrismaService } from '@app/prisma';
 import { ConfigService } from '@nestjs/config';
-import { AuthTokens, AuthUser, UserProfile } from './dto';
+import { AuthTokens, AuthUser } from './dto';
 
 @Injectable()
 export class AuthService {
@@ -114,15 +114,6 @@ export class AuthService {
 
     const tokens = await this.getTokens(user);
     return tokens;
-  }
-
-  async getUserProfile(userId: number): Promise<UserProfile> {
-    const profile = await this.prisma.user.findUnique({
-      where: {
-        id: userId,
-      },
-    });
-    return new UserProfile(profile);
   }
 
   async registerAdmin(userId: number, adminKey: string): Promise<UserProfile> {
