@@ -9,7 +9,8 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
-import { DeleteUserResDto, UserProfile } from './dto';
+import { DeleteUserResDto } from './dto';
+import { UserEntity } from './user.entity';
 import { UserService } from './user.service';
 
 @ApiBearerAuth()
@@ -20,7 +21,7 @@ export class UserController {
 
   /** Get user profile */
   @Get('profile')
-  getProfile(@GetAuthUser('id') userId: number): Promise<UserProfile> {
+  getProfile(@GetAuthUser('id') userId: number): Promise<UserEntity> {
     return this.userService.userProfile(userId);
   }
 

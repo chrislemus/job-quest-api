@@ -1,5 +1,5 @@
 import { GetAuthUser } from '@app/common/decorators';
-import { CreateUserDto, UserProfile } from '@app/user/dto';
+import { CreateUserDto } from '@app/user/dto';
 import { ApiBearerAuth, ApiBody, ApiTags } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { SkipAuth } from './decorators';
@@ -15,6 +15,7 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
+import { UserEntity } from '@app/user/user.entity';
 
 @Controller('auth')
 @ApiBearerAuth()
@@ -72,7 +73,7 @@ export class AuthController {
   async registerAdmin(
     @Body() registerAdminDto: RegisterAdminDto,
     @GetAuthUser('id') id: number,
-  ): Promise<UserProfile> {
+  ): Promise<UserEntity> {
     try {
       const admin = await this.authService.registerAdmin(
         id,

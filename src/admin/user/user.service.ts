@@ -9,11 +9,14 @@ export class UserService {
   constructor(private prisma: PrismaService) {}
 
   /** Find all users */
-  findAll(findAllUsers: FindAllUsersDto): Promise<Page<UserEntity>> {
-    return pageQuery({
+  async findAll(findAllUsers: FindAllUsersDto): Promise<Page<UserEntity>> {
+    const data = await pageQuery({
       pageConfig: findAllUsers,
       queryFn: this.prisma.user.findMany,
       countFn: this.prisma.user.count,
+      dataSerializer: UserEntity,
     });
+
+    return data;
   }
 }

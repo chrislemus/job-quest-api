@@ -5,11 +5,12 @@ import {
   Logger,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { CreateUserDto, UserProfile } from '@app/user/dto';
+import { CreateUserDto } from '@app/user/dto';
 import bcrypt from 'bcryptjs';
 import { PrismaService } from '@app/prisma';
 import { ConfigService } from '@nestjs/config';
 import { AuthTokens, AuthUser } from './dto';
+import { UserEntity } from '@app/user/user.entity';
 
 @Injectable()
 export class AuthService {
@@ -161,7 +162,7 @@ export class AuthService {
   /**
    * Register user as admin(when app runs in new env for first time and no admin users exist).
    */
-  async registerAdmin(userId: number, adminKey: string): Promise<UserProfile> {
+  async registerAdmin(userId: number, adminKey: string): Promise<UserEntity> {
     const existingAdminUser = await this.prisma.user.findFirst({
       where: { role: 'ADMIN' },
     });
@@ -180,6 +181,6 @@ export class AuthService {
       where: { id: userId },
     });
 
-    return new UserProfile(adminUser);
+    return new UserEntity(adminUser);
   }
 }

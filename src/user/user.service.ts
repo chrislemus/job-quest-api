@@ -1,17 +1,18 @@
 import { PrismaService } from '@app/prisma';
 import { Injectable } from '@nestjs/common';
-import { DeleteUserResDto, UserProfile } from './dto';
+import { DeleteUserResDto } from './dto';
+import { UserEntity } from './user.entity';
 
 @Injectable()
 export class UserService {
   constructor(private prisma: PrismaService) {}
 
   /** Get user profile */
-  async userProfile(userId: number): Promise<UserProfile> {
-    const profile = await this.prisma.user.findUnique({
+  async userProfile(userId: number): Promise<UserEntity> {
+    const user = await this.prisma.user.findUnique({
       where: { id: userId },
     });
-    return new UserProfile(profile);
+    return new UserEntity(user);
   }
 
   /** Delete user */
