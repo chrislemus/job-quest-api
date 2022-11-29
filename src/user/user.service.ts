@@ -1,6 +1,6 @@
 import { PrismaService } from '@app/prisma';
 import { Injectable } from '@nestjs/common';
-import { UserProfile } from './dto';
+import { DeleteUserResDto, UserProfile } from './dto';
 
 @Injectable()
 export class UserService {
@@ -11,5 +11,13 @@ export class UserService {
       where: { id: userId },
     });
     return new UserProfile(profile);
+  }
+
+  /** Delete user */
+  async delete(userId: number): Promise<DeleteUserResDto> {
+    const deletedUser = await this.prisma.user.delete({
+      where: { id: userId },
+    });
+    return new DeleteUserResDto(deletedUser);
   }
 }

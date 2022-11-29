@@ -1,7 +1,15 @@
+import { AuthUser } from '@app/auth/dto';
 import { GetAuthUser } from '@app/common/decorators';
-import { Controller, Get } from '@nestjs/common';
+import {
+  Controller,
+  Delete,
+  Get,
+  NotFoundException,
+  Param,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { UserProfile } from './dto';
+import { Role } from '@prisma/client';
+import { DeleteUserResDto, UserProfile } from './dto';
 import { UserService } from './user.service';
 
 @ApiBearerAuth()
@@ -13,5 +21,19 @@ export class UserController {
   @Get('profile')
   getProfile(@GetAuthUser('id') userId: number): Promise<UserProfile> {
     return this.userService.userProfile(userId);
+  }
+
+  /** Delete user */
+  @Delete(':id')
+  delete(
+    @Param('id') userId: number,
+    @GetAuthUser() authUser: AuthUser,
+  ): Promise<DeleteUserResDto> {
+    if (authUser.role === Role.ADMIN) {
+      return this.userService.delete(userId);
+    } else if (authUser.id === userId) {
+      return this.userService.delete(userId);
+    }
+    throw new NotFoundException();
   }
 }
