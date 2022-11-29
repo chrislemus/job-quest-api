@@ -1,4 +1,4 @@
-import { appSetup } from './main-setup';
+import { appSetup } from './app-setup';
 import serverlessExpress from '@vendia/serverless-express';
 import { Callback, Context, Handler } from 'aws-lambda';
 
@@ -23,7 +23,6 @@ let server: Handler;
 async function bootstrapServerless(): Promise<Handler> {
   const app = await appSetup();
   await app.init();
-
   const expressApp = app.getHttpAdapter().getInstance();
   return serverlessExpress({ app: expressApp });
 }
