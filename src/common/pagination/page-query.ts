@@ -26,7 +26,7 @@ export const pageQuery = async <
   if (!config.queryArgs) config.queryArgs = {} as any; // avoid error when user {...res}
 
   // pass in query values and inject pagination config
-  const jobListData = await config.queryFn({
+  const data = await config.queryFn({
     take: pageSize,
     skip: (page - 1) * pageSize,
     ...config.queryArgs,
@@ -36,7 +36,7 @@ export const pageQuery = async <
   const pageInfo: PageInfo = {
     currentPage: page,
     currentPageSize: pageSize,
-    currentPageCount: jobListData.length,
+    currentPageCount: data.length,
   };
 
   // if user wants page count, make a second call the the countFn() to retrieve data
@@ -48,6 +48,6 @@ export const pageQuery = async <
 
   return {
     pageInfo,
-    data: jobListData,
+    data: data,
   };
 };

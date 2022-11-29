@@ -1,4 +1,5 @@
 import { Role, User } from '@prisma/client';
+import { Exclude } from 'class-transformer';
 
 export class UserEntity implements User {
   id: number;
@@ -6,7 +7,13 @@ export class UserEntity implements User {
   email: string;
   firstName: string;
   lastName: string | null;
+  @Exclude()
   password: string;
+  @Exclude()
   refreshToken: string;
   role: Role;
+
+  constructor(partial: Partial<UserEntity>) {
+    Object.assign(this, partial);
+  }
 }
