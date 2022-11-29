@@ -18,6 +18,7 @@ import { UserService } from './user.service';
 export class UserController {
   constructor(private userService: UserService) {}
 
+  /** Get user profile */
   @Get('profile')
   getProfile(@GetAuthUser('id') userId: number): Promise<UserProfile> {
     return this.userService.userProfile(userId);

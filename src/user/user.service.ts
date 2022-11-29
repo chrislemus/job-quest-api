@@ -6,6 +6,7 @@ import { DeleteUserResDto, UserProfile } from './dto';
 export class UserService {
   constructor(private prisma: PrismaService) {}
 
+  /** Get user profile */
   async userProfile(userId: number): Promise<UserProfile> {
     const profile = await this.prisma.user.findUnique({
       where: { id: userId },
