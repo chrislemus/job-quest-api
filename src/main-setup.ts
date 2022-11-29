@@ -24,8 +24,10 @@ export async function appSetup(): Promise<INestApplication> {
   // apply transform to all responses
   app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
 
+  // TODO: specify origin
   app.enableCors({ origin: '*', methods: '*' });
 
+  // Swagger UI setup
   const config = new DocumentBuilder()
     .setTitle('Job Quest API')
     .setDescription('Job Quest API Docs')
