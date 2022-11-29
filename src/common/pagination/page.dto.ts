@@ -9,4 +9,20 @@ export class Page<Record> {
   @ApiProperty()
   /** Page info */
   pageInfo: PageInfo;
+
+  constructor(
+    paginatedData: Page<Record>,
+    dataSerializer?: { new (partial: Record): Record },
+  ) {
+    let { data } = paginatedData;
+    if (data && dataSerializer) {
+      data = data.map((item) => {
+        return new dataSerializer(item);
+      });
+    }
+
+    const { pageInfo } = paginatedData;
+    this.pageInfo = pageInfo;
+    this.data = data;
+  }
 }

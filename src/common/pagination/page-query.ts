@@ -13,14 +13,46 @@ export const pageQuery = async <
   QueryFn extends BaseFn['findMany'],
   CountFn extends BaseFn['count'],
 >(config: {
-  /** Paginated query params */
+  /**
+   * Paginated query params
+   */
   pageConfig: PaginatedQuery;
-  /** Query argument for {@link queryFn } */
+  /**
+   * Query argument for {@link queryFn }
+   */
   queryArgs?: Omit<Parameters<QueryFn>[0], 'skip' | 'take'>;
-  /** Query function that will return data  */
+  /**
+   * Query function that will return data
+   */
   queryFn: (args: Parameters<QueryFn>[0]) => Promise<ReturnT[]>;
-  /** Count function that returns the data count */
+  /**
+   * Count function that returns the data count
+   */
   countFn: (args: Parameters<CountFn>[0]) => Promise<number>;
+  /**
+   * Serialize resource data.
+   * - recommended when you what to transform or exclude properties from
+   * each individual item (ie. remove password from user objects).
+   * - This will serialize each item in the data property. But it
+   * will not affect the `pageInfo` property
+   *
+   * @example
+   * ```typescript
+   * const pageObj = {
+   *  pageInfo: {...}
+   *  data: [{id: 1, password: qwerty}, {id: 2, password: qwerty}]
+   * }
+   *
+   * // if `dataSerializer` is provided `pageObj` could be the following.
+   *
+   * pageObj = {
+   *  pageInfo: {...}, // pageInfo remains the same
+   *  data: [{id: 1, {id: 2}] // password excluded
+   * }
+
+   * ```
+   */
+  dataSerializer?: { new (partial: ReturnT): ReturnT };
 }): Promise<Page<ReturnT>> => {
   const { page, pageSize, pageTotalCount } = config.pageConfig;
   if (!config.queryArgs) config.queryArgs = {} as any; // avoid error when user {...res}
@@ -46,8 +78,5 @@ export const pageQuery = async <
     pageInfo['totalCount'] = count;
   }
 
-  return {
-    pageInfo,
-    data: data,
-  };
+  return new Page({ pageInfo, data }, config.dataSerializer);
 };
