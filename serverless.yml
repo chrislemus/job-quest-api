@@ -28,6 +28,8 @@ functions:
       JWT_SECRET: ${self:custom.appSecrets.JWT_SECRET}
       JWT_REFRESH_SECRET: ${self:custom.appSecrets.JWT_REFRESH_SECRET}
       ADMIN_REGISTER_KEY: ${self:custom.appSecrets.ADMIN_REGISTER_KEY}
+      JOB_CREATE_LIMIT: 40
+      JOB_LIST_CREATE_LIMIT: 10
     events:
       - http:
           method: ANY
