@@ -1,5 +1,3 @@
-org: crislemus
-app: job-quest-api
 service: job-quest-api
 frameworkVersion: '3'
 
