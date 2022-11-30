@@ -130,6 +130,7 @@ export class AuthService {
               { label: 'Applied', order: 2 },
               { label: 'Interview', order: 3 },
               { label: 'Offer', order: 4 },
+              { label: 'Rejected', order: 5 },
             ],
           },
         },
