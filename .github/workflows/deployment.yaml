@@ -1,0 +1,18 @@
+name: app-deployment
+run-name: App Deployment 🚀
+on: [push]
+jobs:
+  Explore-GitHub-Actions:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🐧 This job is now running on a ${{ runner.os }} OS
+      - name: Check out repository code
+        uses: actions/checkout@v3
+      - name: Setup Node 16.10.0
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16.10.0
+      - run: npm install -g serverless
+      - run: npm ci
+      - run: npm run build
+      - run: serverless deploy
