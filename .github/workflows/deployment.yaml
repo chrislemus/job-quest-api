@@ -2,10 +2,10 @@ name: app-deployment
 run-name: App Deployment 🚀
 on: [push]
 jobs:
-  Explore-GitHub-Actions:
+  deploy-app:
     runs-on: ubuntu-latest
     steps:
-      - name: 🐧 This job is now running on a ${{ runner.os }} OS
+      - run: echo "🐧 This job is now running on a ${{ runner.os }} server"
       - name: Check out repository code
         uses: actions/checkout@v3
       - name: Setup Node 16.10.0
