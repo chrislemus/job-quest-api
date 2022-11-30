@@ -15,4 +15,6 @@ jobs:
       - run: npm install -g serverless
       - run: npm ci
       - run: npm run build
+      - name: Serverless AWS authentication
+        run: sls config credentials --provider aws --key ${{ secrets.AWS_ACCESS_ID }} --secret ${{ secrets.AWS_ACCESS_KEY }}
       - run: serverless deploy
