@@ -13,9 +13,19 @@ import { Prisma } from '@prisma/client';
 @Catch(Prisma.PrismaClientKnownRequestError)
 export class PrismaClientExceptionFilter extends BaseExceptionFilter {
   private logger = new Logger(PrismaClientExceptionFilter.name);
-
   catch(exception: Prisma.PrismaClientKnownRequestError, host: ArgumentsHost) {
+    /** Prisma error references: https://www.prisma.io/docs/reference/api-reference/error-reference */
     switch (exception.code) {
+      case 'P2021': {
+        this.logger.error(`Prisma internal server error code: ${exception}`);
+        const baseError = new InternalServerErrorException({
+          statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+          error: InternalServerErrorException.name,
+          messages: [],
+        });
+        super.catch(baseError, host);
+        break;
+      }
       case 'P2025': {
         const messageRaw = exception.message.replace(/\n/g, '');
         const msgStart = 'An operation failed';
