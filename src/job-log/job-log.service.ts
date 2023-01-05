@@ -1,5 +1,6 @@
 import { PrismaService } from '@app/prisma';
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { JobLog } from '@prisma/client';
 import { CreateJobLogDto, UpdateJobLogDto } from './dto';
 
 @Injectable()
@@ -10,13 +11,14 @@ export class JobLogService {
       where: { id: createJobLogDto.jobId },
       select: { userId: true },
     });
+
     if (job?.userId !== userId) throw new NotFoundException();
 
     const jobLog = await this.prisma.jobLog.create({
       data: { jobId: createJobLogDto.jobId, content: createJobLogDto.content },
     });
 
-    return 'This action adds a new jobLog';
+    return jobLog;
   }
 
   findAll() {
