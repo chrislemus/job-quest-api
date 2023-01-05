@@ -49,6 +49,7 @@ model JobLog {
   id Int  @default(autoincrement()) @id
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  content String
   job Job @relation(fields: [jobId], references: [id], onDelete: Cascade)
   jobId Int
 }

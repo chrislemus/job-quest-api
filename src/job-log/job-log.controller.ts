@@ -11,14 +11,20 @@ import { JobLogService } from './job-log.service';
 import { CreateJobLogDto } from './dto/create-job-log.dto';
 import { UpdateJobLogDto } from './dto/update-job-log.dto';
 import { SkipAuth } from '@app/auth/decorators';
+import { ApiBearerAuth } from '@nestjs/swagger';
+import { GetAuthUser } from '@app/common/decorators';
 
 @Controller('job-log')
+@ApiBearerAuth()
 export class JobLogController {
   constructor(private readonly jobLogService: JobLogService) {}
 
   @Post()
-  create(@Body() createJobLogDto: CreateJobLogDto) {
-    return this.jobLogService.create(createJobLogDto);
+  create(
+    @Body() createJobLogDto: CreateJobLogDto,
+    @GetAuthUser('id') userId: number,
+  ) {
+    return this.jobLogService.create(createJobLogDto, userId);
   }
 
   @Get()
