@@ -11,19 +11,25 @@ import {
 import { JobLogService } from './job-log.service';
 import { CreateJobLogDto } from './dto/create-job-log.dto';
 import { UpdateJobLogDto } from './dto/update-job-log.dto';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { GetAuthUser } from '@app/common/decorators';
+import { ApiBearerAuth, ApiExtraModels, ApiTags } from '@nestjs/swagger';
+import {
+  ApiCreatedResponse,
+  ApiOkResponse,
+  GetAuthUser,
+} from '@app/common/decorators';
 import { FindAllJobLogsQueryDto } from './dto';
-import { JobLogEntity } from './entities';
-import { Page } from '@app/common/pagination';
+import { JobLogEntity } from './entities/job-log.entity';
+import { ApiPageResponse, Page } from '@app/common/pagination';
 
 @Controller('job-log')
 @ApiTags('job-log')
 @ApiBearerAuth()
+@ApiExtraModels(JobLogEntity)
 export class JobLogController {
   constructor(private readonly jobLogService: JobLogService) {}
 
   @Post()
+  @ApiCreatedResponse(JobLogEntity)
   create(
     @Body() createJobLogDto: CreateJobLogDto,
     @GetAuthUser('id') userId: number,
@@ -32,6 +38,7 @@ export class JobLogController {
   }
 
   @Get()
+  @ApiPageResponse(JobLogEntity)
   findAll(
     @Query() findAllJobLogsQueryDto: FindAllJobLogsQueryDto,
     @GetAuthUser('id') userId: number,
@@ -40,6 +47,7 @@ export class JobLogController {
   }
 
   @Get(':id')
+  @ApiOkResponse(JobLogEntity)
   findOne(
     @Param('id') id: number,
     @GetAuthUser('id') userId: number,
@@ -48,6 +56,7 @@ export class JobLogController {
   }
 
   @Patch(':id')
+  @ApiOkResponse(JobLogEntity)
   update(
     @Param('id') id: number,
     @Body() updateJobLogDto: UpdateJobLogDto,
@@ -57,6 +66,7 @@ export class JobLogController {
   }
 
   @Delete(':id')
+  @ApiOkResponse(JobLogEntity)
   remove(
     @Param('id') id: number,
     @GetAuthUser('id') userId: number,
