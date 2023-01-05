@@ -11,12 +11,14 @@ import {
 import { JobLogService } from './job-log.service';
 import { CreateJobLogDto } from './dto/create-job-log.dto';
 import { UpdateJobLogDto } from './dto/update-job-log.dto';
-import { SkipAuth } from '@app/auth/decorators';
-import { ApiBearerAuth } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { GetAuthUser } from '@app/common/decorators';
 import { FindAllJobLogsQueryDto } from './dto';
+import { JobLogEntity } from './entities';
+import { Page } from '@app/common/pagination';
 
 @Controller('job-log')
+@ApiTags('job-log')
 @ApiBearerAuth()
 export class JobLogController {
   constructor(private readonly jobLogService: JobLogService) {}
@@ -25,7 +27,7 @@ export class JobLogController {
   create(
     @Body() createJobLogDto: CreateJobLogDto,
     @GetAuthUser('id') userId: number,
-  ) {
+  ): Promise<JobLogEntity> {
     return this.jobLogService.create(createJobLogDto, userId);
   }
 
@@ -33,12 +35,15 @@ export class JobLogController {
   findAll(
     @Query() findAllJobLogsQueryDto: FindAllJobLogsQueryDto,
     @GetAuthUser('id') userId: number,
-  ) {
+  ): Promise<Page<JobLogEntity>> {
     return this.jobLogService.findAll(findAllJobLogsQueryDto, userId);
   }
 
   @Get(':id')
-  findOne(@Param('id') id: number, @GetAuthUser('id') userId: number) {
+  findOne(
+    @Param('id') id: number,
+    @GetAuthUser('id') userId: number,
+  ): Promise<JobLogEntity> {
     return this.jobLogService.findOne(id, userId);
   }
 
@@ -47,12 +52,15 @@ export class JobLogController {
     @Param('id') id: number,
     @Body() updateJobLogDto: UpdateJobLogDto,
     @GetAuthUser('id') userId: number,
-  ) {
+  ): Promise<JobLogEntity> {
     return this.jobLogService.update(id, updateJobLogDto, userId);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: number, @GetAuthUser('id') userId: number) {
+  remove(
+    @Param('id') id: number,
+    @GetAuthUser('id') userId: number,
+  ): Promise<JobLogEntity> {
     return this.jobLogService.remove(id, userId);
   }
 }

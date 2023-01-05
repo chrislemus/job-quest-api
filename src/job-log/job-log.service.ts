@@ -7,11 +7,16 @@ import {
   FindAllJobLogsQueryDto,
   UpdateJobLogDto,
 } from './dto';
+import { JobLogEntity } from './entities';
 
 @Injectable()
 export class JobLogService {
   constructor(private prisma: PrismaService) {}
-  async create(createJobLogDto: CreateJobLogDto, userId: number) {
+
+  async create(
+    createJobLogDto: CreateJobLogDto,
+    userId: number,
+  ): Promise<JobLogEntity> {
     const job = await this.prisma.job.findUnique({
       where: { id: createJobLogDto.jobId },
       select: { userId: true },
@@ -29,7 +34,7 @@ export class JobLogService {
   findAll(
     findAllJobLogsQuery: FindAllJobLogsQueryDto,
     userId: number,
-  ): Promise<Page<JobLog>> {
+  ): Promise<Page<JobLogEntity>> {
     return pageQuery({
       pageConfig: findAllJobLogsQuery as any,
       queryFn: this.prisma.jobLog.findMany,
@@ -47,7 +52,7 @@ export class JobLogService {
     });
   }
 
-  async findOne(jobLogId: number, userId: number) {
+  async findOne(jobLogId: number, userId: number): Promise<JobLogEntity> {
     const jobLog = await this.prisma.jobLog.findUnique({
       where: { id: jobLogId },
       include: { job: { select: { userId: true } } },
@@ -55,14 +60,15 @@ export class JobLogService {
 
     if (jobLog?.job?.userId !== userId) throw new NotFoundException();
 
-    return { ...jobLog, job: undefined };
+    if (jobLog.job) jobLog.job = undefined;
+    return { ...jobLog };
   }
 
   async update(
     jobLogId: number,
     updateJobLogDto: UpdateJobLogDto,
     userId: number,
-  ) {
+  ): Promise<JobLogEntity> {
     const jobLog = await this.prisma.jobLog.findUnique({
       where: { id: jobLogId },
       include: { job: { select: { userId: true } } },
@@ -78,7 +84,7 @@ export class JobLogService {
     return updatedJobLog;
   }
 
-  async remove(id: number, userId: number) {
+  async remove(id: number, userId: number): Promise<JobLogEntity> {
     const jobLog = await this.prisma.jobLog.findUnique({
       where: { id: id },
       include: { job: { select: { userId: true } } },
