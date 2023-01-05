@@ -1,7 +1,12 @@
+import { Page, pageQuery } from '@app/common/pagination';
 import { PrismaService } from '@app/prisma';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { JobLog } from '@prisma/client';
-import { CreateJobLogDto, UpdateJobLogDto } from './dto';
+import {
+  CreateJobLogDto,
+  FindAllJobLogsQueryDto,
+  UpdateJobLogDto,
+} from './dto';
 
 @Injectable()
 export class JobLogService {
@@ -21,9 +26,25 @@ export class JobLogService {
     return jobLog;
   }
 
-  findAll() {
-    return this.prisma.jobLog.findMany();
-    return `This action returns all jobLog`;
+  findAll(
+    findAllJobLogsQuery: FindAllJobLogsQueryDto,
+    userId: number,
+  ): Promise<Page<JobLog>> {
+    return pageQuery({
+      pageConfig: findAllJobLogsQuery as any,
+      queryFn: this.prisma.jobLog.findMany,
+      queryArgs: {
+        where: {
+          job: { userId },
+          AND: [
+            {
+              OR: findAllJobLogsQuery.jobId?.map((id) => ({ jobId: id })),
+            },
+          ],
+        },
+      },
+      countFn: this.prisma.jobLog.count,
+    });
   }
 
   findOne(id: number) {

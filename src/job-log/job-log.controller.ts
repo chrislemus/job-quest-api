@@ -6,6 +6,7 @@ import {
   Patch,
   Param,
   Delete,
+  Query,
 } from '@nestjs/common';
 import { JobLogService } from './job-log.service';
 import { CreateJobLogDto } from './dto/create-job-log.dto';
@@ -13,6 +14,7 @@ import { UpdateJobLogDto } from './dto/update-job-log.dto';
 import { SkipAuth } from '@app/auth/decorators';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { GetAuthUser } from '@app/common/decorators';
+import { FindAllJobLogsQueryDto } from './dto';
 
 @Controller('job-log')
 @ApiBearerAuth()
@@ -28,9 +30,11 @@ export class JobLogController {
   }
 
   @Get()
-  @SkipAuth()
-  findAll() {
-    return this.jobLogService.findAll();
+  findAll(
+    @Query() findAllJobLogsQueryDto: FindAllJobLogsQueryDto,
+    @GetAuthUser('id') userId: number,
+  ) {
+    return this.jobLogService.findAll(findAllJobLogsQueryDto, userId);
   }
 
   @Get(':id')
