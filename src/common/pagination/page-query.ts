@@ -9,7 +9,8 @@ export const pageQuery = async <
   BaseFn extends
     | PrismaService['jobList']
     | PrismaService['job']
-    | PrismaService['user'],
+    | PrismaService['user']
+    | PrismaService['jobLog'],
   QueryFn extends BaseFn['findMany'],
   CountFn extends BaseFn['count'],
 >(config: {
