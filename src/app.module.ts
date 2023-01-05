@@ -18,6 +18,7 @@ import {
   PrismaClientExceptionFilter,
 } from './common/filters';
 import { AdminModule } from './admin/admin.module';
+import { JobLogModule } from './job-log/job-log.module';
 
 @Module({
   controllers: [AppController],
@@ -29,6 +30,7 @@ import { AdminModule } from './admin/admin.module';
     UserModule,
     JobModule,
     JobListModule,
+    JobLogModule,
   ],
   providers: [
     { provide: APP_INTERCEPTOR, useClass: ClassSerializerInterceptor },
