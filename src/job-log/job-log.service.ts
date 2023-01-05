@@ -1,13 +1,12 @@
 import { Page, pageQuery } from '@app/common/pagination';
 import { PrismaService } from '@app/prisma';
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { JobLog } from '@prisma/client';
+import { JobLogEntity } from './entities';
 import {
   CreateJobLogDto,
   FindAllJobLogsQueryDto,
   UpdateJobLogDto,
 } from './dto';
-import { JobLogEntity } from './entities';
 
 @Injectable()
 export class JobLogService {
