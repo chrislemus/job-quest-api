@@ -47,15 +47,49 @@ export class JobLogService {
     });
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} jobLog`;
+  async findOne(jobLogId: number, userId: number) {
+    const jobLog = await this.prisma.jobLog.findUnique({
+      where: { id: jobLogId },
+      include: { job: { select: { userId: true } } },
+    });
+
+    if (jobLog?.job?.userId !== userId) throw new NotFoundException();
+
+    return { ...jobLog, job: undefined };
   }
 
-  update(id: number, updateJobLogDto: UpdateJobLogDto) {
-    return `This action updates a #${id} jobLog`;
+  async update(
+    jobLogId: number,
+    updateJobLogDto: UpdateJobLogDto,
+    userId: number,
+  ) {
+    const jobLog = await this.prisma.jobLog.findUnique({
+      where: { id: jobLogId },
+      include: { job: { select: { userId: true } } },
+    });
+
+    if (jobLog?.job?.userId !== userId) throw new NotFoundException();
+
+    const updatedJobLog = await this.prisma.jobLog.update({
+      data: { content: updateJobLogDto.content },
+      where: { id: jobLogId },
+    });
+
+    return updatedJobLog;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} jobLog`;
+  async remove(id: number, userId: number) {
+    const jobLog = await this.prisma.jobLog.findUnique({
+      where: { id: id },
+      include: { job: { select: { userId: true } } },
+    });
+
+    if (jobLog?.job?.userId !== userId) throw new NotFoundException();
+
+    const deletedJobLog = await this.prisma.jobLog.delete({
+      where: { id: id },
+    });
+
+    return deletedJobLog;
   }
 }

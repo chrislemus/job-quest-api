@@ -38,17 +38,21 @@ export class JobLogController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.jobLogService.findOne(+id);
+  findOne(@Param('id') id: number, @GetAuthUser('id') userId: number) {
+    return this.jobLogService.findOne(id, userId);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateJobLogDto: UpdateJobLogDto) {
-    return this.jobLogService.update(+id, updateJobLogDto);
+  update(
+    @Param('id') id: number,
+    @Body() updateJobLogDto: UpdateJobLogDto,
+    @GetAuthUser('id') userId: number,
+  ) {
+    return this.jobLogService.update(id, updateJobLogDto, userId);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.jobLogService.remove(+id);
+  remove(@Param('id') id: number, @GetAuthUser('id') userId: number) {
+    return this.jobLogService.remove(id, userId);
   }
 }
