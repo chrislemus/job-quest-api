@@ -13,7 +13,6 @@ export class LocalStrategy extends PassportStrategy(Strategy) {
 
   async validate(email: string, password: string): Promise<LocalPayload> {
     const user = await this.prisma.user.findUnique({ where: { email } });
-
     if (user?.password) {
       const isMatch = await bcrypt.compare(password, user.password);
       if (isMatch) {
