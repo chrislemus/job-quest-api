@@ -30,7 +30,7 @@ GitHub actions handle app deployment. Deployment configurations can be found in 
 4. \*Provide env variables outlined in `src/config.schema`
 5. Run the app
    - `npm run start` development
-   - `npm run start:dev` npm run start:dev
+   - `npm run start:dev` development watch mode
    - `npm run start:prod` production mode
 
 \*You must provide a URL to a running database instance for the DATABASE_URL environment variable. If you already have docker installed in your machine, run `docker-compose up db-local` to spin up a PostgresSQL container.
