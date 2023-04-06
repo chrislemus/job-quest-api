@@ -177,10 +177,10 @@ export class AuthService {
     const validAdminKey = expectedAdminKey === adminKey;
     if (!validAdminKey) throw new Error('Invalid admin key');
 
-    const adminUser = await this.prisma.user.update({
+    const adminUser = (await this.prisma.user.update({
       data: { role: 'ADMIN' },
       where: { id: userId },
-    });
+    })) as UserEntity;
 
     return new UserEntity(adminUser);
   }

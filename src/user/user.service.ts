@@ -8,10 +8,11 @@ export class UserService {
   constructor(private prisma: PrismaService) {}
 
   /** Get user profile */
-  async userProfile(userId: number): Promise<UserEntity> {
+  async userProfile(userId: number): Promise<UserEntity | undefined> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
     });
+    if (!user) return;
     return new UserEntity(user);
   }
 

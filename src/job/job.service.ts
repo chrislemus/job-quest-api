@@ -20,7 +20,7 @@ export class JobService {
   ) {}
 
   async create(createJobDto: CreateJobDto, userId: number): Promise<JobEntity> {
-    const createLimit = this.configService.get<number>('JOB_CREATE_LIMIT');
+    const createLimit = this.configService.get<number>('JOB_CREATE_LIMIT') || 0;
     const userJobCount = await this.prisma.job.count({ where: { userId } });
     if (userJobCount >= createLimit) {
       throw new ConflictException(

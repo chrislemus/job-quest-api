@@ -16,7 +16,7 @@ export class UserEntity implements User {
   refreshToken: string;
   role: Role;
 
-  constructor(partial: UserEntity) {
+  constructor(partial: UserEntity | User) {
     Object.assign(this, partial);
   }
 }

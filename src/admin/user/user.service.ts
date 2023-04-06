@@ -10,12 +10,12 @@ export class UserService {
 
   /** Find all users */
   async findAll(findAllUsers: FindAllUsersDto): Promise<Page<UserEntity>> {
-    const data = await pageQuery({
+    const data = (await pageQuery({
       pageConfig: findAllUsers,
       queryFn: this.prisma.user.findMany,
       countFn: this.prisma.user.count,
       dataSerializer: UserEntity,
-    });
+    })) as Page<UserEntity>;
 
     return data;
   }

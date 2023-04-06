@@ -21,7 +21,9 @@ export class JobListService {
     createJobListDto: CreateJobListDto,
     userId: number,
   ): Promise<JobListEntity> {
-    const createLimit = this.configService.get<number>('JOB_LIST_CREATE_LIMIT');
+    const createLimit = this.configService.get<number>(
+      'JOB_LIST_CREATE_LIMIT',
+    ) as number;
     const userJobListCount = await this.prisma.jobList.count({
       where: { userId },
     });
@@ -34,6 +36,8 @@ export class JobListService {
     const lastJobList = await this.prisma.jobList.findFirst({
       orderBy: { order: 'desc' },
     });
+
+    if (!lastJobList) throw new Error('Unable to pull lastJobList');
 
     const nextOrderNumber = lastJobList.order + 1;
 
@@ -63,7 +67,7 @@ export class JobListService {
 
   async findOne(id: number, userId: number): Promise<JobListEntity> {
     const jobList = await this.prisma.jobList.findUnique({ where: { id: id } });
-    if (jobList.userId !== userId) throw new NotFoundException();
+    if (jobList?.userId !== userId) throw new NotFoundException();
     return jobList;
   }
 

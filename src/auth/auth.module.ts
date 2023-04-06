@@ -19,13 +19,14 @@ import { PrismaService } from '@app/prisma';
   providers: [
     AuthService,
     LocalStrategy,
-    JwtStrategy,
     JwtRefreshTokenStrategy,
     PrismaService,
+    JwtStrategy,
     {
       provide: APP_GUARD,
-      useClass: JwtAuthGuard,
+      useExisting: JwtAuthGuard,
     },
+    JwtAuthGuard,
   ],
 })
 export class AuthModule {}

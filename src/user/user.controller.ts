@@ -21,8 +21,10 @@ export class UserController {
 
   /** Get user profile */
   @Get('profile')
-  getProfile(@GetAuthUser('id') userId: number): Promise<UserEntity> {
-    return this.userService.userProfile(userId);
+  async getProfile(@GetAuthUser('id') userId: number): Promise<UserEntity> {
+    const user = await this.userService.userProfile(userId);
+    if (user) return user;
+    throw new NotFoundException();
   }
 
   /** Delete user */

@@ -74,7 +74,7 @@ export const pageQuery = async <
 
   // if user wants page count, make a second call the the countFn() to retrieve data
   if (pageTotalCount) {
-    const count = await config.countFn({ where: config.queryArgs?.where });
+    const count = await config.countFn({ where: config.queryArgs?.['where'] });
     pageInfo['totalPageCount'] = Math.ceil(count / pageSize);
     pageInfo['totalCount'] = count;
   }

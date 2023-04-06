@@ -59,8 +59,8 @@ export class JobLogService {
 
     if (jobLog?.job?.userId !== userId) throw new NotFoundException();
 
-    if (jobLog.job) jobLog.job = undefined;
-    return { ...jobLog };
+    const { job, ...jobLogData } = jobLog;
+    return jobLogData;
   }
 
   async update(
