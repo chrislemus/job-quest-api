@@ -5,7 +5,6 @@ import { AuthService } from './auth.service';
 import { SkipAuth } from './decorators';
 import { RegisterAdminDto, AuthTokens, AuthUser, UserLoginReqDto } from './dto';
 import { JwtRefreshAuthGuard, LocalAuthGuard } from './guards';
-import { AuthUserWithRefreshToken } from './types';
 import {
   Body,
   Controller,
@@ -49,10 +48,8 @@ export class AuthController {
   @SkipAuth()
   @UseGuards(JwtRefreshAuthGuard)
   @Post('refresh')
-  refreshTokens(
-    @GetAuthUser() user: AuthUserWithRefreshToken,
-  ): Promise<AuthTokens> {
-    return this.authService.refreshJwt(user.id, user.refreshToken);
+  refreshTokens(@GetAuthUser() user: AuthUser): Promise<AuthTokens> {
+    return this.authService.refreshJwt(user);
   }
 
   /**

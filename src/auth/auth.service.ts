@@ -1,5 +1,4 @@
 import {
-  ForbiddenException,
   Injectable,
   InternalServerErrorException,
   Logger,
@@ -21,43 +20,24 @@ export class AuthService {
     private configService: ConfigService,
   ) {}
 
-  /**
-   * User local login.
-   */
+  /**  User local login. */
   async localLogin(user: AuthUser): Promise<AuthTokens> {
-    const tokens = await this.getTokens(user);
-    return tokens;
+    return this.getTokens(user);
   }
 
-  /**
-   * Refresh auth JWT.
-   */
-  async refreshJwt(userId: number, refreshToken: string): Promise<AuthTokens> {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-    });
-
-    if (!user?.refreshToken) throw new ForbiddenException('Access Denied');
-
-    const isMatch = await bcrypt.compare(refreshToken, user.refreshToken);
-    if (!isMatch) throw new ForbiddenException('Access Denied');
-
-    const tokens = await this.getTokens(user);
-    return tokens;
+  /**  Refresh auth JWT. */
+  async refreshJwt(user: AuthUser): Promise<AuthTokens> {
+    return this.getTokens(user);
   }
 
-  /**
-   * Default hash encryption.
-   */
+  /**  Default hash encryption. */
   async hashValue(value: string): Promise<string> {
     const salt = await bcrypt.genSalt(10);
     const hash = await bcrypt.hash(value, salt);
     return hash;
   }
 
-  /**
-   * Generates and returns auth tokens.
-   */
+  /**  Generates and returns auth tokens. */
   async getTokens(user: AuthUser): Promise<AuthTokens> {
     const jwtPayload: any = {
       sub: user.id,
@@ -80,9 +60,7 @@ export class AuthService {
     return { accessToken, refreshToken };
   }
 
-  /**
-   * Sync refresh token with DB for persistence.
-   */
+  /**  Sync refresh token with DB for persistence. */
   async syncRefreshToken(userId: number, refreshToken: string): Promise<void> {
     try {
       const hashRt = await this.hashValue(refreshToken);
@@ -96,9 +74,7 @@ export class AuthService {
     }
   }
 
-  /**
-   * Logout user (removes refresh token from DB).
-   */
+  /** Logout user (removes refresh token from DB). */
   async logout(userId: number): Promise<boolean> {
     await this.prisma.user.updateMany({
       where: {
@@ -110,9 +86,7 @@ export class AuthService {
     return true;
   }
 
-  /**
-   * New user signup.
-   */
+  /**  New user signup. */
   async signup(newUserData: CreateUserDto) {
     const password = await this.hashValue(newUserData.password);
 
