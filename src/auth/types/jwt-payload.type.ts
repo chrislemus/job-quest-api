@@ -2,8 +2,8 @@ import { Role } from '@prisma/client';
 
 /** User JWT payload data */
 export type JwtPayload = {
-  /** Subject (user id) */
-  sub: number;
+  /** user id */
+  id: number;
   email: string;
   /** Issued At */
   iat: number;

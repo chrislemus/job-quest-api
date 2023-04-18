@@ -26,7 +26,7 @@ export class JwtRefreshTokenStrategy extends PassportStrategy(
 
     if (!refreshToken) throw new ForbiddenException('Refresh token malformed');
 
-    const { sub: id, email, role } = payload;
+    const { id, email, role } = payload;
     const authUser: AuthUser = { id, email, role };
 
     const dbUser = await this.prisma.user.findUnique({

@@ -31,7 +31,7 @@ export class AuthService {
   }
 
   /**  Default hash encryption. */
-  async hashValue(value: string): Promise<string> {
+  private async hashValue(value: string): Promise<string> {
     const salt = await bcrypt.genSalt(10);
     const hash = await bcrypt.hash(value, salt);
     return hash;
@@ -39,18 +39,12 @@ export class AuthService {
 
   /**  Generates and returns auth tokens. */
   async getTokens(user: AuthUser): Promise<AuthTokens> {
-    const jwtPayload: any = {
-      sub: user.id,
-      email: user.email,
-      role: user.role,
-    };
-
     const [accessToken, refreshToken] = await Promise.all([
-      this.jwtService.signAsync(jwtPayload, {
+      this.jwtService.signAsync(user, {
         secret: this.configService.get<string>('JWT_SECRET'),
         expiresIn: '20m',
       }),
-      this.jwtService.signAsync(jwtPayload, {
+      this.jwtService.signAsync(user, {
         secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
         expiresIn: '7d',
       }),
