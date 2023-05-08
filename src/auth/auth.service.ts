@@ -105,24 +105,6 @@ export class AuthService {
       },
     });
 
-    // extract first job list, base on db query we
-    // should expect an array with length of 1.
-    const firstJobList = jobLists[0];
-
-    // create sample job
-    await this.prisma.job.create({
-      data: {
-        title: 'Sale Associate',
-        company: 'Job Quest',
-        location: 'Raleigh, NC',
-        salary: '50k',
-        color: '#e91e63',
-        description: 'This is a sample job',
-        user: { connect: { id: user.id } },
-        jobList: { connect: { id: firstJobList.id } },
-      },
-    });
-
     //get tokens and return
     const tokens = await this.getTokens(user);
     return tokens;
