@@ -8,6 +8,6 @@ export const GetAuthUser = createParamDecorator(
   (data: keyof AuthUser | undefined, context: ExecutionContext): JwtPayload => {
     const request = context.switchToHttp().getRequest<Request>();
     const { user } = request;
-    return data ? user[data] : user;
+    return data ? user?.[data] : user;
   },
 );

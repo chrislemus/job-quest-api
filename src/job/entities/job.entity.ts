@@ -17,8 +17,8 @@ export class JobEntity implements Job {
   description: string | null;
   /** Hexadecimal color to be used in UI when displaying job content */
   color: string | null;
-  /** Job list order */
-  jobListOrder: string;
+  /** Job list rank */
+  jobListRank: string;
   /** Job List ID where the Job links to */
   jobListId: number;
   /** ID of the User who owns this Job */

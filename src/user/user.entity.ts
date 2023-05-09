@@ -13,7 +13,7 @@ export class UserEntity implements User {
   password: string;
   @Exclude()
   @ApiHideProperty()
-  refreshToken: string;
+  refreshToken: string | null;
   role: Role;
 
   constructor(partial: UserEntity) {

@@ -22,7 +22,8 @@ export class JwtRefreshTokenStrategy extends PassportStrategy(
   }
 
   async validate(req: Request, payload: JwtPayload): Promise<AuthUser> {
-    const [_type, refreshToken] = req?.get('authorization').split(' ');
+    const auth = req?.get('authorization')?.split(' ');
+    const refreshToken = auth?.[1];
 
     if (!refreshToken) throw new ForbiddenException('Refresh token malformed');
 
