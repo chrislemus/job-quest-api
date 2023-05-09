@@ -21,12 +21,14 @@ export class JobListDataService {
     const lastRebalance = this.rebalanceTracker[jobListId];
     if (lastRebalance) {
       const elapsedMinutes = (Date.now() - lastRebalance) / 1000 / 60;
-      if (elapsedMinutes < 30) {
+      // arbitrary limit of an hour
+      if (elapsedMinutes < 60) {
         const errMsg = `Failed to rebalance jobListRanks | jobListId: ${jobListId}`;
         this.logger.error(errMsg);
         throw new InternalServerErrorException(errMsg);
       }
     }
+
     const jobs = await this.prisma.job.findMany({
       where: { id: jobListId },
       select: { id: true, jobListRank: true },
@@ -62,13 +64,13 @@ export class JobListDataService {
   private async genNextRank(jobListId: number): Promise<string> {
     const { rank } = this;
     const baseJob = await this.prisma.job.findFirst({
-      where: { id: jobListId },
+      where: { jobListId: jobListId },
       select: { jobListRank: true },
       orderBy: { jobListRank: 'desc' },
     });
 
     if (baseJob) {
-      const nextRank = rank.parse(baseJob.jobListRank).genPrev();
+      const nextRank = rank.parse(baseJob.jobListRank).genNext();
       if (nextRank.isMax() || nextRank.isMin()) {
         await this.rebalanceDB(jobListId);
         return this.genNextRank(jobListId);
@@ -84,64 +86,43 @@ export class JobListDataService {
   ): Promise<{ jobListRank: string; jobListId: number }> {
     const { rank } = this;
     const { id, beforeJobId, afterJobId } = jobListParam;
-
     if (id) {
       const jobListRank = await this.genNextRank(id);
       return { jobListRank, jobListId: id };
     } else if (beforeJobId) {
-      const jobBase = await this.getJob(beforeJobId);
-      const { jobListId } = jobBase;
-
-      const jobLeft = await this.prisma.job.findFirst({
-        where: { jobListRank: { lt: jobBase.jobListRank } },
-        select: { jobListRank: true },
-        orderBy: { jobListRank: 'asc' },
+      const { jobListId, baseRank, siblingRank } = await this.getJob({
+        beforeJobId,
       });
 
-      const rankLeft = jobLeft?.jobListRank
-        ? rank.parse(jobLeft?.jobListRank)
-        : null;
-      const rankBase = rank.parse(jobBase.jobListRank);
-
-      if (rankLeft) {
-        const jobListRank = this.getRankBetween(rankLeft, rankBase);
+      if (siblingRank) {
+        const jobListRank = this.getRankBetween(siblingRank, baseRank);
         if (jobListRank) return { jobListRank, jobListId };
         await this.rebalanceDB;
         return this.getJobListData(jobListParam);
       }
 
-      const newRank = rankBase.genPrev();
+      const newRank = baseRank.genPrev(); // <-----------
       if (newRank.isMin()) {
-        await this.rebalanceDB;
+        await this.rebalanceDB; // <-----------
         return this.getJobListData(jobListParam);
       }
       const jobListRank = newRank.toString();
-      return { jobListRank, jobListId };
+      return { jobListRank, jobListId }; // <----------- ENNNNNND
     } else if (afterJobId) {
-      const jobBase = await this.getJob(afterJobId);
-      const { jobListId } = jobBase;
-
-      const jobRight = await this.prisma.job.findFirst({
-        where: { jobListRank: { gt: jobBase.jobListRank } },
-        select: { jobListRank: true },
-        orderBy: { jobListRank: 'desc' },
+      const { jobListId, baseRank, siblingRank } = await this.getJob({
+        afterJobId,
       });
 
-      const rankRight = jobRight?.jobListRank
-        ? rank.parse(jobRight?.jobListRank)
-        : null;
-      const rankBase = rank.parse(jobBase.jobListRank);
-
-      if (rankRight) {
-        const jobListRank = this.getRankBetween(rankRight, rankBase);
+      if (siblingRank) {
+        const jobListRank = this.getRankBetween(siblingRank, baseRank);
         if (jobListRank) return { jobListRank, jobListId };
         await this.rebalanceDB;
         return this.getJobListData(jobListParam);
       }
 
-      const newRank = rankBase.genNext();
+      const newRank = baseRank.genNext(); // <-----------
       if (newRank.isMin()) {
-        await this.rebalanceDB;
+        await this.rebalanceDB; // <-----------
         return this.getJobListData(jobListParam);
       }
       const jobListRank = newRank.toString();
@@ -153,16 +134,53 @@ export class JobListDataService {
     );
   }
 
-  private async getJob(id: number): Promise<{
-    jobListRank: string;
+  private async getJob(jobData: {
+    afterJobId?: number;
+    beforeJobId?: number;
+  }): Promise<{
     jobListId: number;
+
+    baseRank: LexoRank;
+    siblingRank: LexoRank | null;
   }> {
-    const job = await this.prisma.job.findUnique({
-      where: { id },
+    const keys = Object.keys(jobData) as (keyof typeof jobData)[];
+    if (keys.length !== 1) {
+      this.logger.error(
+        `${this.getJob.name} invalid jobData argument - ${JSON.stringify(
+          jobData,
+        )}`,
+      );
+      throw new InternalServerErrorException();
+    }
+    const direction = keys[0];
+
+    const { afterJobId, beforeJobId } = jobData;
+    const baseJobId = afterJobId ?? beforeJobId;
+    const baseJob = await this.prisma.job.findUnique({
+      where: { id: baseJobId },
       select: { jobListRank: true, jobListId: true },
     });
-    if (!job) throw new NotFoundException(`unable to find job ( ${id} )`);
-    return job;
+    if (!baseJob)
+      throw new NotFoundException(`unable to find job ( ${baseJobId} )`);
+
+    const siblingRank = await this.prisma.job
+      .findFirst({
+        where: {
+          jobListRank: {
+            lt: direction === 'beforeJobId' ? baseJob.jobListRank : undefined,
+            gt: direction === 'afterJobId' ? baseJob.jobListRank : undefined,
+          },
+        },
+        select: { jobListRank: true },
+        orderBy: { jobListRank: direction === 'beforeJobId' ? 'desc' : 'asc' },
+      })
+      .then((job) => {
+        const jobListRank = job?.jobListRank;
+        return jobListRank ? this.rank.parse(jobListRank) : null;
+      });
+    const baseRank = this.rank.parse(baseJob.jobListRank);
+
+    return { jobListId: baseJob.jobListId, baseRank, siblingRank };
   }
 
   private getRankBetween(

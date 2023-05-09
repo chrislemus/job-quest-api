@@ -78,7 +78,6 @@ export class CreateJobDto
   color?: string | null;
 
   /** Parameters for assigning job list to job  */
-  @IsOptional()
   @ValidateNested()
   jobList: JobListParamDto;
 }

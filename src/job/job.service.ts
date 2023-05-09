@@ -77,6 +77,7 @@ export class JobService {
             },
           ],
         },
+        orderBy: { jobListRank: 'asc' },
       },
       countFn: this.prisma.job.count,
     });
