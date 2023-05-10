@@ -10,7 +10,7 @@ import { PrismaService } from '@app/prisma';
 import { ConfigService } from '@nestjs/config';
 import { AuthTokens, AuthUser } from './dto';
 import { UserEntity } from '@app/user/user.entity';
-import { JobListDataService } from '@app/job/job-list-data.service';
+import { UserService } from '@app/user/user.service';
 
 @Injectable()
 export class AuthService {
@@ -19,7 +19,7 @@ export class AuthService {
     private jwtService: JwtService,
     private prisma: PrismaService,
     private configService: ConfigService,
-    private jobListData: JobListDataService,
+    private userService: UserService,
   ) {}
 
   /**  User local login. */
@@ -87,48 +87,15 @@ export class AuthService {
     const password = await this.hashValue(newUserData.password);
 
     // create user with default job lists
-    const { jobLists, ...user } = await this.prisma.user.create({
-      include: { jobLists: { orderBy: { order: 'asc' }, take: 1 } },
+    const { ...user } = await this.prisma.user.create({
       data: {
         ...newUserData,
         role: 'SUBSCRIBER',
         password,
-        jobLists: {
-          createMany: {
-            data: [
-              { label: 'Queue', order: 1 },
-              { label: 'Applied', order: 2 },
-              { label: 'Interview', order: 3 },
-              { label: 'Offer', order: 4 },
-              { label: 'Rejected', order: 5 },
-            ],
-          },
-        },
       },
     });
 
-    // extract first job list, base on db query we
-    // should expect an array with length of 1.
-    const firstJobList = jobLists[0];
-
-    // TODO: extract this logic into a more suitable service
-    const { jobListRank, jobListId } = await this.jobListData.getJobListData({
-      id: firstJobList.id,
-    });
-    // create sample job
-    await this.prisma.job.create({
-      data: {
-        title: 'Sales Associate',
-        company: 'Job Quest',
-        location: 'Raleigh, NC',
-        salary: '50k',
-        color: '#e91e63',
-        description: 'This is a sample job',
-        userId: user.id,
-        jobListId,
-        jobListRank,
-      },
-    });
+    await this.userService.createNewUserStarterData(user.id);
 
     //get tokens and return
     const tokens = await this.getTokens(user);
