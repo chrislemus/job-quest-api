@@ -1,14 +1,14 @@
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import {
-  JobListParamDto,
+  JobListDto,
   belowRangeErrorMsg,
   overRangeErrorMsg,
-} from './job-list-param.dto';
+} from './job-list.dto';
 
-describe('JobListParamDto', () => {
+describe('JobListDto', () => {
   it('Should return over range error', async () => {
-    const instance = plainToInstance(JobListParamDto, {
+    const instance = plainToInstance(JobListDto, {
       id: '',
       beforeJobId: 'd',
     });
@@ -17,17 +17,17 @@ describe('JobListParamDto', () => {
     expect(errors?.[0].constraints?.isNumber).toEqual(overRangeErrorMsg);
   });
   it('Should return below range error', async () => {
-    const instance = plainToInstance(JobListParamDto, {});
+    const instance = plainToInstance(JobListDto, {});
     const errors = await validate(instance);
     expect(errors).toHaveLength(1);
     expect(errors?.[0].constraints?.isNumber).toEqual(belowRangeErrorMsg);
   });
-  it.each(['id', 'beforeJobId', 'afterJobId'] as (keyof JobListParamDto)[])(
-    'JobListParamDto.[%s] should only return property validation error',
+  it.each(['id', 'beforeJobId', 'afterJobId'] as (keyof JobListDto)[])(
+    'JobListDto.[%s] should only return property validation error',
     async (propertyName) => {
       const data = {};
       data[`${propertyName}`] = '';
-      const instance = plainToInstance(JobListParamDto, data);
+      const instance = plainToInstance(JobListDto, data);
 
       const errors = await validate(instance);
       expect(errors).toHaveLength(1);

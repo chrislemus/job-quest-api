@@ -5,10 +5,10 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { JobEntity } from '../entities';
-import { JobListParamDto } from './job-list-param.dto';
+import { JobListDto } from './job-list.dto';
 
 interface WithJobList {
-  jobList: JobListParamDto;
+  jobList: JobListDto;
 }
 
 export class CreateJobDto
@@ -79,5 +79,5 @@ export class CreateJobDto
 
   /** Parameters for assigning job list to job  */
   @ValidateNested()
-  jobList: JobListParamDto;
+  jobList: JobListDto;
 }

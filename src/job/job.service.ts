@@ -1,22 +1,20 @@
 import { Page, pageQuery } from '@app/common/pagination';
 import { PrismaService } from '@app/prisma';
+import { ConfigService } from '@nestjs/config';
+import { FindAllJobsQueryDto } from './dto';
+import { CreateJobDto } from './dto/create-job.dto';
+import { UpdateJobDto } from './dto/update-job.dto';
+import { JobEntity } from './entities/job.entity';
+import { JobListDataService } from './job-list-data.service';
 import {
   BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { FindAllJobsQueryDto } from './dto';
-import { CreateJobDto } from './dto/create-job.dto';
-import { UpdateJobDto } from './dto/update-job.dto';
-import { JobEntity } from './entities/job.entity';
-import { LexoRank } from 'lexorank';
-import { JobListDataService } from './job-list-data.service';
 
 @Injectable()
 export class JobService {
-  private jobOrder = LexoRank;
   constructor(
     private prisma: PrismaService,
     private configService: ConfigService,
@@ -31,29 +29,21 @@ export class JobService {
         `Exceeded Job limit (${createLimit}). Consider deleting Jobs to free up some space.`,
       );
     }
-    const jobListData = await this.jobListData.getJobListData(
-      createJobDto.jobList,
-    );
+    const { jobList: _jobList, ...jobData } = createJobDto;
+    const jobList = await this.jobListData.getJobListData(_jobList);
 
-    const jobList = await this.prisma.jobList.findUnique({
-      where: { id: jobListData.jobListId },
-      select: { userId: true },
-    });
-
-    if (jobList?.userId !== userId)
-      throw new BadRequestException(
-        `Cannot find Job List with ID '${jobListData.jobListId}'`,
-      );
-
-    const { jobList: _jobList, ...jodData } = createJobDto;
+    await this.prisma.jobList
+      .findUnique({
+        where: { id: jobList.jobListId },
+        select: { userId: true },
+      })
+      .then((data) => {
+        const errMsg = `Cannot find Job List with ID '${jobList.jobListId}'`;
+        if (data?.userId !== userId) throw new BadRequestException(errMsg);
+      });
 
     const job = await this.prisma.job.create({
-      data: {
-        ...jodData,
-        userId,
-        jobListId: jobListData.jobListId,
-        jobListRank: jobListData.jobListRank,
-      },
+      data: { ...jobData, ...jobList, userId },
     });
 
     return job;
@@ -99,24 +89,20 @@ export class JobService {
       select: { userId: true },
     });
     if (job?.userId !== userId) throw new NotFoundException();
-    const { jobList: _jobList, ...jodData } = updateJobDto;
+    const { jobList: _jobList, ...jobData } = updateJobDto;
 
-    let jobListData:
+    let jobList:
       | undefined
       | {
           jobListRank: string;
           jobListId: number;
         };
     if (_jobList) {
-      jobListData = await this.jobListData.getJobListData(_jobList);
+      jobList = await this.jobListData.getJobListData(_jobList);
     }
 
     const updatedJob = await this.prisma.job.update({
-      data: {
-        ...jodData,
-        jobListId: jobListData?.jobListId,
-        jobListRank: jobListData?.jobListRank,
-      },
+      data: { ...jobData, ...jobList },
       where: { id: jobId },
     });
 

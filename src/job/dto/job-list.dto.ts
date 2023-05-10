@@ -9,8 +9,8 @@ import {
  * Parameters for assigning job list to job
  * - only one property must be defined
  */
-export class JobListParamDto {
-  @ValidateIf((obj: JobListParamDto) => {
+export class JobListDto {
+  @ValidateIf((obj: JobListDto) => {
     const keys = Object.keys(obj);
     const valueCountNotInRange = !valueCountInRange(obj);
     const propValueProvided = keys.includes('id');
@@ -35,12 +35,12 @@ export class JobListParamDto {
   )
   id?: number;
 
-  @ValidateIf((obj: JobListParamDto) => valueCountInRange(obj))
+  @ValidateIf((obj: JobListDto) => valueCountInRange(obj))
   @IsNumber()
   @IsOptional()
   beforeJobId?: number;
 
-  @ValidateIf((obj: JobListParamDto) => valueCountInRange(obj))
+  @ValidateIf((obj: JobListDto) => valueCountInRange(obj))
   @IsNumber()
   @IsOptional()
   afterJobId?: number;
@@ -51,7 +51,7 @@ export const overRangeErrorMsg =
 export const belowRangeErrorMsg =
   'Job list should have at least one property defined';
 
-function valueCountInRange(obj: JobListParamDto) {
+function valueCountInRange(obj: JobListDto) {
   const keys = Object.keys(obj);
   const count = keys.length;
   return count == 1;
