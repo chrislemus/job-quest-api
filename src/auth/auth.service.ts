@@ -118,7 +118,7 @@ export class AuthService {
     // create sample job
     await this.prisma.job.create({
       data: {
-        title: 'Sale Associate',
+        title: 'Sales Associate',
         company: 'Job Quest',
         location: 'Raleigh, NC',
         salary: '50k',
