@@ -12,6 +12,7 @@ import { JwtAuthGuard } from './guards';
 import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from './jwt.module';
 import { PrismaService } from '@app/prisma';
+import { JobListDataService } from '@app/job/job-list-data.service';
 
 @Module({
   imports: [PassportModule, ConfigModule.forRoot(), JwtModule],
@@ -22,6 +23,7 @@ import { PrismaService } from '@app/prisma';
     JwtStrategy,
     JwtRefreshTokenStrategy,
     PrismaService,
+    JobListDataService,
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,

@@ -1,5 +1,5 @@
 import { PrismaService } from '@app/prisma';
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { DeleteUserResDto } from './dto';
 import { UserEntity } from './user.entity';
 
@@ -12,6 +12,7 @@ export class UserService {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
     });
+    if (!user) throw new NotFoundException();
     return new UserEntity(user);
   }
 

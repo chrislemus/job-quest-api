@@ -25,7 +25,7 @@ export class JobListService {
     const userJobListCount = await this.prisma.jobList.count({
       where: { userId },
     });
-    if (userJobListCount >= createLimit) {
+    if (createLimit && userJobListCount >= createLimit) {
       throw new ConflictException(
         `Exceeded Job List limit (${createLimit}). Consider deleting Job Lists to free up some space.`,
       );
@@ -35,7 +35,7 @@ export class JobListService {
       orderBy: { order: 'desc' },
     });
 
-    const nextOrderNumber = lastJobList.order + 1;
+    const nextOrderNumber = (lastJobList?.order || 0) + 1;
 
     const jobList = await this.prisma.jobList.create({
       data: {
@@ -63,7 +63,7 @@ export class JobListService {
 
   async findOne(id: number, userId: number): Promise<JobListEntity> {
     const jobList = await this.prisma.jobList.findUnique({ where: { id: id } });
-    if (jobList.userId !== userId) throw new NotFoundException();
+    if (jobList?.userId !== userId) throw new NotFoundException();
     return jobList;
   }
 

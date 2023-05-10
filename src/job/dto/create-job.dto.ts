@@ -1,14 +1,33 @@
-import { IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  ValidateNested,
+} from 'class-validator';
 import { JobEntity } from '../entities';
+import { JobListDto } from './job-list.dto';
+
+interface WithJobList {
+  jobList: JobListDto;
+}
 
 export class CreateJobDto
-  // todo: figure out how to allow undefined for null Prisma values.
+  // TODO: figure out how to allow undefined for null Prisma values.
   // We still would like the type safety of the data type
   implements
     Omit<
       JobEntity,
-      'id' | 'userId' | 'location' | 'url' | 'salary' | 'description' | 'color'
-    >
+      | 'id'
+      | 'userId'
+      | 'location'
+      | 'url'
+      | 'salary'
+      | 'description'
+      | 'color'
+      | 'jobListRank'
+      | 'jobListId'
+    >,
+    WithJobList
 {
   /**
    * Job Title
@@ -57,10 +76,8 @@ export class CreateJobDto
   @IsOptional()
   @IsString()
   color?: string | null;
-  /**
-   * Job List ID belonging to this Job
-   */
-  @IsNumber()
-  @IsNotEmpty()
-  jobListId: number;
+
+  /** Parameters for assigning job list to job  */
+  @ValidateNested()
+  jobList: JobListDto;
 }

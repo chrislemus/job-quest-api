@@ -10,6 +10,7 @@ import { PrismaService } from '@app/prisma';
 import { ConfigService } from '@nestjs/config';
 import { AuthTokens, AuthUser } from './dto';
 import { UserEntity } from '@app/user/user.entity';
+import { JobListDataService } from '@app/job/job-list-data.service';
 
 @Injectable()
 export class AuthService {
@@ -18,6 +19,7 @@ export class AuthService {
     private jwtService: JwtService,
     private prisma: PrismaService,
     private configService: ConfigService,
+    private jobListData: JobListDataService,
   ) {}
 
   /**  User local login. */
@@ -109,6 +111,10 @@ export class AuthService {
     // should expect an array with length of 1.
     const firstJobList = jobLists[0];
 
+    // TODO: extract this logic into a more suitable service
+    const { jobListRank, jobListId } = await this.jobListData.getJobListData({
+      id: firstJobList.id,
+    });
     // create sample job
     await this.prisma.job.create({
       data: {
@@ -118,8 +124,9 @@ export class AuthService {
         salary: '50k',
         color: '#e91e63',
         description: 'This is a sample job',
-        user: { connect: { id: user.id } },
-        jobList: { connect: { id: firstJobList.id } },
+        userId: user.id,
+        jobListId,
+        jobListRank,
       },
     });
 

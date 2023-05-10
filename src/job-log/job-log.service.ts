@@ -52,14 +52,14 @@ export class JobLogService {
   }
 
   async findOne(jobLogId: number, userId: number): Promise<JobLogEntity> {
-    const jobLog = await this.prisma.jobLog.findUnique({
+    const res = await this.prisma.jobLog.findUnique({
       where: { id: jobLogId },
       include: { job: { select: { userId: true } } },
     });
+    if (!res) throw new NotFoundException();
 
-    if (jobLog?.job?.userId !== userId) throw new NotFoundException();
-
-    if (jobLog.job) jobLog.job = undefined;
+    const { job, ...jobLog } = res;
+    if (job?.userId !== userId) throw new NotFoundException();
     return { ...jobLog };
   }
 
