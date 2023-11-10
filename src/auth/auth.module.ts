@@ -6,8 +6,8 @@ import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './guards';
 import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from './jwt.module';
-import { PrismaService } from '@app/prisma';
 import { UserModule } from '@app/user/user.module';
+import { PrismaModule } from '@app/prisma';
 import {
   JwtRefreshTokenStrategy,
   JwtStrategy,
@@ -15,14 +15,19 @@ import {
 } from './strategies';
 
 @Module({
-  imports: [PassportModule, ConfigModule.forRoot(), JwtModule, UserModule],
+  imports: [
+    PassportModule,
+    ConfigModule.forRoot(),
+    JwtModule,
+    UserModule,
+    PrismaModule,
+  ],
   controllers: [AuthController],
   providers: [
     AuthService,
     LocalStrategy,
     JwtStrategy,
     JwtRefreshTokenStrategy,
-    PrismaService,
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,

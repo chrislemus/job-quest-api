@@ -1,9 +1,29 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { JobListDataService } from './job-list-data.service';
-import { PrismaService } from '@app/prisma';
+import { expect, vi } from 'vitest';
 import { LexoRank } from 'lexorank';
+import { prismaServiceMock, PrismaServiceMock } from '@app/prisma';
+import { PrismaService } from '@app/prisma';
 
 type Direction = 'before' | 'after';
+
+function mockedP<T>(mock: T) {
+  return vi.mocked<T>(mock, { partial: true });
+}
+
+type Job = {
+  id: number;
+  title: string;
+  company: string;
+  location: string | null;
+  url: string | null;
+  salary: string | null;
+  description: string | null;
+  color: string | null;
+  userId: number;
+  jobListRank: string;
+  jobListId: number;
+};
 
 const jobsWithRank = (
   direction: Direction,
@@ -12,11 +32,28 @@ const jobsWithRank = (
 ) => {
   let rank = LexoRank[startRank]();
 
-  const jobs: { id: number; jobListRank: string; jobListId: number }[] = [];
+  const jobs: Job[] = [];
 
   for (let id = 1; id <= count; id++) {
     const jobListRank = rank.toString();
-    jobs.push({ id, jobListRank, jobListId: 1 });
+    const title = 'title';
+    const company = 'company';
+
+    const job: Job = {
+      id,
+      title,
+      company,
+      location: null,
+      url: null,
+      salary: null,
+      description: null,
+      color: null,
+      userId: 1,
+      jobListRank,
+      jobListId: 1,
+    };
+
+    jobs.push(job);
     rank = direction === 'before' ? rank.genPrev() : rank.genNext();
   }
   return jobs;
@@ -24,29 +61,23 @@ const jobsWithRank = (
 
 describe('JobListDataService', () => {
   let service: JobListDataService;
-  const prisma = {
-    job: {
-      findFirst: jest.fn(),
-      findMany: jest.fn(),
-      findUnique: jest.fn(),
-    },
-    $transaction: jest.fn(),
-  };
+  let prisma: PrismaServiceMock;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         JobListDataService,
-        { provide: PrismaService, useValue: prisma },
+        { provide: PrismaService, useValue: prismaServiceMock },
       ],
     }).compile();
 
     service = module.get<JobListDataService>(JobListDataService);
+    prisma = module.get<PrismaServiceMock>(PrismaService);
+    vi.resetAllMocks();
   });
 
   describe('JobListDto.id', () => {
     it('Provides initial rank when job list has no assigned jobs', async () => {
-      prisma.job.findFirst.mockReturnValueOnce(null);
       const bucket = LexoRank.middle().getBucket();
       const jobListRank = LexoRank.initial(bucket).toString();
       const jobListId = 1;
@@ -56,10 +87,9 @@ describe('JobListDataService', () => {
 
     it('Provides new next rank', async () => {
       const existingRank = LexoRank.middle();
-      prisma.job.findFirst.mockReturnValueOnce({
+      mockedP(prisma.job.findFirst).mockResolvedValueOnce({
         jobListRank: existingRank.toString(),
       });
-
       const jobListRank = existingRank.genNext().toString();
       const jobListId = 1;
       const jobListData = await service.getJobListData({ id: jobListId });
@@ -70,8 +100,8 @@ describe('JobListDataService', () => {
       const jobs = jobsWithRank('before', 'max', 1);
       const lastJob = () => jobs[jobs.length - 1]; // fn to handle mutation
       const { jobListId } = jobs[0];
-      prisma.job.findFirst.mockReturnValueOnce(jobs[0]);
-      prisma.job.findMany.mockReturnValueOnce(jobs);
+      prisma.job.findFirst.mockResolvedValueOnce(jobs[0]);
+      prisma.job.findMany.mockResolvedValueOnce(jobs);
 
       prisma.$transaction.mockImplementationOnce((cb: (tx) => void) => {
         const update = ({ where: { id }, data: { jobListRank } }) => {
@@ -82,7 +112,7 @@ describe('JobListDataService', () => {
         cb(tx);
       });
 
-      prisma.job.findFirst.mockReturnValueOnce(lastJob());
+      prisma.job.findFirst.mockResolvedValueOnce(lastJob());
       const jobListData = await service.getJobListData({ id: jobListId });
       const lastJobRank = LexoRank.parse(lastJob().jobListRank);
       const jobListRank = lastJobRank.genNext().toString();
@@ -91,8 +121,8 @@ describe('JobListDataService', () => {
 
     it('Job list rank rebalancing is rate limited (avoids infinite loop)', async () => {
       const jobs = jobsWithRank('before', 'max', 1);
-      prisma.job.findFirst.mockReturnValue(jobs[0]);
-      prisma.job.findMany.mockReturnValue(jobs);
+      prisma.job.findFirst.mockResolvedValueOnce(jobs[0]);
+      prisma.job.findMany.mockResolvedValueOnce(jobs);
 
       let errorCount = 0;
       await service.getJobListData({ id: 1 }).catch((e) => {
@@ -113,8 +143,14 @@ describe('JobListDataService', () => {
         const baseJob = () => jobs[0];
         const { jobListId } = baseJob();
 
-        prisma.job.findUnique.mockImplementation(({ where: { id } }) => {
-          return jobs.find((j) => j.id === id);
+        prisma.job.findUnique.mockImplementation(async (args) => {
+          const {
+            where: { id },
+          } = args;
+          return jobs.find((j) => j.id === id) as unknown as Job & {
+            user: any;
+            jobList: any;
+          };
         });
 
         // sibling query not required

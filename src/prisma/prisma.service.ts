@@ -1,15 +1,29 @@
-import { INestApplication, Injectable, OnModuleInit } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
+import {
+  BeforeApplicationShutdown,
+  Injectable,
+  Logger,
+  OnModuleInit,
+} from '@nestjs/common';
 
 @Injectable()
-export class PrismaService extends PrismaClient implements OnModuleInit {
+export class PrismaService
+  extends PrismaClient
+  implements OnModuleInit, BeforeApplicationShutdown
+{
+  private logger = new Logger(PrismaService.name);
+
   async onModuleInit() {
     await this.$connect();
   }
 
-  async enableShutdownHooks(app: INestApplication) {
-    this.$on('beforeExit', async () => {
-      await app.close();
-    });
+  async beforeApplicationShutdown() {
+    await this.$disconnect()
+      .then(() => {
+        this.logger.verbose('Prisma client disconnected');
+      })
+      .catch((err) => {
+        this.logger.error(`Flawed Prisma client disconnect: ${err}`);
+      });
   }
 }

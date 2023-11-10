@@ -1,8 +1,4 @@
-import {
-  ClassSerializerInterceptor,
-  Module,
-  ValidationPipe,
-} from '@nestjs/common';
+import { ClassSerializerInterceptor, Module } from '@nestjs/common';
 import { AuthModule } from './auth/auth.module';
 import { ConfigModule } from '@nestjs/config';
 import { UserModule } from './user/user.module';
@@ -19,6 +15,7 @@ import {
 } from './common/filters';
 import { AdminModule } from './admin/admin.module';
 import { JobLogModule } from './job-log/job-log.module';
+import { ValidationPipe } from './common/pipes';
 
 @Module({
   controllers: [AppController],
@@ -36,14 +33,7 @@ import { JobLogModule } from './job-log/job-log.module';
     { provide: APP_INTERCEPTOR, useClass: ClassSerializerInterceptor },
     {
       provide: APP_PIPE,
-      useValue: new ValidationPipe({
-        whitelist: true,
-        transform: true,
-        transformOptions: {
-          // transform payloads based on TS type
-          enableImplicitConversion: true,
-        },
-      }),
+      useExisting: ValidationPipe,
     },
     { provide: APP_INTERCEPTOR, useClass: HttpTransformResponseInterceptor },
     { provide: APP_FILTER, useClass: GlobalExceptionsFilter },

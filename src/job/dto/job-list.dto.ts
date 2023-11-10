@@ -1,3 +1,4 @@
+import _ from 'lodash';
 import {
   ValidationArguments,
   IsNumber,
@@ -5,42 +6,38 @@ import {
   IsOptional,
 } from 'class-validator';
 
+function valueCount(obj: Record<string, any>) {
+  return _.size(_.pickBy(obj, _.identity));
+}
+
 /**
  * Parameters for assigning job list to job
  * - only one property must be defined
  */
 export class JobListDto {
-  @ValidateIf((obj: JobListDto) => {
-    const keys = Object.keys(obj);
-    const valueCountNotInRange = !valueCountInRange(obj);
-    const propValueProvided = keys.includes('id');
-    return propValueProvided || valueCountNotInRange;
+  @ValidateIf((obj: JobListDto, value) => {
+    if (value) return true;
+    return valueCount(obj) !== 1;
   })
   @IsNumber(
     {},
     {
       message: ({ object, property }: ValidationArguments) => {
-        const count = Object.keys(object)?.length;
-        const overRange = count > 1;
-        const belowRange = count < 1;
-
-        // global class validation
-        if (overRange || belowRange) {
-          return overRange ? overRangeErrorMsg : belowRangeErrorMsg;
-        } else {
+        const count = valueCount(object);
+        if (count === 1) {
           return `${property} must be a number conforming to the specified constraints`;
         }
+        const overRange = count > 1;
+        return overRange ? overRangeErrorMsg : belowRangeErrorMsg;
       },
     },
   )
   id?: number;
 
-  @ValidateIf((obj: JobListDto) => valueCountInRange(obj))
   @IsNumber()
   @IsOptional()
   beforeJobId?: number;
 
-  @ValidateIf((obj: JobListDto) => valueCountInRange(obj))
   @IsNumber()
   @IsOptional()
   afterJobId?: number;
@@ -50,9 +47,3 @@ export const overRangeErrorMsg =
   'Job list should have at most one property defined';
 export const belowRangeErrorMsg =
   'Job list should have at least one property defined';
-
-function valueCountInRange(obj: JobListDto) {
-  const keys = Object.keys(obj);
-  const count = keys.length;
-  return count == 1;
-}

@@ -2,7 +2,7 @@ import { appSetup } from './app-setup';
 import serverlessExpress from '@vendia/serverless-express';
 import { Callback, Context, Handler } from 'aws-lambda';
 
-const notServerlessBuild =
+const notServerlessApp =
   process.env.NOT_SERVERLESS_BUILD === 'true' ? true : false;
 
 // ---------------------------
@@ -13,12 +13,12 @@ async function bootstrap() {
   await app.listen(3001);
 }
 
-if (notServerlessBuild) bootstrap();
+if (notServerlessApp) bootstrap();
 
 // ---------------------------
 // Serverless build
 // ---------------------------
-let server: Handler;
+let serverlessApp: Handler;
 
 async function bootstrapServerless(): Promise<Handler> {
   const app = await appSetup();
@@ -32,6 +32,6 @@ export const handler: Handler = async (
   context: Context,
   callback: Callback,
 ) => {
-  server = server ?? (await bootstrapServerless());
-  return server(event, context, callback);
+  serverlessApp = serverlessApp ?? (await bootstrapServerless());
+  return serverlessApp(event, context, callback);
 };

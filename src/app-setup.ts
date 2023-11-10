@@ -25,5 +25,7 @@ export async function appSetup(): Promise<INestApplication> {
 
   SwaggerModule.setup('api', app, document);
 
+  app.enableShutdownHooks();
+
   return app;
 }
