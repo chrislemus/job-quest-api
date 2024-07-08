@@ -13,9 +13,16 @@ import {
   JwtStrategy,
   LocalStrategy,
 } from './strategies';
+import { DBModule } from '@app/db/db.module';
 
 @Module({
-  imports: [PassportModule, ConfigModule.forRoot(), JwtModule, UserModule],
+  imports: [
+    PassportModule,
+    ConfigModule.forRoot(),
+    JwtModule,
+    UserModule,
+    DBModule,
+  ],
   controllers: [AuthController],
   providers: [
     AuthService,

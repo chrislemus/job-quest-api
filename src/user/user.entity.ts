@@ -2,12 +2,12 @@ import { ApiHideProperty, ApiProperty, OmitType } from '@nestjs/swagger';
 import { Role, User } from '@prisma/client';
 import { Exclude } from 'class-transformer';
 
-export class UserEntity implements User {
-  id: number;
+export class UserEntity {
+  id: string;
   createdAt: Date;
   email: string;
   firstName: string;
-  lastName: string | null;
+  lastName?: string;
   @Exclude()
   @ApiHideProperty()
   password: string;

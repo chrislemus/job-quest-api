@@ -11,6 +11,7 @@ import {
   ForbiddenException,
   HttpCode,
   HttpStatus,
+  InternalServerErrorException,
   Post,
   UseGuards,
 } from '@nestjs/common';
@@ -38,7 +39,9 @@ export class AuthController {
    */
   @SkipAuth()
   @Post('signup')
-  signup(@Body() user: CreateUserDto): Promise<AuthTokens> {
+  signup(
+    @Body() user: CreateUserDto,
+  ): Promise<AuthTokens | InternalServerErrorException> {
     return this.authService.signup(user);
   }
 
@@ -57,28 +60,28 @@ export class AuthController {
    */
   @Post('logout')
   @HttpCode(HttpStatus.OK)
-  logout(@GetAuthUser('id') id: number): Promise<boolean> {
-    return this.authService.logout(id);
+  logout(@GetAuthUser() user: AuthUser): Promise<boolean> {
+    return this.authService.logout(user);
   }
 
-  /**
-   *
-   * Register admin for the first time to activate app
-   */
-  @Post('register-admin')
-  @HttpCode(HttpStatus.OK)
-  async registerAdmin(
-    @Body() registerAdminDto: RegisterAdminDto,
-    @GetAuthUser('id') id: number,
-  ): Promise<UserEntity> {
-    try {
-      const admin = await this.authService.registerAdmin(
-        id,
-        registerAdminDto.adminKey,
-      );
-      return admin;
-    } catch (_error) {
-      throw new ForbiddenException();
-    }
-  }
+  // /**
+  //  *
+  //  * Register admin for the first time to activate app
+  //  */
+  // @Post('register-admin')
+  // @HttpCode(HttpStatus.OK)
+  // async registerAdmin(
+  //   @Body() registerAdminDto: RegisterAdminDto,
+  //   @GetAuthUser() user: AuthUser,
+  // ): Promise<UserEntity> {
+  //   try {
+  //     const admin = await this.authService.registerAdmin(
+  //       user,
+  //       registerAdminDto.adminKey,
+  //     );
+  //     return admin;
+  //   } catch (_error) {
+  //     throw new ForbiddenException();
+  //   }
+  // }
 }

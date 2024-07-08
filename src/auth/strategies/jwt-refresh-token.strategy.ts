@@ -4,16 +4,16 @@ import { Request } from 'express';
 import { ForbiddenException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtPayload } from '../types';
-import { PrismaService } from '@app/prisma';
 import { AuthUser } from '../dto';
 import bcrypt from 'bcryptjs';
+import { UserDBService } from '@app/db/user-db.service';
 
 @Injectable()
 export class JwtRefreshTokenStrategy extends PassportStrategy(
   Strategy,
   'jwt-refresh-token',
 ) {
-  constructor(config: ConfigService, private prisma: PrismaService) {
+  constructor(config: ConfigService, private userDB: UserDBService) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       secretOrKey: config.get<string>('JWT_REFRESH_SECRET'),
@@ -29,12 +29,12 @@ export class JwtRefreshTokenStrategy extends PassportStrategy(
 
     const { id, email, role } = payload;
     const authUser: AuthUser = { id, email, role };
+    // const dbUser = await this.prisma.user.findUnique({
+    //   where: { id: authUser.id },
+    //   select: { refreshToken: true },
+    // });
 
-    const dbUser = await this.prisma.user.findUnique({
-      where: { id: authUser.id },
-      select: { refreshToken: true },
-    });
-
+    const { Item: dbUser } = await this.userDB.queryUnique(authUser.id);
     if (!dbUser?.refreshToken) throw new ForbiddenException('Access Denied');
 
     const isMatch = await bcrypt.compare(refreshToken, dbUser.refreshToken);

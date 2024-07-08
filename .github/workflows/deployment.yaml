@@ -1,21 +1,21 @@
-name: app-deployment
-run-name: App Deployment 🚀
-on: [push]
-jobs:
-  deploy-app:
-    runs-on: ubuntu-latest
-    steps:
-      - run: echo "🐧 This job is now running on a ${{ runner.os }} server"
-      - name: Check out repository code
-        uses: actions/checkout@v3
-      - name: Setup Node 16.10.0
-        uses: actions/setup-node@v3
-        with:
-          node-version: 16.10.0
-      - run: npm install -g serverless
-      - run: npm ci
-      - run: npx prisma generate --data-proxy
-      - run: npm run build
-      - name: Serverless AWS authentication
-        run: serverless config credentials --provider aws --key ${{ secrets.AWS_ACCESS_ID }} --secret ${{ secrets.AWS_ACCESS_KEY }}
-      - run: serverless deploy
+# name: app-deployment
+# run-name: App Deployment 🚀
+# on: [push]
+# jobs:
+#   deploy-app:
+#     runs-on: ubuntu-latest
+#     steps:
+#       - run: echo "🐧 This job is now running on a ${{ runner.os }} server"
+#       - name: Check out repository code
+#         uses: actions/checkout@v3
+#       - name: Setup Node 16.10.0
+#         uses: actions/setup-node@v3
+#         with:
+#           node-version: 16.10.0
+#       - run: npm install -g serverless
+#       - run: npm ci
+#       - run: npx prisma generate --data-proxy
+#       - run: npm run build
+#       - name: Serverless AWS authentication
+#         run: serverless config credentials --provider aws --key ${{ secrets.AWS_ACCESS_ID }} --secret ${{ secrets.AWS_ACCESS_KEY }}
+#       - run: serverless deploy

@@ -56,7 +56,7 @@ export class JobController {
   @ApiOkResponse(JobEntity)
   @Get(':id')
   findOne(
-    @Param('id') id: number,
+    @Param('id') id: string,
     @GetAuthUser('id') userId: number,
   ): Promise<JobEntity> {
     return this.jobService.findOne(id, userId);

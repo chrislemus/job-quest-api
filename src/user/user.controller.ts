@@ -21,20 +21,20 @@ export class UserController {
 
   /** Get user profile */
   @Get('profile')
-  getProfile(@GetAuthUser('id') userId: number): Promise<UserEntity> {
-    return this.userService.userProfile(userId);
+  getProfile(@GetAuthUser() authUser: AuthUser): Promise<UserEntity> {
+    return this.userService.userProfile(authUser);
   }
 
   /** Delete user */
   @Delete(':id')
   delete(
-    @Param('id') userId: number,
+    @Param('id') userId: string,
     @GetAuthUser() authUser: AuthUser,
   ): Promise<DeleteUserResDto> {
     if (authUser.role === Role.ADMIN) {
-      return this.userService.delete(userId);
+      return this.userService.delete(authUser);
     } else if (authUser.id === userId) {
-      return this.userService.delete(userId);
+      return this.userService.delete(authUser);
     }
     throw new NotFoundException();
   }

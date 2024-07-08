@@ -8,13 +8,17 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
+import { JobJobListRankDBService } from '@app/db/job-job-list-rank-db.service';
 
 @Injectable()
 export class JobListDataService {
   private rank = LexoRank;
   private logger = new Logger(JobListDataService.name);
   private rebalanceTracker: Record<number, number> = {};
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private jobJobListRankDB: JobJobListRankDBService,
+  ) {}
 
   async getJobListData(
     jobListParam: JobListDto,

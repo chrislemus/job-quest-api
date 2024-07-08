@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Injectable,
   InternalServerErrorException,
   Logger,
@@ -11,6 +12,7 @@ import { ConfigService } from '@nestjs/config';
 import { AuthTokens, AuthUser } from './dto';
 import { UserEntity } from '@app/user/user.entity';
 import { UserService } from '@app/user/user.service';
+import { UserDBService } from '@app/db/user-db.service';
 
 @Injectable()
 export class AuthService {
@@ -20,6 +22,7 @@ export class AuthService {
     private prisma: PrismaService,
     private configService: ConfigService,
     private userService: UserService,
+    private userDB: UserDBService,
   ) {}
 
   /**  User local login. */
@@ -52,18 +55,22 @@ export class AuthService {
       }),
     ]);
 
-    await this.syncRefreshToken(user.id, refreshToken);
+    await this.syncRefreshToken(user, refreshToken);
     return { accessToken, refreshToken };
   }
 
   /**  Sync refresh token with DB for persistence. */
-  async syncRefreshToken(userId: number, refreshToken: string): Promise<void> {
+  async syncRefreshToken(user: AuthUser, refreshToken: string): Promise<void> {
     try {
       const hashRt = await this.hashValue(refreshToken);
-      await this.prisma.user.update({
-        where: { id: userId },
-        data: { refreshToken: hashRt },
+      await this.userDB.update({
+        id: user.id,
+        refreshToken: hashRt,
       });
+      // await this.prisma.user.update({
+      //   where: { id: userId },
+      //   data: { refreshToken: hashRt },
+      // });
     } catch (error) {
       this.logger.error('Unable to sync refresh token to database:::', error);
       throw new InternalServerErrorException();
@@ -71,13 +78,17 @@ export class AuthService {
   }
 
   /** Logout user (removes refresh token from DB). */
-  async logout(userId: number): Promise<boolean> {
-    await this.prisma.user.updateMany({
-      where: {
-        id: userId,
-        refreshToken: { not: null },
-      },
-      data: { refreshToken: null },
+  async logout(user: AuthUser): Promise<boolean> {
+    // await this.prisma.user.updateMany({
+    //   where: {
+    //     id: user.id,
+    //     refreshToken: { not: null },
+    //   },
+    //   data: { refreshToken: null },
+    // });
+    await this.userDB.update({
+      id: user.id,
+      refreshToken: null,
     });
     return true;
   }
@@ -87,15 +98,36 @@ export class AuthService {
     const password = await this.hashValue(newUserData.password);
 
     // create user with default job lists
-    const { ...user } = await this.prisma.user.create({
-      data: {
-        ...newUserData,
-        role: 'SUBSCRIBER',
-        password,
-      },
+    // const { ...user } = await this.prisma.user.create({
+    //   data: {
+    //     ...newUserData,
+    //     role: 'SUBSCRIBER',
+    //     password,
+    //   },
+    // });
+
+    const userExists = await this.userDB
+      .findByEmail(newUserData.email)
+      .then((res) => !!res)
+      .catch((error) => {
+        if (error.status === 404) return false;
+        this.logger.error(JSON.stringify(error));
+        throw error;
+      });
+
+    if (userExists) {
+      throw new BadRequestException('User with this email already exists');
+    }
+    const res = await this.userDB.create({
+      ...newUserData,
+      role: 'SUBSCRIBER',
+      password,
     });
 
-    await this.userService.createNewUserStarterData(user.id);
+    const { Item: user } = res;
+    if (!user) return new InternalServerErrorException('User creation failed');
+
+    await this.userService.createNewUserStarterData(user);
 
     //get tokens and return
     const tokens = await this.getTokens(user);
@@ -105,25 +137,25 @@ export class AuthService {
   /**
    * Register user as admin(when app runs in new env for first time and no admin users exist).
    */
-  async registerAdmin(userId: number, adminKey: string): Promise<UserEntity> {
-    const existingAdminUser = await this.prisma.user.findFirst({
-      where: { role: 'ADMIN' },
-    });
+  // async registerAdmin(user: AuthUser, adminKey: string): Promise<UserEntity> {
+  //   const existingAdminUser = await this.prisma.user.findFirst({
+  //     where: { role: 'ADMIN' },
+  //   });
 
-    const noAdminRegistered = existingAdminUser === null;
-    if (!noAdminRegistered) throw new Error('Admin already registered');
+  //   const noAdminRegistered = existingAdminUser === null;
+  //   if (!noAdminRegistered) throw new Error('Admin already registered');
 
-    const expectedAdminKey =
-      this.configService.get<string>('ADMIN_REGISTER_KEY');
+  //   const expectedAdminKey =
+  //     this.configService.get<string>('ADMIN_REGISTER_KEY');
 
-    const validAdminKey = expectedAdminKey === adminKey;
-    if (!validAdminKey) throw new Error('Invalid admin key');
+  //   const validAdminKey = expectedAdminKey === adminKey;
+  //   if (!validAdminKey) throw new Error('Invalid admin key');
 
-    const adminUser = await this.prisma.user.update({
-      data: { role: 'ADMIN' },
-      where: { id: userId },
-    });
+  //   const adminUser = await this.prisma.user.update({
+  //     data: { role: 'ADMIN' },
+  //     where: { id: user.id },
+  //   });
 
-    return new UserEntity(adminUser);
-  }
+  //   return new UserEntity(adminUser);
+  // }
 }

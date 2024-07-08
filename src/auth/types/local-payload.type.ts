@@ -1,7 +1,7 @@
 import { Role } from '@prisma/client';
 
 export type LocalPayload = {
-  id: number;
+  id: string;
   email: string;
   role: Role;
 };
