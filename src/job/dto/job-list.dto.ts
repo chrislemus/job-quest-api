@@ -1,29 +1,54 @@
 import {
   ValidationArguments,
-  IsNumber,
-  ValidateIf,
   IsOptional,
   IsString,
   ValidationOptions,
   registerDecorator,
   ValidatorConstraint,
   ValidatorConstraintInterface,
-  Validate,
 } from 'class-validator';
+const propNames = {
+  id: 'id',
+  beforeJobId: 'beforeJobId',
+  afterJobId: 'afterJobId',
+} as const;
 
-@ValidatorConstraint({ name: 'customText', async: false })
-export class OnlyOneJobIdPlacement implements ValidatorConstraintInterface {
+@ValidatorConstraint({ name: 'jobListProperty', async: false })
+export class JobListPropertyConstraint implements ValidatorConstraintInterface {
   validate(_, args: ValidationArguments) {
-    const hasBeforeJobId = args.object.hasOwnProperty('beforeJobId');
-    const hasAfterJobId = args.object.hasOwnProperty('afterJobId');
+    const validPropNames = Object.values(propNames);
+    const queryPropNames = Object.keys(args.object);
+    const currPropName = args.property;
 
-    if (hasBeforeJobId && hasAfterJobId) return false;
+    if (!validPropNames.includes(currPropName as any)) return false; // invalid property name
+    if (queryPropNames.length > 1) return false;
+
     return true;
   }
 
-  defaultMessage() {
-    return 'Only one property must be defined: "beforeJobId" or "afterJobId"';
+  defaultMessage(args: ValidationArguments) {
+    const validPropNames = Object.values(propNames);
+    const queryPropNames = Object.keys(args.object);
+    const currPropName = args.property;
+
+    if (queryPropNames.length > 1) {
+      const validPropNamesStr = validPropNames.join(', ');
+      return `${currPropName}: only one property must be defined: ${validPropNamesStr}`;
+    }
+    return `${currPropName}: invalid property name.`;
   }
+}
+
+export function JobListProperty(validationOptions?: ValidationOptions) {
+  return function (object: Record<any, any>, propertyName: string) {
+    registerDecorator({
+      target: object.constructor,
+      propertyName: propertyName,
+      options: validationOptions,
+      constraints: [],
+      validator: JobListPropertyConstraint,
+    });
+  };
 }
 
 /**
@@ -61,17 +86,17 @@ export class JobListDto {
   //   },
   // )
   @IsString()
-  id: string;
-
-  // @ValidateIf((obj: JobListDto) => valueCountInRange(obj))
-  @IsString()
-  @Validate(OnlyOneJobIdPlacement)
+  @JobListProperty()
   @IsOptional()
-  beforeJobId?: number;
+  [propNames.id]?: string;
 
-  // @ValidateIf((obj: JobListDto) => valueCountInRange(obj))
   @IsString()
-  @Validate(OnlyOneJobIdPlacement)
+  @JobListProperty()
   @IsOptional()
-  afterJobId?: number;
+  [propNames.beforeJobId]?: string;
+
+  @IsString()
+  @JobListProperty()
+  @IsOptional()
+  [propNames.afterJobId]?: string;
 }

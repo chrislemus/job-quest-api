@@ -7,7 +7,7 @@ import { JobListDataService } from './job-list-data.service';
 import { DBModule } from '@app/db/db.module';
 
 @Module({
-  imports: [ConfigModule.forRoot(), DBModule],
+  imports: [ConfigModule.forRoot(), DBModule, DBModule],
   controllers: [JobController],
   providers: [JobService, PrismaService, JobListDataService],
 })

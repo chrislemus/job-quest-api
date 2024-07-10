@@ -67,6 +67,20 @@ export class UserService {
     // const deletedUser = await this.prisma.user.delete({
     //   where: { id: userId },
     // });
+    // todo: delete all user data (jobs, job lists)
+    // todo: delete all user data (jobs, job lists)
+    // todo: delete all user data (jobs, job lists)
+    // todo: delete all user data (jobs, job lists)
+    // todo: delete all user data (jobs, job lists)
+    // todo: delete all user data (jobs, job lists)
+    // todo: delete all user data (jobs, job lists)
+    // todo: delete all user data (jobs, job lists)
+    // todo: delete all user data (jobs, job lists)
+    // todo: delete all user data (jobs, job lists)
+    // todo: delete all user data (jobs, job lists)
+    // todo: delete all user data (jobs, job lists)
+    // todo: delete all user data (jobs, job lists)
+    // todo: delete all user data (jobs, job lists)
     const { Attributes: deletedUser } = await this.userDB.delete(user.id);
 
     if (!deletedUser) throw new NotFoundException();

@@ -12,6 +12,8 @@ import { JobJobListRankDBService } from './job-job-list-rank-db.service';
     DynamoDBDocumentClientService,
     UserDBService,
     JobListDBService,
+    JobDBService,
+    JobJobListRankDBService,
   ],
   exports: [
     JobListDBService,

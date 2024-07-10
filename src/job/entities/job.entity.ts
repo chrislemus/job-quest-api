@@ -1,26 +1,26 @@
 import { Job } from '@prisma/client';
 
-export class JobEntity implements Job {
+export class JobEntity {
   /** ID of the Job */
-  id: number;
+  id: string;
   /** Job Title */
   title: string;
   /** Job company */
   company: string;
   /** Job Location */
-  location: string | null;
+  location?: string;
   /** Job post URL */
-  url: string | null;
+  url?: string;
   /** Job salary */
-  salary: string | null;
+  salary?: string;
   /** Job description */
-  description: string | null;
+  description?: string;
   /** Hexadecimal color to be used in UI when displaying job content */
-  color: string | null;
+  color?: string;
   /** Job list rank */
   jobListRank: string;
   /** Job List ID where the Job links to */
-  jobListId: number;
+  jobListId: string;
   /** ID of the User who owns this Job */
-  userId: number;
+  userId: string;
 }

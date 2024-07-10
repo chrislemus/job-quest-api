@@ -49,33 +49,33 @@ export class CreateJobDto
    */
   @IsOptional()
   @IsString()
-  location?: string | null;
+  location?: string;
   /**
    * Job post URL
    */
   @IsString()
   @IsOptional()
-  url?: string | null;
+  url?: string;
   /**
    * Job salary
    * @example 56k
    */
   @IsOptional()
   @IsString()
-  salary?: string | null;
+  salary?: string;
   /**
    * Job description
    */
   @IsOptional()
   @IsString()
-  description?: string | null;
+  description?: string;
   /**
    * Hexadecimal color to be used in UI when displaying job content
    * @example #e91e63
    */
   @IsOptional()
   @IsString()
-  color?: string | null;
+  color?: string;
 
   /** Parameters for assigning job list to job  */
   @ValidateNested()

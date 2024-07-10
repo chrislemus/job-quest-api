@@ -23,6 +23,7 @@ import {
   ApiOkResponse,
   GetAuthUser,
 } from '@app/common/decorators';
+import { ApiOkResponse as _ApiOkResponse } from '@nestjs/swagger';
 
 @Controller('job')
 @ApiTags('job')
@@ -37,7 +38,7 @@ export class JobController {
   @ApiBadRequestResponse()
   create(
     @Body() createJobDto: CreateJobDto,
-    @GetAuthUser('id') userId: number,
+    @GetAuthUser('id') userId: string,
   ): Promise<JobEntity> {
     return this.jobService.create(createJobDto, userId);
   }
@@ -47,7 +48,7 @@ export class JobController {
   @ApiPageResponse(JobEntity)
   findAll(
     @Query() findAllJobsQuery: FindAllJobsQueryDto,
-    @GetAuthUser('id') userId: number,
+    @GetAuthUser('id') userId: string,
   ): Promise<Page<JobEntity>> {
     return this.jobService.findAll(findAllJobsQuery, userId);
   }
@@ -57,7 +58,7 @@ export class JobController {
   @Get(':id')
   findOne(
     @Param('id') id: string,
-    @GetAuthUser('id') userId: number,
+    @GetAuthUser('id') userId: string,
   ): Promise<JobEntity> {
     return this.jobService.findOne(id, userId);
   }
@@ -66,20 +67,17 @@ export class JobController {
   @Patch(':id')
   @ApiOkResponse(JobEntity)
   update(
-    @Param('id') id: number,
+    @Param('id') id: string,
     @Body() updateJobDto: UpdateJobDto,
-    @GetAuthUser('id') userId: number,
+    @GetAuthUser('id') userId: string,
   ): Promise<JobEntity> {
     return this.jobService.update(id, updateJobDto, userId);
   }
 
   /** Delete a Job */
   @Delete(':id')
-  @ApiOkResponse(JobEntity)
-  remove(
-    @Param('id') jobId: number,
-    @GetAuthUser('id') userId: number,
-  ): Promise<JobEntity> {
+  @_ApiOkResponse()
+  remove(@Param('id') jobId: string, @GetAuthUser('id') userId: string) {
     return this.jobService.remove(jobId, userId);
   }
 }

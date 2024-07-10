@@ -284,6 +284,21 @@ export class JobListService {
     // if (jobList?.userId !== userId) throw new NotFoundException();
 
     // const res = await this.prisma.jobList.delete({ where: { id: jobListId } });
+    // todo: check if jobs are linked to this job list
+    // todo: check if jobs are linked to this job list
+    // todo: check if jobs are linked to this job list
+    // todo: check if jobs are linked to this job list
+    // todo: check if jobs are linked to this job list
+    // todo: check if jobs are linked to this job list
+    // todo: check if jobs are linked to this job list
+    // todo: check if jobs are linked to this job list
+    // todo: check if jobs are linked to this job list
+    // todo: check if jobs are linked to this job list
+    // todo: check if jobs are linked to this job list
+    // todo: check if jobs are linked to this job list
+    // todo: check if jobs are linked to this job list
+    // todo: check if jobs are linked to this job list
+    // todo: check if jobs are linked to this job list
     return jobListId;
   }
 }
