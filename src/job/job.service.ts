@@ -43,20 +43,6 @@ export class JobService {
     }
     const { jobList: _jobList, ...jobData } = createJobDto;
     // const jobList = await this.jobListData.getJobListData(_jobList);
-    if (!_jobList.id) throw new BadRequestException('Not Implemented yet');
-    // implement above
-    // implement above
-    // implement above
-    // implement above
-    // implement above
-    // implement above
-    // implement above
-    // implement above
-    const { Item: jobList } = await this.jobListDB.queryUnique(
-      userId,
-      _jobList.id,
-    );
-    if (!jobList) throw new BadRequestException('Job List not found');
 
     // const jobJobListRank = await this.jobJobListRankDB.query({
     //   // Select: 'COUNT',
@@ -67,13 +53,15 @@ export class JobService {
     //   },
     // });
 
-    const nextRank = await this.jobListData.getJobListData(userId, _jobList);
+    const jobListUpdates = await this.jobListData.getJobListData(
+      userId,
+      _jobList,
+    );
+    // console.log('create jobList data', jobListUpdates);
     const res = await this.jobDB.create({
       ...jobData,
-      // ...jobList,
       userId,
-      jobRank: nextRank.jobListRank,
-      'userId#jobListId': `${userId}#${jobList.id}`,
+      ...jobListUpdates,
     });
 
     if (!res.Item) throw new InternalServerErrorException();
@@ -207,7 +195,7 @@ export class JobService {
     // const jobList = await this.jobListData.getJobListData(_jobList);
 
     // const
-    if (!_jobList?.id) throw new BadRequestException('Not Implemented yet');
+    // if (!_jobList?.id) throw new BadRequestException('Not Implemented yet');
     // implement above
     // implement above
     // implement above
@@ -216,22 +204,27 @@ export class JobService {
     // implement above
     // implement above
     // implement above
-    const { Item: jobList } = _jobList
-      ? await this.jobListDB.queryUnique(userId, _jobList.id)
-      : { Item: undefined };
+    // const { Item: jobList } = _jobList
+    //   ? await this.jobListDB.queryUnique(userId, _jobList.id)
+    //   : { Item: undefined };
 
-    if (_jobList && !jobList)
-      throw new BadRequestException('Job List not found');
+    // if (_jobList && !jobList)
+    //   throw new BadRequestException('Job List not found');
 
-    //  const nextRank = await this.jobListData.getJobListData(userId, _jobList);
-    const jobListUpdates = jobList
-      ? await this.jobListData.getJobListData(userId, jobList).then((res) => {
-          return {
-            jobRank: res.jobListRank,
-            'userId#jobListId': `${userId}#${res.jobListId}`,
-          };
-        })
+    // //  const nextRank = await this.jobListData.getJobListData(userId, _jobList);
+    // const jobListUpdates = jobList
+    //   ? await this.jobListData.getJobListData(userId, jobList).then((res) => {
+    //       return {
+    //         jobRank: res.jobListRank,
+    //         'userId#jobListId': `${userId}#${res.jobListId}`,
+    //       };
+    //     })
+    //   : {};
+    // console.log('_jobList', _jobList);
+    const jobListUpdates = _jobList
+      ? await this.jobListData.getJobListData(userId, _jobList)
       : {};
+    console.log('\n\njobListUpdates', jobListUpdates);
 
     const { Attributes: updatedJob } = await this.jobDB.update({
       id: jobId,
@@ -241,6 +234,10 @@ export class JobService {
     });
 
     if (!updatedJob) throw new NotFoundException();
+    // console.log(
+    //   'updated job - jobList',
+    //   updatedJob['userId#jobListId'].split('#')[1],
+    // );
     return fmtJob(updatedJob);
     // jobList.
     // let jobList:
