@@ -36,20 +36,11 @@ export class JobListController {
   }
 
   /** Get all Job Lists */
-  // @Query() query: PaginatedQuery,
-  // @GetAuthUser('id') userId: number,
-  // @ApiPageResponse(JobListEntity)
-  @Get('test')
-  test(@GetAuthUser('id') userId: number) {
-    return this.jobListService.test(userId);
-  }
-
-  /** Get all Job Lists */
   @Get()
   @ApiPageResponse(JobListEntity)
   findAll(
     @Query() query: PaginatedQuery,
-    @GetAuthUser('id') userId: number,
+    @GetAuthUser('id') userId: string,
   ): Promise<Page<JobListEntity>> {
     // return this.jobListService.test(userId) as any;
 

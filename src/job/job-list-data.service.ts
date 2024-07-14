@@ -1,6 +1,7 @@
-import { JobListDto } from './dto';
+import { JobListDto, JobListRankDto } from './dto';
 import { LexoRank } from 'lexorank';
-import { PrismaService } from '@app/prisma';
+import { Job, JobDBService } from '@app/db/job-db.service';
+import { JobListDBService } from '@app/db/job-list-db.service';
 import {
   BadRequestException,
   Injectable,
@@ -8,15 +9,11 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { JobJobListRankDBService } from '@app/db/job-job-list-rank-db.service';
-import { Job, JobDBService } from '@app/db/job-db.service';
-import { JobListDBService } from '@app/db/job-list-db.service';
 
 @Injectable()
 export class JobListDataService {
   private rank = LexoRank;
   private logger = new Logger(JobListDataService.name);
-  private rebalanceTracker: Record<number, number> = {};
   constructor(
     private jobDB: JobDBService,
     private jobListDB: JobListDBService,
@@ -24,260 +21,321 @@ export class JobListDataService {
 
   async getJobListData(
     userId: string,
-    jobListParam: JobListDto,
-  ): Promise<{
-    jobRank: string;
-    jobListId: string;
-    'userId#jobListId': string;
-  }> {
-    const { id, beforeJobId, afterJobId } = jobListParam;
-    if (id) {
-      const { Item: jobList } = await this.jobListDB.queryUnique(userId, id);
-      if (!jobList) throw new BadRequestException('Job List not found');
-      const jobRank = await this.genNewBottomRank(userId, id);
-      return this.formatJobListData({ jobRank, jobListId: id, userId });
-    } else if (beforeJobId) {
-      const data = await this.genNewSiblingRank(userId, beforeJobId, 'before');
-      return this.formatJobListData({ ...data, userId });
-    } else if (afterJobId) {
-      const data = await this.genNewSiblingRank(userId, afterJobId, 'after');
-      return this.formatJobListData({ ...data, userId });
-    }
-    throw new BadRequestException(
-      `${JobListDto.name} must have a property defined`,
-    );
-  }
-
-  formatJobListData(data: {
-    jobRank: string;
-    jobListId: string;
-    userId: string;
-  }) {
-    return {
-      jobRank: data.jobRank,
-      jobListId: data.jobListId,
-      'userId#jobListId': `${data.userId}#${data.jobListId}`,
-    };
-  }
-
-  private async genNewBottomRank(
-    userId: string,
     jobListId: string,
-    shouldRetry = true,
-  ): Promise<string> {
-    const { rank } = this;
+    jobListRankConfig?: JobListRankDto,
+  ): Promise<{
+    jobListRank: string;
+    jobListId: string;
+  }> {
+    const getData = async () => {
+      const config = { jobListId, jobListRankConfig };
+      const jobListRanks = await this.jobDB.getTopAndBottomJobListRanks(
+        jobListId,
+        jobListRankConfig,
+      );
 
-    const res = await this.jobDB.query({
-      Limit: 1,
-      ScanIndexForward: false,
-      IndexName: 'jobListIndex',
-      KeyConditionExpression: '#pk = :pkValue',
-      ExpressionAttributeNames: { '#pk': 'userId#jobListId' },
-      ExpressionAttributeValues: { ':pkValue': `${userId}#${jobListId}` },
-    });
+      const data = await this.getRankPlacement({ ...config, jobListRanks });
+      return data;
+    };
 
-    const baseJob = res?.Items?.[0];
+    let res = await getData();
 
-    if (baseJob) {
-      const nextRank = rank.parse(baseJob.jobRank).genNext();
-      if (nextRank.isMax() || nextRank.isMin()) {
-        if (!shouldRetry) {
-          throw new InternalServerErrorException(
-            'Failed to rebalance job list rank',
-          );
-        }
-        await this.rebalanceDB(jobListId, userId);
-        return this.genNewBottomRank(userId, jobListId, false);
-      }
-      return nextRank.toString();
+    if (res === 'rebalance required') {
+      await this.rebalanceDB(jobListId, userId);
     }
-    const currentBucket = rank.middle().getBucket();
-    return rank.initial(currentBucket).toString();
+
+    res = await getData();
+
+    if (res === 'rebalance required') {
+      this.logger.error('Rebalance required after 2nd attempt');
+
+      throw new InternalServerErrorException(
+        'failed to rebalance job list ranks',
+      );
+    }
+
+    return res;
   }
+
+  private async getRankPlacement(config: {
+    jobListId: string;
+    jobListRankConfig?: JobListRankDto;
+    jobListRanks: { topRank?: string; bottomRank?: string };
+  }): Promise<
+    | {
+        jobListRank: string;
+        jobListId: string;
+      }
+    | 'rebalance required'
+  > {
+    const rebalanceRes = 'rebalance required' as const;
+    const { rank } = this;
+    const { jobListId, jobListRanks, jobListRankConfig } = config;
+    const { topRank: topRankStr, bottomRank: bottomRankStr } = jobListRanks;
+
+    const topRank = topRankStr ? rank.parse(topRankStr) : undefined;
+    const bottomRank = bottomRankStr ? rank.parse(bottomRankStr) : undefined;
+
+    // condition must return a value
+    if (topRank && bottomRank) {
+      const hasSpaceBetween = topRank.compareTo(bottomRank) !== 0;
+      if (!hasSpaceBetween) return rebalanceRes;
+
+      const bucket = topRank.getBucket();
+      const [tRank, bRank] = [topRank, bottomRank].map((r) => r.getDecimal());
+      const decimalRank = rank.between(tRank, bRank);
+      const newRank = rank.from(bucket, decimalRank).toString();
+      return { jobListRank: newRank, jobListId };
+    }
+
+    // condition must return a value
+    if (topRank || bottomRank) {
+      const baseRank = (topRank || bottomRank) as LexoRank;
+      const rankBottom = jobListRankConfig?.placement === 'bottom';
+      const newRank = rankBottom ? baseRank.genNext() : baseRank.genPrev();
+
+      const limitReached = newRank.isMax() || newRank.isMin();
+      if (limitReached) return rebalanceRes;
+      return { jobListId, jobListRank: newRank.toString() };
+    }
+
+    const currentBucket = rank.middle().getBucket();
+    const jobListRank = rank.initial(currentBucket).toString();
+    return { jobListRank, jobListId };
+  }
+
+  // private async getRankPlacement(config: {
+  //   jobListId: string;
+  //   jobListRankConfig?: JobListRankDto;
+  //   jobListRanks?:
+  //     | { topRank: string; bottomRank: undefined }
+  //     | { bottomRank: string; topRank: undefined };
+  // }): Promise<{ jobListRank: string; jobListId: string }> {
+  //   const { jobListId, jobListRanks, jobListRankConfig } = config;
+  //   const { rank } = this;
+
+  //   const baseRankStr = jobListRanks?.topRank || jobListRanks?.bottomRank;
+
+  //   if (!baseRankStr) {
+  //     const currentBucket = rank.middle().getBucket();
+  //     const jobListRank = rank.initial(currentBucket).toString();
+  //     return { jobListRank, jobListId };
+  //   }
+
+  //   const baseRank = rank.parse(baseRankStr);
+  //   const genNext = jobListRankConfig?.placement === 'bottom';
+  //   const newRank = genNext ? baseRank.genNext() : baseRank.genPrev();
+
+  //   const limitReached = newRank.isMax() || newRank.isMin();
+  //   if (limitReached) throw new InternalServerErrorException(rebalanceErrorMsg);
+
+  //   return { jobListId, jobListRank: newRank.toString() };
+  // }
+
+  //   userId: string,
+  // jobListId: string,
+  // shouldRetry = true,
+  // topRank?: string,
+  // private async getRankBetween(config: {
+  //   jobListId: string;
+  //   jobListRankConfig?: JobListRankDto;
+  //   jobListRanks: { topRank: string; bottomRank: string };
+  // }): Promise<{
+  //   jobListRank: string;
+  //   jobListId: string;
+  // }> {
+  //   const { jobListId, jobListRanks } = config;
+  //   const topRank = this.rank.parse(jobListRanks.topRank);
+  //   const bottomRank = this.rank.parse(jobListRanks.bottomRank);
+
+  //   const hasSpaceBetween = topRank.compareTo(bottomRank) !== 0;
+  //   if (hasSpaceBetween) {
+  //     const bucket = topRank.getBucket();
+  //     const decimalRank = this.rank.between(
+  //       topRank.getDecimal(),
+  //       bottomRank.getDecimal(),
+  //     );
+  //     const newRank = this.rank.from(bucket, decimalRank).toString();
+  //     return { jobListRank: newRank, jobListId };
+  //   }
+
+  //   throw new InternalServerErrorException(rebalanceErrorMsg);
+  // }
 
   private async rebalanceDB(jobListId: string, userId: string) {
-    // throw new InternalServerErrorException('Not implemented yet - rebalanceDB');
-    // const lastRebalance = this.rebalanceTracker[jobListId];
-    // if (lastRebalance) {
-    //   const elapsedMinutes = (Date.now() - lastRebalance) / 1000 / 60;
-    //   // arbitrary limit of an 2 hours (lambda functions only run 15 minutes)
-    //   if (elapsedMinutes < 120) {
-    //     const errMsg = `Job list rank rebalance rate exceeded | jobListId: ${jobListId}`;
-    //     this.logger.error(errMsg);
-    //     throw new InternalServerErrorException();
+    // add TimeToExist for retries
+    // add TimeToExist for retries
+    // add TimeToExist for retries
+    // add TimeToExist for retries
+    // add TimeToExist for retries
+    // add TimeToExist for retries
+    // add TimeToExist for retries
+    // add TimeToExist for retries
+    // add TimeToExist for retries
+    // add TimeToExist for retries
+    // add TimeToExist for retries
+    // const logRebalanceStatus = (s: 'init' | 'success' | 'failed') => {
+    //   const msg = `Rebalancing job list ranks: status=${s} |  userId=${userId} | jobListId=${jobListId}`;
+    //   this.logger.warn(msg);
+    // };
+    // logRebalanceStatus('init');
+    // logRebalanceStatus('success');
+    // logRebalanceStatus('failed');
+    throw new InternalServerErrorException('Method not implemented.');
+    // let ExclusiveStartKey: Record<string, any> | undefined;
+    // const jobs: Job[] = [];
+    // let counter = 0;
+    // do {
+    //   const res = await this.jobDB.query({
+    //     Limit: 3,
+    //     ScanIndexForward: true,
+    //     ExclusiveStartKey,
+    //     IndexName: 'JobQuest-JobListIndex',
+    //     KeyConditionExpression: 'jobListId = :jobListId',
+    //     ExpressionAttributeValues: { ':jobListId': jobListId },
+    //   });
+    //   const jobsData = res?.Items;
+    //   if (jobsData && jobsData?.length > 0) {
+    //     jobs.push(...jobsData);
     //   }
-    // } else {
-    //   this.rebalanceTracker[jobListId] = Date.now();
-    // }
+    //   ExclusiveStartKey = res.LastEvaluatedKey;
+    //   counter++;
+    // } while (!!ExclusiveStartKey && counter < 6);
 
-    // const jobs = await this.prisma.job.findMany({
-    //   where: { id: jobListId },
-    //   select: { id: true, jobListRank: true },
-    //   orderBy: { jobListRank: 'asc' },
-    // });
-    let ExclusiveStartKey: Record<string, any> | undefined;
-    const jobs: Job[] = [];
-    let counter = 0;
-    do {
-      const res = await this.jobDB.query({
-        Limit: 1,
-        ScanIndexForward: true,
-        IndexName: 'jobListIndex',
-        KeyConditionExpression: '#k1 = :v1',
-        ExpressionAttributeNames: { '#k1': 'userId#jobListId' },
-        ExpressionAttributeValues: { ':v1': `${userId}#${jobListId}` },
-      });
-      console.log(res);
-      const jobsData = res?.Items;
-      if (jobsData && jobsData?.length > 0) {
-        jobs.push(...jobsData);
-      }
-      ExclusiveStartKey = res.LastEvaluatedKey;
-      counter++;
-    } while (!!ExclusiveStartKey && counter < 3);
-    console.log(jobs);
-    // const res2 = await this.jobDB.query({
-    //   Limit: 1,
-
-    //   IndexName: 'jobListIndex',
-    //   KeyConditionExpression: '#k1 = :v1',
-    //   ExpressionAttributeNames: { '#k1': 'userId#jobListId' },
-    //   ExpressionAttributeValues: { ':v1': `${userId}#${jobListId}` },
-    //   ExclusiveStartKey: res.LastEvaluatedKey,
-    // });
-    // const jobs = res?.Items;
-    // console.log('res', res);
-    // console.log('res2', res2);
-    throw new Error('Method not implemented.');
     // if (jobs?.length > 0) {
     //   this.logger.verbose(`Rebalancing job list - ${jobListId}`);
     //   const [firstJob] = jobs;
     //   const firstJobRank = this.rank.parse(firstJob.jobListRank);
     //   const newBucket = firstJobRank.inNextBucket().getBucket();
-    //   await this.prisma.$transaction(async (tx) => {
-    //     let latestRank = this.rank.initial(newBucket);
-    //     await Promise.all(
-    //       jobs.map((job) => {
-    //         const jobListRank = latestRank.toString();
-    //         latestRank = latestRank.genNext();
-    //         return tx.job.update({
-    //           where: { id: job.id },
-    //           data: { jobListRank },
-    //         });
-    //       }),
-    //     );
-    //   });
+    //   let latestRank = this.rank.initial(newBucket);
+    //   await Promise.all(
+    //     jobs.map((job) => {
+    //       const { id } = job;
+    //       const jobListRank = latestRank.toString();
+    //       latestRank = latestRank.genNext();
+    //       return this.jobDB.update({ id, userId, jobListRank });
+    //     }),
+    //   );
+    //   this.logger.verbose(`Rebalancing job list success - ${jobListId}`);
     //   return;
     // }
-    this.logger.error(
-      `rebalance requested but found no jobs linked to job list (${jobListId})`,
-    );
-    throw new InternalServerErrorException();
+    // this.logger.error(
+    //   `rebalance requested but found no jobs linked to job list (${jobListId})`,
+    // );
+    // throw new InternalServerErrorException();
   }
 
-  private async genNewSiblingRank(
-    userId: string,
-    baseJobId: string,
-    direction: 'before' | 'after',
-    shouldRetry = true,
-  ): Promise<{
-    jobRank: string;
-    jobListId: string;
-  }> {
-    const baseJob = await this.getExistingJob(userId, baseJobId);
-    const { jobListId } = baseJob;
+  // private async genNewSiblingRank(
+  //   userId: string,
+  //   baseJobId: string,
+  //   direction: 'before' | 'after',
+  //   shouldRetry = true,
+  // ): Promise<{
+  //   jobListRank: string;
+  //   jobListId: string;
+  // }> {
+  //   const baseJob = await this.getExistingJob(userId, baseJobId);
+  //   const { jobListId } = baseJob;
 
-    // avoid infinite loop
-    // avoid infinite loop
-    // avoid infinite loop
-    // avoid infinite loop
-    // avoid infinite loop
-    // avoid infinite loop
-    // avoid infinite loop
-    // avoid infinite loop
-    // avoid infinite loop
-    const retry = async () => {
-      if (!shouldRetry) {
-        throw new InternalServerErrorException(
-          'Failed to generate new sibling rank',
-        );
-      }
-      await this.rebalanceDB(jobListId, userId);
-      return this.genNewSiblingRank(userId, baseJobId, direction, false);
-    };
+  //   // avoid infinite loop
+  //   // avoid infinite loop
+  //   // avoid infinite loop
+  //   // avoid infinite loop
+  //   // avoid infinite loop
+  //   // avoid infinite loop
+  //   // avoid infinite loop
+  //   // avoid infinite loop
+  //   // avoid infinite loop
+  //   const retry = async () => {
+  //     if (!shouldRetry) {
+  //       throw new InternalServerErrorException(
+  //         'Failed to generate new sibling rank',
+  //       );
+  //     }
+  //     await this.rebalanceDB(jobListId, userId);
+  //     return this.genNewSiblingRank(userId, baseJobId, direction, false);
+  //   };
 
-    const siblingRank = await this.getExistingSiblingJobRank(
-      userId,
-      direction,
-      { jobListId, rank: baseJob.rank },
-    );
-    if (siblingRank) {
-      const jobRank = this.getRankBetween(siblingRank, baseJob.rank);
-      if (jobRank) return { jobRank, jobListId };
+  //   // const siblingRank = await this.getExistingSiblingJobRank(
+  //   //   userId,
+  //   //   direction,
+  //   //   { jobListId, rank: baseJob.jobListRank },
+  //   // );
+  //   const siblingRank = await this.getExistingSiblingJobRank(
+  //     userId,
+  //     direction,
+  //     { jobListId, rank: baseJob.jobListRank },
+  //   );
+  //   if (siblingRank) {
+  //     const jobListRank = this.getRankBetween(siblingRank, baseJob.jobListRank);
+  //     if (jobListRank) return { jobListRank, jobListId };
 
-      return retry();
-    }
+  //     return retry();
+  //   }
 
-    const newRank =
-      direction === 'after' ? baseJob.rank.genNext() : baseJob.rank.genPrev();
-    if (newRank.isMin() || newRank.isMax()) return retry();
+  //   const newRank =
+  //     direction === 'after'
+  //       ? baseJob.jobListRank.genNext()
+  //       : baseJob.jobListRank.genPrev();
+  //   if (newRank.isMin() || newRank.isMax()) return retry();
 
-    const jobRank = newRank.toString();
-    return { jobRank, jobListId };
-  }
+  //   const jobListRank = newRank.toString();
+  //   return { jobListRank, jobListId };
+  // }
 
-  private async getExistingJob(
-    userId: string,
-    jobId: string,
-  ): Promise<{
-    jobListId: string;
-    rank: LexoRank;
-  }> {
-    const { Item: job } = await this.jobDB.getUnique(userId, jobId);
-    if (job) {
-      const { jobRank } = job;
-      const [, jobListId] = job['userId#jobListId'].split('#');
-      const rank = this.rank.parse(jobRank);
-      return { jobListId, rank };
-    }
-    throw new NotFoundException(`unable to find job ( ${jobId} )`);
-  }
+  // private async getExistingJob(
+  //   userId: string,
+  //   jobId: string,
+  // ): Promise<{
+  //   jobListId: string;
+  //   jobListRank: LexoRank;
+  // }> {
+  //   const { Item: job } = await this.jobDB.getUnique(userId, jobId, [
+  //     'jobListId',
+  //     'jobListRank',
+  //   ]);
+  //   if (job) {
+  //     const { jobListId } = job;
+  //     const jobListRank = this.rank.parse(job.jobListRank);
+  //     return { jobListId, jobListRank };
+  //   }
+  //   throw new NotFoundException(`unable to find job ( ${jobId} )`);
+  // }
 
-  private async getExistingSiblingJobRank(
-    userId: string,
-    direction: 'before' | 'after',
-    job: { jobListId: string; rank: LexoRank },
-  ): Promise<LexoRank | null> {
-    const dir = direction === 'after' ? '>' : '<';
-    const res = await this.jobDB.query({
-      Limit: 1,
-      IndexName: 'jobListIndex',
-      KeyConditionExpression: `#k1 = :v1 AND #k2 ${dir} :v2`,
-      ExpressionAttributeNames: { '#k1': 'userId#jobListId', '#k2': 'jobRank' },
-      ExpressionAttributeValues: {
-        ':v1': `${userId}#${job.jobListId}`,
-        ':v2': job.rank.toString(),
-      },
-    });
-    const siblingJob = res?.Items?.[0];
-    if (!siblingJob) return null;
-    return this.rank.parse(siblingJob.jobRank);
-  }
+  // private async getExistingSiblingJobRank(
+  //   userId: string,
+  //   direction: 'before' | 'after',
+  //   job: { jobListId: string; rank: LexoRank },
+  // ): Promise<LexoRank | null> {
+  //   const dir = direction === 'after' ? '>' : '<';
+  //   const res = await this.jobDB.query({
+  //     Limit: 1,
+  //     IndexName: 'JobQuest-JobListIndex',
+  //     KeyConditionExpression: `jobListId = :jobListId AND jobListRank ${dir} :jobListRank`,
+  //     ExpressionAttributeValues: {
+  //       ':jobListId': job.jobListId,
+  //       ':jobListRank': job.rank.toString(),
+  //     },
+  //   });
+  //   const siblingJob = res?.Items?.[0];
+  //   if (!siblingJob) return null;
+  //   return this.rank.parse(siblingJob.jobListRank);
+  // }
 
-  private getRankBetween(
-    rankLeft: LexoRank,
-    rankRight: LexoRank,
-  ): string | null {
-    const hasSpaceBetween = rankLeft.compareTo(rankRight) !== 0;
-    if (hasSpaceBetween) {
-      const bucket = rankRight.getBucket();
-      const decimalRank = this.rank.between(
-        rankLeft.getDecimal(),
-        rankRight.getDecimal(),
-      );
-      const newRank = this.rank.from(bucket, decimalRank);
-      return newRank.toString();
-    }
-    return null;
-  }
+  // private getRankBetween(
+  //   rankLeft: LexoRank,
+  //   rankRight: LexoRank,
+  // ): string | null {
+  //   const hasSpaceBetween = rankLeft.compareTo(rankRight) !== 0;
+  //   if (hasSpaceBetween) {
+  //     const bucket = rankRight.getBucket();
+  //     const decimalRank = this.rank.between(
+  //       rankLeft.getDecimal(),
+  //       rankRight.getDecimal(),
+  //     );
+  //     const newRank = this.rank.from(bucket, decimalRank);
+  //     return newRank.toString();
+  //   }
+  //   return null;
+  // }
 }

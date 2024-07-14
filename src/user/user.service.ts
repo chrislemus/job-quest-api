@@ -28,11 +28,20 @@ export class UserService {
 
   async createNewUserStarterData(user: AuthUser) {
     // create all job lists
-    await Promise.all(
-      ['Queue', 'Applied', 'Interview', 'Offer', 'Rejected'].map((label, idx) =>
-        this.jobListDB.create({ label, order: idx + 1, userId: user.id }),
-      ),
-    );
+    const jobListLabels = [
+      'Queue',
+      'Applied',
+      'Interview',
+      'Offer',
+      'Rejected',
+    ];
+    const jobLists = jobListLabels.map((label) => ({ label }));
+    await this.jobListDB.createMany(user.id, jobLists);
+    // await Promise.all(
+    //   ['Queue', 'Applied', 'Interview', 'Offer', 'Rejected'].map((label, idx) =>
+    //     this.jobListDB.create({ label, order: idx + 1, userId: user.id }),
+    //   ),
+    // );
 
     // await this.jobListDB.create({
     //   label: 'Queue',

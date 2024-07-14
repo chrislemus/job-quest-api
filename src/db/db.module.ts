@@ -5,8 +5,11 @@ import { JobListDBService } from './job-list-db.service';
 import { UserDBService } from './user-db.service';
 import { JobDBService } from './job-db.service';
 import { JobJobListRankDBService } from './job-job-list-rank-db.service';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
+  imports: [ConfigModule.forRoot()],
+
   providers: [
     // DynamoDBClientService,
     DynamoDBDocumentClientService,

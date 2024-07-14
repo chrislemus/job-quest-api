@@ -88,7 +88,7 @@ export class JobListDto {
   @IsString()
   @JobListProperty()
   @IsOptional()
-  [propNames.id]?: string;
+  [propNames.id]: string;
 
   @IsString()
   @JobListProperty()

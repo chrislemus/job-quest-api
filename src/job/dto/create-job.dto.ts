@@ -1,15 +1,12 @@
 import {
+  IsEnum,
   IsNotEmpty,
   IsOptional,
   IsString,
   ValidateNested,
+  isEnum,
 } from 'class-validator';
 import { JobEntity } from '../entities';
-import { JobListDto } from './job-list.dto';
-
-interface WithJobList {
-  jobList: JobListDto;
-}
 
 export class CreateJobDto
   // TODO: figure out how to allow undefined for null Prisma values.
@@ -26,8 +23,7 @@ export class CreateJobDto
       | 'color'
       | 'jobListRank'
       | 'jobListId'
-    >,
-    WithJobList
+    >
 {
   /**
    * Job Title
@@ -78,6 +74,22 @@ export class CreateJobDto
   color?: string;
 
   /** Parameters for assigning job list to job  */
+  @IsString()
+  jobListId: string;
+
+  /** Parameters for assigning job list to job  */
   @ValidateNested()
-  jobList: JobListDto;
+  @IsOptional()
+  jobListRank?: JobListRankDto;
+}
+
+export class JobListRankDto {
+  @IsString()
+  @IsOptional()
+  rank: string;
+
+  // @IsString()
+  @IsEnum(['top', 'bottom'])
+  @IsOptional()
+  placement: 'top' | 'bottom';
 }

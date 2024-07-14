@@ -1,5 +1,4 @@
-import { Page, pageQuery } from '@app/common/pagination';
-import { PrismaService } from '@app/prisma';
+import { Page } from '@app/common/pagination';
 import { ConfigService } from '@nestjs/config';
 import { FindAllJobsQueryDto } from './dto';
 import { CreateJobDto } from './dto/create-job.dto';
@@ -7,82 +6,46 @@ import { UpdateJobDto } from './dto/update-job.dto';
 import { JobEntity } from './entities/job.entity';
 import { JobListDataService } from './job-list-data.service';
 import {
-  BadRequestException,
   ConflictException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
-import { JobDBService, Job as RawDBJob } from '@app/db/job-db.service';
+import { JobDBService } from '@app/db/job-db.service';
 import { JobListDBService } from '@app/db/job-list-db.service';
 
-// import { JobJobListRankDBService } from '@app/db/job-job-list-rank-db.service';
-function fmtJob(job: RawDBJob) {
-  const { 'userId#jobListId': jobListIdRaw, jobRank, ...jobData } = job;
-  const [, jobListId] = jobListIdRaw.split('#');
-  return { ...jobData, jobListId, jobListRank: jobRank };
-}
 @Injectable()
 export class JobService {
   constructor(
-    private configService: ConfigService,
+    // private configService: ConfigService,
     private jobListData: JobListDataService,
     private jobDB: JobDBService,
-    private jobListDB: JobListDBService, // private jobJobListRankDB: JobJobListRankDBService,
   ) {}
 
   async create(createJobDto: CreateJobDto, userId: string): Promise<JobEntity> {
-    const createLimit = this.configService.get<number>('JOB_CREATE_LIMIT');
-    // const userJobCount = await this.prisma.job.count({ where: { userId } });
-    const userJobCount = await this.jobDB.totalCount(userId);
+    // const createLimit = this.configService.get<number>('JOB_CREATE_LIMIT');
+    // const userJobCount = await this.jobDB.totalCount(userId);
 
-    if (createLimit && userJobCount >= createLimit) {
-      throw new ConflictException(
-        `Exceeded Job limit (${createLimit}). Consider deleting Jobs to free up some space.`,
-      );
-    }
-    const { jobList: _jobList, ...jobData } = createJobDto;
-    // const jobList = await this.jobListData.getJobListData(_jobList);
-
-    // const jobJobListRank = await this.jobJobListRankDB.query({
-    //   // Select: 'COUNT',
-    //   Limit: 1,
-    //   FilterExpression: 'jobListId = :jobListId',
-    //   ExpressionAttributeValues: {
-    //     ':userId#jobListId': `${userId}#${jobList.id}`,
-    //   },
-    // });
-
+    // if (createLimit && userJobCount >= createLimit) {
+    //   throw new ConflictException(
+    //     `Exceeded Job limit (${createLimit}). Consider deleting Jobs to free up some space.`,
+    //   );
+    // }
+    const { jobListId, jobListRank, ...jobData } = createJobDto;
     const jobListUpdates = await this.jobListData.getJobListData(
       userId,
-      _jobList,
+      jobListId,
+      jobListRank,
     );
-    // console.log('create jobList data', jobListUpdates);
-    const res = await this.jobDB.create({
+
+    const job = await this.jobDB.create({
       ...jobData,
       userId,
       ...jobListUpdates,
     });
 
-    if (!res.Item) throw new InternalServerErrorException();
-    const { 'userId#jobListId': jobListIdRaw, jobRank, ...job } = res.Item;
-    const jobListId = jobListIdRaw.split('#')[1];
-    return { ...job, jobListId, jobListRank: jobRank };
-    // await this.prisma.jobList
-    //   .findUnique({
-    //     where: { id: jobList.jobListId },
-    //     select: { userId: true },
-    //   })
-    //   .then((data) => {
-    //     const errMsg = `Cannot find Job List with ID '${jobList.jobListId}'`;
-    //     if (data?.userId !== userId) throw new BadRequestException(errMsg);
-    //   });
-
-    // const job = await this.prisma.job.create({
-    //   data: { ...jobData, ...jobList, userId },
-    // });
-
-    // return job;
+    if (!job) throw new InternalServerErrorException();
+    return job;
   }
 
   async findAll(
@@ -90,25 +53,13 @@ export class JobService {
     userId: string,
   ): Promise<Page<JobEntity>> {
     const { jobListId } = findAllJobsQuery;
-    // let KeyConditionExpression = 'userId = :userId';
-    // if (jobListId) {
-    //   KeyConditionExpression += ' AND jobListId IN (:jobListId)';
-    // }
-    // console.log(jobListId, 'jobListId');
-    // IndexName: 'jobListIndex',
-    // KeyConditionExpression: 'userId#jobListId = :userId#jobListId',
-    // ExpressionAttributeValues: {
-    //   ':userId#jobListId': `${userId}#${jobListId}`,
-    // },
 
-    // console.log(findAllJobsQuery, 'findAllJobsQuery');
-
+    if (jobListId) throw new Error('Not implemented');
     const queryParams = jobListId
       ? {
-          IndexName: 'jobListIndex',
-          ExpressionAttributeNames: { '#pk': 'userId#jobListId' },
-          KeyConditionExpression: '#pk = :pkVal',
-          ExpressionAttributeValues: { ':pkVal': `${userId}#${jobListId}` },
+          IndexName: 'JobQuest-JobListIndex',
+          KeyConditionExpression: 'jobListId = :jobListId',
+          ExpressionAttributeValues: { ':jobListId': jobListId },
         }
       : {
           KeyConditionExpression: 'userId = :userId',
@@ -125,20 +76,18 @@ export class JobService {
       ...queryParams,
     });
 
-    let data = !res.Items ? [] : res.Items.map((job) => fmtJob(job));
+    const data = !res.Items ? [] : res.Items;
 
-    if (jobListId && data.length > 0) {
-      data = await this.jobDB
-        .batchGetItem({
-          Keys: data.map((job) => ({
-            userId: job.userId,
-            id: job.id,
-          })),
-        })
-        .then((res) => {
-          return res.Items.map((job) => fmtJob(job));
-        });
-    }
+    // if (jobListId && data.length > 0) {
+    //   data = await this.jobDB
+    //     .batchGetItem({
+    //       Keys: data.map((job) => ({
+    //         userId: job.userId,
+    //         id: job.id,
+    //       })),
+    //     })
+    //     .then((res) => res.Items);
+    // }
 
     // if (!res.Items)
     return {
@@ -171,9 +120,9 @@ export class JobService {
   }
 
   async findOne(jobId: string, userId: string): Promise<JobEntity> {
-    const { Item: jobRaw } = await this.jobDB.getUnique(userId, jobId);
-    if (!jobRaw) throw new NotFoundException();
-    return fmtJob(jobRaw);
+    const job = await this.jobDB.getUnique(userId, jobId);
+    if (!job) throw new NotFoundException();
+    return job;
     // return '' as any;
     // const job = await this.prisma.job.findUnique({ where: { id: jobId } });
     // if (job?.userId !== userId) throw new NotFoundException();
@@ -185,46 +134,11 @@ export class JobService {
     updateJobDto: UpdateJobDto,
     userId: string,
   ): Promise<JobEntity> {
-    // return '' as any;
-    // const job = await this.prisma.job.findUnique({
-    //   where: { id: jobId },
-    //   select: { userId: true },
-    // });
-    // if (job?.userId !== userId) throw new NotFoundException();
     const { jobList: _jobList, ...jobData } = updateJobDto;
-    // const jobList = await this.jobListData.getJobListData(_jobList);
 
-    // const
-    // if (!_jobList?.id) throw new BadRequestException('Not Implemented yet');
-    // implement above
-    // implement above
-    // implement above
-    // implement above
-    // implement above
-    // implement above
-    // implement above
-    // implement above
-    // const { Item: jobList } = _jobList
-    //   ? await this.jobListDB.queryUnique(userId, _jobList.id)
-    //   : { Item: undefined };
-
-    // if (_jobList && !jobList)
-    //   throw new BadRequestException('Job List not found');
-
-    // //  const nextRank = await this.jobListData.getJobListData(userId, _jobList);
-    // const jobListUpdates = jobList
-    //   ? await this.jobListData.getJobListData(userId, jobList).then((res) => {
-    //       return {
-    //         jobRank: res.jobListRank,
-    //         'userId#jobListId': `${userId}#${res.jobListId}`,
-    //       };
-    //     })
-    //   : {};
-    // console.log('_jobList', _jobList);
     const jobListUpdates = _jobList
       ? await this.jobListData.getJobListData(userId, _jobList)
       : {};
-    console.log('\n\njobListUpdates', jobListUpdates);
 
     const { Attributes: updatedJob } = await this.jobDB.update({
       id: jobId,
@@ -234,28 +148,8 @@ export class JobService {
     });
 
     if (!updatedJob) throw new NotFoundException();
-    // console.log(
-    //   'updated job - jobList',
-    //   updatedJob['userId#jobListId'].split('#')[1],
-    // );
-    return fmtJob(updatedJob);
-    // jobList.
-    // let jobList:
-    //   | undefined
-    //   | {
-    //       jobListRank: string;
-    //       jobListId: number;
-    //     };
-    // if (_jobList) {
-    //   jobList = await this.jobListData.getJobListData(_jobList);
-    // }
 
-    // const updatedJob = await this.prisma.job.update({
-    //   data: { ...jobData, ...jobList },
-    //   where: { id: jobId },
-    // });
-
-    // return updatedJob;
+    return updatedJob;
   }
 
   async remove(jobId: string, userId: string) {

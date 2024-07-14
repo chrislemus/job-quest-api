@@ -1,11 +1,18 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+} from '@nestjs/common';
 import { DynamoDBDocumentClientService } from './dynamo-db-document-client.service';
 import {
   DeleteCommand,
   GetCommand,
   PutCommand,
+  PutCommandInput,
   QueryCommand,
   QueryCommandInput,
+  TransactWriteCommand,
+  TransactWriteCommandInput,
   UpdateCommand,
 } from '@aws-sdk/lib-dynamodb';
 import {
@@ -15,8 +22,48 @@ import {
   QueryCommandOutput,
 } from './types';
 import { v4 as uuidv4 } from 'uuid';
+import { TableName } from './table-name.const';
+import { ConfigService } from '@nestjs/config';
+import { RequireFields } from '@app/common/types';
 
-const TableName = 'JobQuest-JobList';
+// const TableName = 'JobQuest-JobList';
+
+// const
+export type JobListJobCountPK = `jobList#${string}#jobCount`;
+export type JobListJobCountSK = `count`;
+export type JobListJobCountCK = {
+  pk: JobListJobCountPK;
+  sk: JobListJobCountSK;
+};
+
+export function createJobListJobCountCK(jobListId: string): JobListJobCountCK {
+  const pk: JobListJobCountPK = `jobList#${jobListId}#jobCount`;
+  const sk: JobListJobCountSK = `count`;
+  return { pk, sk };
+}
+
+export type JobListJobRankPK = `jobList#${string}#jobRank`;
+export type JobListJobRankSK = `jobRank#${string}`;
+export type JobListJobRankCK = {
+  pk: JobListJobRankPK;
+  sk: JobListJobRankSK;
+};
+
+export function createJobListJobRankCK(
+  jobListId: string,
+  jobRank: string,
+): JobListJobRankCK {
+  const pk: JobListJobRankPK = `jobList#${jobListId}#jobRank`;
+  const sk: JobListJobRankSK = `jobRank#${jobRank}`;
+  return { pk, sk };
+}
+
+type JobListPK = `user#${string}#jobList`;
+type JobListSK = `jobList#${string}`;
+type JobListCK = {
+  pk: JobListPK;
+  sk: JobListSK;
+};
 
 type JobList = {
   userId: string;
@@ -25,42 +72,178 @@ type JobList = {
   label: string;
 };
 
+type JobListOutput = Omit<JobList, 'userId' | 'id'> & JobListCK;
+
+function jobListPkIds<T extends JobListPK>(pk: T) {
+  const userId = pk.split('#')[1];
+  return { userId };
+}
+
+function jobListSkIds<T extends JobListSK>(sk: T) {
+  const jobListId = sk.split('#')[1];
+  return { jobListId };
+}
+
+function jobListCkIds<T extends JobListCK>(ck: T) {
+  const { userId } = jobListPkIds(ck.pk);
+  const { jobListId } = jobListSkIds(ck.sk);
+  return { userId, jobListId };
+}
+
+function removeKeys<T1 extends Record<any, any>, T2 extends keyof T1>(
+  data: T1,
+  keys: T2[],
+): Omit<T1, T2> {
+  const copy = { ...data };
+  keys.forEach((key) => delete copy[key]);
+  return copy;
+}
+
+type JobListCreateInput = Omit<JobList, 'id' | 'order'>;
+type JobListCreateItem = Omit<JobList, 'id' | 'userId'> & JobListCK;
+
 @Injectable()
 export class JobListDBService {
-  constructor(private dbClient: DynamoDBDocumentClientService) {}
+  constructor(
+    private dbClient: DynamoDBDocumentClientService,
+    private configService: ConfigService,
+  ) {}
 
-  async create(jobList: Omit<JobList, 'id'>) {
-    const Item = {
-      ...jobList,
-      id: uuidv4() as string,
-    };
+  async create(jobList: JobListCreateInput): Promise<JobList> {
+    const { label, userId } = jobList;
+    const jobListId = uuidv4();
+    const lastJobListId = await this.getLastJobListId(userId);
+    const order = lastJobListId ? lastJobListId + 1 : 1; // must start at index 1
 
-    const command = new PutCommand({
-      TableName,
-      Item,
-      ReturnValues: 'ALL_OLD',
+    // hard limit due to storage constraints
+    const createLimit =
+      this.configService.get<number>('JOB_LIST_CREATE_LIMIT') ?? 0;
+    if (order >= createLimit) {
+      throw new ConflictException(
+        `Exceeded Job List limit (${createLimit}). Consider deleting Job Lists to free up some space.`,
+      );
+    }
+
+    const sk = `jobList#${jobListId}` as const;
+    const pk = `user#${userId}#jobList` as const;
+    const Item: JobListCreateItem = { order, label, pk, sk };
+
+    const JobCountItem = this.jobListJobCountPutInput(jobListId, 0);
+
+    const command = new TransactWriteCommand({
+      TransactItems: [
+        { Put: { TableName, Item } },
+        { Put: { TableName, Item: JobCountItem } },
+      ],
     });
-
     await this.dbClient.send(command);
 
-    const data = await this.queryUnique(Item.userId, Item.id);
-    // data.Item
-    return data;
+    return { order, label, id: jobListId, userId };
   }
 
-  update(
-    jobList: Partial<Pick<JobList, 'label'>> & Pick<JobList, 'id' | 'userId'>,
+  jobListJobCountPutInput(jobListId: string, count: number) {
+    const pk: JobListJobCountPK = `jobList#${jobListId}#jobCount`;
+    const sk: JobListJobCountSK = `count`;
+    return { count, pk, sk };
+  }
+
+  async createMany(
+    userId: string,
+    jobListItems: Omit<JobListCreateInput, 'userId'>[],
+  ) {
+    if (jobListItems.length === 0) throw new BadRequestException('No data');
+    const lastJobListId = await this.getLastJobListId(userId);
+    const startOrder = lastJobListId ? lastJobListId + 1 : 1; // must start at index 1
+    const totalJobListItemsAfterCreate = startOrder + jobListItems.length;
+
+    // hard limit due to storage constraints
+    const createLimit =
+      this.configService.get<number>('JOB_LIST_CREATE_LIMIT') ?? 0;
+    if (totalJobListItemsAfterCreate >= createLimit) {
+      throw new ConflictException(
+        `Exceeded Job List limit (${createLimit}). Consider deleting Job Lists to free up some space.`,
+      );
+    }
+
+    const TransactItems: TransactWriteCommandInput['TransactItems'] = [];
+
+    jobListItems.forEach(({ label }, idx) => {
+      const order = startOrder + idx;
+      const jobListId = uuidv4();
+      const sk = `jobList#${jobListId}` as const;
+      const pk = `user#${userId}#jobList` as const;
+      const Item: JobListCreateItem = { order, label, pk, sk };
+
+      const JobCountItem = this.jobListJobCountPutInput(jobListId, 0);
+
+      TransactItems.push(
+        { Put: { TableName, Item } },
+        { Put: { TableName, Item: JobCountItem } },
+      );
+    });
+
+    const command = new TransactWriteCommand({ TransactItems });
+    const res = await this.dbClient.send(command);
+
+    return res;
+  }
+
+  async getJobCount(jobListId: string) {
+    const pk: JobListJobCountPK = `jobList#${jobListId}#jobCount`;
+    const sk: JobListJobCountSK = `count`;
+    const command = new GetCommand({
+      TableName,
+      Key: { pk, sk },
+      ProjectionExpression: 'count',
+    });
+
+    const data = (await this.dbClient.send(command)) as GetCommandOutput<{
+      count: number;
+    }>;
+
+    const count = data.Item?.count;
+    if (count === undefined)
+      throw new BadRequestException('Job List count not found');
+  }
+
+  async getLastJobListId(userId: string): Promise<number | null> {
+    const pk: JobListPK = `user#${userId}#jobList`;
+    const sk: JobListSK = 'jobList#';
+
+    const command = new QueryCommand({
+      TableName,
+      ScanIndexForward: false,
+      ConsistentRead: true,
+      KeyConditionExpression: 'pk = :pk And begins_with(sk, :sk)',
+      ExpressionAttributeValues: { ':pk': pk, ':sk': sk },
+      Select: 'SPECIFIC_ATTRIBUTES',
+      ProjectionExpression: 'sk',
+      Limit: 1,
+    });
+
+    const res = (await this.dbClient.send(command)) as QueryCommandOutput<
+      Pick<JobListCK, 'sk'>
+    >;
+
+    const lastJobListId = res.Items?.[0]?.sk.split('#')[1];
+    const lastJobListIdNum = lastJobListId ? parseInt(lastJobListId) : null;
+    return lastJobListIdNum ?? null;
+  }
+
+  async update(
+    jobList: RequireFields<
+      Partial<Pick<JobList, 'label' | 'id' | 'userId'>>,
+      'id' | 'userId'
+    >,
   ) {
     const { id, userId, ...data } = jobList;
+    const pk: JobListPK = `user#${userId}#jobList`;
+    const sk: JobListSK = `jobList#${id}`;
+
     if (!Object.keys(data).length) {
       throw new BadRequestException('No data to update');
     }
 
-    // const Item = {
-    //   id,
-    //   createdAt: new Date().toISOString(),
-    //   ...user,
-    // };
     const ExpressionAttributeValues = {};
     let UpdateExpression = 'SET';
     for (const key in data) {
@@ -73,25 +256,50 @@ export class JobListDBService {
 
     const command = new UpdateCommand({
       TableName,
-      Key: { id, userId },
+      Key: { pk, sk },
       UpdateExpression,
       ExpressionAttributeValues,
       ReturnValues: 'ALL_NEW',
     });
 
-    return this.dbClient.send(command) as Promise<PutCommandOutput<JobList>>;
+    const { Attributes: updatedJobList } = (await this.dbClient.send(
+      command,
+    )) as PutCommandOutput<JobList>;
+    return updatedJobList;
   }
 
-  async queryUnique(userId: string, jobListId: string) {
+  async jobListExist(userId: string, jobListId: string): Promise<boolean> {
+    const pk: JobListPK = `user#${userId}#jobList`;
+    const sk: JobListSK = `jobList#${jobListId}`;
     const command = new GetCommand({
       TableName,
-      Key: { id: jobListId, userId },
+      Key: { pk, sk },
+      ProjectionExpression: 'sk',
     });
+    const data = (await this.dbClient.send(command)) as GetCommandOutput<
+      JobListOutput | undefined
+    >;
 
-    const data = (await this.dbClient.send(
-      command,
-    )) as GetCommandOutput<JobList>;
-    return data;
+    return !!data.Item;
+  }
+
+  async queryUnique(
+    userId: string,
+    jobListId: string,
+  ): Promise<JobList | undefined> {
+    const pk: JobListPK = `user#${userId}#jobList`;
+    const sk: JobListSK = `jobList#${jobListId}`;
+    const command = new GetCommand({
+      TableName,
+      Key: { pk, sk },
+    });
+    const data = (await this.dbClient.send(command)) as GetCommandOutput<
+      JobListOutput | undefined
+    >;
+
+    if (!data.Item) return undefined;
+    const jobList = removeKeys(data.Item, ['pk', 'sk']);
+    return { userId, id: jobListId, ...jobList };
   }
 
   // async findByEmail(email: string) {
@@ -108,14 +316,14 @@ export class JobListDBService {
   //   return user;
   // }
 
-  delete(userId: string, jobListId: string) {
-    const command = new DeleteCommand({
-      TableName,
-      Key: { id: { S: jobListId }, userId: { S: userId } },
-    });
+  // delete(userId: string, jobListId: string) {
+  //   const command = new DeleteCommand({
+  //     TableName,
+  //     Key: { id: { S: jobListId }, userId: { S: userId } },
+  //   });
 
-    return this.dbClient.send(command) as Promise<DeleteCommandOutput<JobList>>;
-  }
+  //   return this.dbClient.send(command) as Promise<DeleteCommandOutput<JobList>>;
+  // }
 
   // query(userId: string, email: string) {
   //   // params;
@@ -138,19 +346,41 @@ export class JobListDBService {
   //   >;
   // }
 
-  query(params: Omit<QueryCommandInput, 'TableName'>) {
-    // params;
-    // console.log(this.tableName);
-    // console.log(this.tableName);
-    // console.log(this.tableName);
-    // console.log(this.tableName);
-    // console.log(this.tableName);
+  // query(params: Omit<QueryCommandInput, 'TableName'>) {
+  //   // params;
+  //   // console.log(this.tableName);
+  //   // console.log(this.tableName);
+  //   // console.log(this.tableName);
+  //   // console.log(this.tableName);
+  //   // console.log(this.tableName);
+  //   const command = new QueryCommand({
+  //     TableName,
+  //     ...params,
+  //     // ExpressionAttributeValues: { ':userId': userId.toString() },
+  //     // KeyConditionExpression: 'userId = :userId',
+  //   });
+  //   return this.dbClient.send(command) as Promise<QueryCommandOutput<JobList>>;
+  // }
+
+  async findAll(userId: string): Promise<JobList[]> {
+    const pk: JobListPK = `user#${userId}#jobList`;
+    const sk: JobListSK = 'jobList#';
     const command = new QueryCommand({
       TableName,
-      ...params,
-      // ExpressionAttributeValues: { ':userId': userId.toString() },
-      // KeyConditionExpression: 'userId = :userId',
+      ScanIndexForward: true,
+      KeyConditionExpression: 'pk = :pk And begins_with(sk, :sk)',
+      ExpressionAttributeValues: { ':pk': pk, ':sk': sk },
     });
-    return this.dbClient.send(command) as Promise<QueryCommandOutput<JobList>>;
+    const res = (await this.dbClient.send(
+      command,
+    )) as QueryCommandOutput<JobListOutput>;
+
+    const jobLists = res.Items?.map((item) => {
+      const { pk, sk, ...data } = item;
+      const { userId, jobListId: id } = jobListCkIds(item);
+      return { id, userId, ...data };
+    });
+
+    return jobLists ?? [];
   }
 }
