@@ -66,16 +66,10 @@ export class JobService {
           ExpressionAttributeValues: { ':userId': userId },
         };
 
-    const res = await this.jobDB.query({
-      // replace Limit with pagination
-      // replace Limit with pagination
-      // replace Limit with pagination
-      // replace Limit with pagination
-      // Limit: 1,
-      ScanIndexForward: false,
-      ...queryParams,
-    });
-
+    const res = jobListId
+      ? await this.jobDB.findAllByJobListId(userId, jobListId)
+      : await this.jobDB.findAll(userId);
+    console.log(res);
     const data = !res.Items ? [] : res.Items;
 
     // if (jobListId && data.length > 0) {
@@ -134,10 +128,10 @@ export class JobService {
     updateJobDto: UpdateJobDto,
     userId: string,
   ): Promise<JobEntity> {
-    const { jobList: _jobList, ...jobData } = updateJobDto;
+    const { jobListRank, jobListId, ...jobData } = updateJobDto;
 
-    const jobListUpdates = _jobList
-      ? await this.jobListData.getJobListData(userId, _jobList)
+    const jobListUpdates = jobListId
+      ? await this.jobListData.getJobListData(userId, jobListId, jobListRank)
       : {};
 
     const { Attributes: updatedJob } = await this.jobDB.update({

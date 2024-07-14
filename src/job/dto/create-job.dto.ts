@@ -4,9 +4,19 @@ import {
   IsOptional,
   IsString,
   ValidateNested,
-  isEnum,
 } from 'class-validator';
 import { JobEntity } from '../entities';
+
+export class JobListRankDto {
+  @IsString()
+  @IsOptional()
+  rank: string;
+
+  // @IsString()
+  @IsEnum(['top', 'bottom'])
+  @IsOptional()
+  placement: 'top' | 'bottom';
+}
 
 export class CreateJobDto
   // TODO: figure out how to allow undefined for null Prisma values.
@@ -81,15 +91,4 @@ export class CreateJobDto
   @ValidateNested()
   @IsOptional()
   jobListRank?: JobListRankDto;
-}
-
-export class JobListRankDto {
-  @IsString()
-  @IsOptional()
-  rank: string;
-
-  // @IsString()
-  @IsEnum(['top', 'bottom'])
-  @IsOptional()
-  placement: 'top' | 'bottom';
 }

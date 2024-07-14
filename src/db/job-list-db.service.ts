@@ -48,6 +48,30 @@ export type JobListJobRankCK = {
   pk: JobListJobRankPK;
   sk: JobListJobRankSK;
 };
+export type JobListJobRank = {
+  jobListId: string;
+  jobListRank: string;
+  jobId: string;
+};
+
+type JobListJobRankOutput = Omit<JobListJobRank, 'jobListId' | 'jobListRank'> &
+  JobListJobRankCK;
+
+function jobListJobRankPkIds(pk: JobListJobRankPK) {
+  const jobListId = pk.split('#')[1];
+  return { jobListId };
+}
+
+function jobListJobRankSkIds(sk: JobListJobRankSK) {
+  const jobListRank = sk.split('#')[1];
+  return { jobListRank };
+}
+
+function jobListJobRankCkIds(ck: JobListJobRankCK) {
+  const { jobListId } = jobListJobRankPkIds(ck.pk);
+  const { jobListRank } = jobListJobRankSkIds(ck.sk);
+  return { jobListId, jobListRank };
+}
 
 export function createJobListJobRankCK(
   jobListId: string,
@@ -74,20 +98,26 @@ type JobList = {
 
 type JobListOutput = Omit<JobList, 'userId' | 'id'> & JobListCK;
 
-function jobListPkIds<T extends JobListPK>(pk: T) {
+function jobListPkIds(pk: JobListPK) {
   const userId = pk.split('#')[1];
   return { userId };
 }
 
-function jobListSkIds<T extends JobListSK>(sk: T) {
+function jobListSkIds(sk: JobListSK) {
   const jobListId = sk.split('#')[1];
   return { jobListId };
 }
 
-function jobListCkIds<T extends JobListCK>(ck: T) {
+function jobListCkIds(ck: JobListCK) {
   const { userId } = jobListPkIds(ck.pk);
   const { jobListId } = jobListSkIds(ck.sk);
   return { userId, jobListId };
+}
+
+export function createJobListCK(userId: string, jobListId: string): JobListCK {
+  const pk: JobListPK = `user#${userId}#jobList`;
+  const sk: JobListSK = `jobList#${jobListId}`;
+  return { pk, sk };
 }
 
 function removeKeys<T1 extends Record<any, any>, T2 extends keyof T1>(
@@ -363,8 +393,28 @@ export class JobListDBService {
   // }
 
   async findAll(userId: string): Promise<JobList[]> {
-    const pk: JobListPK = `user#${userId}#jobList`;
-    const sk: JobListSK = 'jobList#';
+    const jobListCK = createJobListCK(userId, '');
+    const command = new QueryCommand({
+      TableName,
+      ScanIndexForward: true,
+      KeyConditionExpression: 'pk = :pk And begins_with(sk, :sk)',
+      ExpressionAttributeValues: { ':pk': jobListCK.pk, ':sk': jobListCK.sk },
+    });
+    const res = (await this.dbClient.send(
+      command,
+    )) as QueryCommandOutput<JobListOutput>;
+
+    const jobLists = res.Items?.map((jobList) => {
+      const { pk, sk, ...jobListRes } = jobList;
+      const { jobListId } = jobListCkIds({ pk, sk });
+      return { id: jobListId, userId, ...jobListRes } as JobList;
+    });
+
+    return jobLists ?? [];
+  }
+  async findAllJobListJobRanks(jobListId: string): Promise<JobListJobRank[]> {
+    const pk: JobListJobRankPK = `jobList#${jobListId}#jobRank`;
+    const sk: JobListJobRankSK = `jobRank#$`;
     const command = new QueryCommand({
       TableName,
       ScanIndexForward: true,
@@ -373,12 +423,13 @@ export class JobListDBService {
     });
     const res = (await this.dbClient.send(
       command,
-    )) as QueryCommandOutput<JobListOutput>;
+    )) as QueryCommandOutput<JobListJobRankOutput>;
 
     const jobLists = res.Items?.map((item) => {
-      const { pk, sk, ...data } = item;
-      const { userId, jobListId: id } = jobListCkIds(item);
-      return { id, userId, ...data };
+      const { jobId, ...ck } = item;
+      // const { pk, sk, ...data } = item;
+      const { jobListRank, jobListId } = jobListJobRankCkIds(ck);
+      return { jobId, jobListRank, jobListId };
     });
 
     return jobLists ?? [];

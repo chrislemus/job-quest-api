@@ -33,6 +33,8 @@ import { TransactWriteItemsCommand } from '@aws-sdk/client-dynamodb';
 import { JobListDto, JobListRankDto } from '@app/job/dto';
 import { TableName } from './table-name.const';
 import {
+  JobListDBService,
+  createJobListCK,
   createJobListJobCountCK,
   createJobListJobRankCK,
 } from './job-list-db.service';
@@ -102,6 +104,7 @@ export type Job = {
 export class JobDBService {
   constructor(
     private dbClient: DynamoDBDocumentClientService,
+    private jobListDB: JobListDBService,
     private configService: ConfigService,
   ) {}
 
@@ -115,6 +118,7 @@ export class JobDBService {
 
     const jobListJobCountCK = createJobListJobCountCK(jobListId);
     const jobListJobRankCK = createJobListJobRankCK(jobListId, jobListRank);
+    const jobListCK = createJobListCK(userId, jobListId);
 
     const command = new TransactWriteCommand({
       TransactItems: [
@@ -122,22 +126,32 @@ export class JobDBService {
           Update: {
             TableName,
             Key: jobListJobCountCK,
-            UpdateExpression: `SET count = count + ${1}`,
-            ConditionExpression: `attribute_exists(pk) AND count < ${createLimit}`,
+            UpdateExpression: `SET count = count + :countAdd`,
+            ExpressionAttributeValues: { ':countAdd': 1 },
+            ExpressionAttributeNames: { ':pk': 'count' },
           },
         },
         {
           Put: {
             TableName,
             Item: jobItem,
-            // ConditionExpression: 'attribute_not_exists(pk)',
+            ConditionExpression:
+              'attribute_not_exists(pk) AND attribute_not_exists(sk)',
           },
         },
         {
           Put: {
             TableName,
             Item: jobListJobRankCK,
-            // ConditionExpression: 'attribute_not_exists(pk)',
+            ConditionExpression:
+              'attribute_not_exists(pk) AND attribute_not_exists(sk)',
+          },
+        },
+        {
+          ConditionCheck: {
+            TableName,
+            Key: jobListCK,
+            ConditionExpression: `attribute_exists(pk) AND attribute_exists(sk)`,
           },
         },
       ],
@@ -197,7 +211,7 @@ export class JobDBService {
     return this.dbClient.send(command) as Promise<DeleteCommandOutput<Job>>;
   }
 
-  update(job: RequireFields<Partial<Job>, 'id' | 'userId'>) {
+  async update(job: RequireFields<Partial<Job>, 'id' | 'userId'>) {
     const { id, userId, ...data } = job;
     if (!Object.keys(data).length) {
       throw new BadRequestException('No data to update');
@@ -236,39 +250,85 @@ export class JobDBService {
     };
 
     if (data.jobListId || data.jobListRank) {
-      const { jobListId, jobListRank } = data;
-      const jobListJobRankCK = createJobListJobRankCK(jobListId, jobListRank);
-      const jobListJobRankCKUpdate: UpdateCommandInput = {
-        TableName,
-        Key: jobListJobRankCK,
-        UpdateExpression: 'SET sk = :jobListRank',
-        ExpressionAttributeValues: { ':jobListRank': `jobRank${jobListRank}` },
-      };
-
       const TransactItems: TransactWriteCommandInput['TransactItems'] = [
-        {
-          Update: jobUpdateCommandInput,
-        },
+        { Update: jobUpdateCommandInput },
       ];
 
-      const command = new TransactWriteCommand({
-        TransactItems: [
-          {
-            Update: jobUpdateCommandInput,
-          },
-          {
-            Update: jobListJobRankCKUpdate,
-          },
-          {
-            ConditionCheck: {
-              TableName,
-              Key: createJobListJobCountCK(jobListId),
-              ConditionExpression: 'attribute_exists(pk)',
-            },
-          },
-        ],
-      });
+      const res = await this.getUnique(userId, id, [
+        'jobListId',
+        'jobListRank',
+      ]);
 
+      // res.jobListId;
+      // res.company;
+
+      if (data.jobListId && res.jobListId !== data.jobListId) {
+        const jobListJobCountOldCK = createJobListJobCountCK(res.jobListId);
+        const jobListJobCountOldCKUpdate: TxItem['Update'] = {
+          TableName,
+          Key: jobListJobCountOldCK,
+          UpdateExpression: 'SET count = count - 1',
+          ConditionExpression: 'attribute_not_exists(count)',
+        };
+
+        const jobListJobCountNewCK = createJobListJobCountCK(data.jobListId);
+        const jobListJobCountNewCKUpdate: TxItem['Update'] = {
+          TableName,
+          Key: jobListJobCountNewCK,
+          UpdateExpression: 'SET count = count + 2',
+          ExpressionAttributeValues: { ':count': 1 },
+          ConditionExpression: 'attribute_not_exists(count)',
+        };
+
+        TransactItems.push(
+          { Update: jobListJobCountOldCKUpdate },
+          { Update: jobListJobCountNewCKUpdate },
+        );
+      }
+
+      const hasJobListDataSet = data.jobListRank && data.jobListId;
+      const jobListRankMismatch = res.jobListRank !== data.jobListRank;
+      const jobListIdMismatch = res.jobListId !== data.jobListId;
+      const jobListUpdateRequired =
+        hasJobListDataSet && (jobListRankMismatch || jobListIdMismatch);
+
+      if (jobListUpdateRequired) {
+        // const { jobListId, jobListRank } = data;
+        const oldJobListJobRankCK = createJobListJobRankCK(
+          res.jobListId,
+          res.jobListRank,
+        );
+
+        const newJobListJobRankCK = createJobListJobRankCK(
+          res.jobListId,
+          res.jobListRank,
+        );
+        const jobListJobRankCKUpdate: TxItem['Update'] = {
+          TableName,
+          Key: oldJobListJobRankCK,
+          UpdateExpression: 'SET pk = :pk , sk = :sk',
+          ExpressionAttributeValues: {
+            ':pk': newJobListJobRankCK.pk,
+            ':sk': newJobListJobRankCK.sk,
+          },
+        };
+
+        TransactItems.push({ Update: jobListJobRankCKUpdate });
+      }
+
+      // const { jobListId, jobListRank } = data;
+      // const jobListJobRankCK = createJobListJobRankCK(
+      //   data.jobListId,
+      //   jobListRank,
+      // );
+      // const jobListJobRankCKUpdate: TxItem['Update'] = {
+      //   TableName,
+      //   Key: jobListJobRankCK,
+      //   UpdateExpression: 'SET sk = :jobListRank',
+      //   ExpressionAttributeValues: { ':jobListRank': `jobRank${jobListRank}` },
+      // };
+
+      const command = new TransactWriteCommand({ TransactItems });
       return this.dbClient.send(command) as Promise<PutCommandOutput<Job>>;
     }
 
@@ -276,15 +336,24 @@ export class JobDBService {
     return this.dbClient.send(command) as Promise<PutCommandOutput<Job>>;
   }
 
-  async getUnique(
+  async getUnique<
+    JobT extends Job,
+    AttrToGetT extends keyof JobT | undefined,
+    // ResT extends AttrToGetT extends undefined ? Job : Pick<Job, AttrToGetT>,
+    ResT extends AttrToGetT extends undefined
+      ? Job
+      : {
+          [P in keyof JobT]: P extends AttrToGetT ? JobT[P] : never;
+        },
+  >(
     userId: string,
     jobId: string,
-    AttributesToGet?: (keyof Job)[],
-  ): Promise<Job> {
+    AttributesToGet?: AttrToGetT[],
+  ): Promise<ResT> {
     const command = new GetCommand({
       TableName,
       Key: { userId, id: jobId },
-      AttributesToGet,
+      AttributesToGet: AttributesToGet as string[],
     });
 
     const data = (await this.dbClient.send(
@@ -294,7 +363,14 @@ export class JobDBService {
     if (!data.Item) throw new NotFoundException();
 
     const jobRaw = removeKeys(data.Item, ['pk', 'sk']);
-    return { userId, id: jobId, ...jobRaw };
+    Object.assign(jobRaw, { userId, id: jobId });
+    if (!AttributesToGet) return jobRaw as ResT;
+    const job = {} as ResT;
+
+    AttributesToGet.forEach((key) => {
+      job[key as any] = jobRaw[key as any];
+    });
+    return job;
   }
 
   // async totalCount(jobListId: string) {
@@ -338,7 +414,7 @@ export class JobDBService {
 
     const skCondition = jobListRank
       ? (`sk ${dir} :sk` as const)
-      : ('begins_with(sk, jobRank#)' as const);
+      : ('begins_with(sk, :sk)' as const);
 
     return {
       TableName,
@@ -413,4 +489,40 @@ export class JobDBService {
 
   //   return this.dbClient.send(command) as Promise<QueryCommandOutput<JobCK>>;
   // }
+
+  async findAll(userId: string) {
+    const jobCK = createJobCK({ userId, jobId: '' });
+
+    const command = new QueryCommand({
+      TableName,
+      KeyConditionExpression: 'pk = :pk AND begins_with(sk, :sk)',
+      ExpressionAttributeValues: {
+        ':pk': jobCK.pk,
+        ':sk': jobCK.sk,
+      },
+    });
+    return this.dbClient.send(command) as Promise<QueryCommandOutput<Job>>;
+  }
+
+  async findAllByJobListId(userId: string, jobListId: string) {
+    const jobListJobRanks = await this.jobListDB.findAllJobListJobRanks(
+      jobListId,
+    );
+
+    const ExpressionAttributeValues = {};
+    const KeyConditionExpressionList: string[] = [];
+    jobListJobRanks.forEach((jobRank, idx) => {
+      const jobCk = createJobCK({ userId, jobId: jobRank.jobId });
+      ExpressionAttributeValues[`:pk${idx}`] = jobCk.pk;
+      ExpressionAttributeValues[`:sk${idx}`] = jobCk.sk;
+      KeyConditionExpressionList.push(`(pk = :pk${idx} AND sk = :sk${idx})`);
+    });
+
+    const command = new QueryCommand({
+      TableName,
+      KeyConditionExpression: KeyConditionExpressionList.join(' OR '),
+      ExpressionAttributeValues,
+    });
+    return this.dbClient.send(command) as Promise<QueryCommandOutput<Job>>;
+  }
 }
