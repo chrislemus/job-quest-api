@@ -128,7 +128,7 @@ export class JobDBService {
             Key: jobListJobCountCK,
             UpdateExpression: `SET count = count + :countAdd`,
             ExpressionAttributeValues: { ':countAdd': 1 },
-            ExpressionAttributeNames: { ':pk': 'count' },
+            ExpressionAttributeNames: { ':pk': 'countAdd' },
           },
         },
         {

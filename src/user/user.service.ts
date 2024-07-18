@@ -18,7 +18,7 @@ export class UserService {
 
   /** Get user profile */
   async userProfile(authUser: AuthUser): Promise<UserEntity> {
-    const { Item: user } = await this.userDB.queryUnique(authUser.id);
+    const user = await this.userDB.queryUnique(authUser.id);
     // const user = await this.prisma.user.findUnique({
     //   where: { id: userId },
     // });
@@ -90,7 +90,7 @@ export class UserService {
     // todo: delete all user data (jobs, job lists)
     // todo: delete all user data (jobs, job lists)
     // todo: delete all user data (jobs, job lists)
-    const { Attributes: deletedUser } = await this.userDB.delete(user.id);
+    const deletedUser = await this.userDB.delete(user.id);
 
     if (!deletedUser) throw new NotFoundException();
 

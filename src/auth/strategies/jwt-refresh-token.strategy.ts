@@ -34,7 +34,7 @@ export class JwtRefreshTokenStrategy extends PassportStrategy(
     //   select: { refreshToken: true },
     // });
 
-    const { Item: dbUser } = await this.userDB.queryUnique(authUser.id);
+    const dbUser = await this.userDB.queryUnique(authUser.id);
     if (!dbUser?.refreshToken) throw new ForbiddenException('Access Denied');
 
     const isMatch = await bcrypt.compare(refreshToken, dbUser.refreshToken);

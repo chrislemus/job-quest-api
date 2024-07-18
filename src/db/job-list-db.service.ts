@@ -30,7 +30,7 @@ import { RequireFields } from '@app/common/types';
 
 // const
 export type JobListJobCountPK = `jobList#${string}#jobCount`;
-export type JobListJobCountSK = `count`;
+export type JobListJobCountSK = `"count"`;
 export type JobListJobCountCK = {
   pk: JobListJobCountPK;
   sk: JobListJobCountSK;
@@ -38,7 +38,7 @@ export type JobListJobCountCK = {
 
 export function createJobListJobCountCK(jobListId: string): JobListJobCountCK {
   const pk: JobListJobCountPK = `jobList#${jobListId}#jobCount`;
-  const sk: JobListJobCountSK = `count`;
+  const sk: JobListJobCountSK = `"count"`;
   return { pk, sk };
 }
 
@@ -173,7 +173,7 @@ export class JobListDBService {
 
   jobListJobCountPutInput(jobListId: string, count: number) {
     const pk: JobListJobCountPK = `jobList#${jobListId}#jobCount`;
-    const sk: JobListJobCountSK = `count`;
+    const sk: JobListJobCountSK = `"count"`;
     return { count, pk, sk };
   }
 
@@ -220,7 +220,7 @@ export class JobListDBService {
 
   async getJobCount(jobListId: string) {
     const pk: JobListJobCountPK = `jobList#${jobListId}#jobCount`;
-    const sk: JobListJobCountSK = `count`;
+    const sk: JobListJobCountSK = `"count"`;
     const command = new GetCommand({
       TableName,
       Key: { pk, sk },

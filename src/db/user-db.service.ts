@@ -10,6 +10,7 @@ import {
   UpdateCommand,
   GetCommand,
   ScanCommand,
+  QueryCommand,
 } from '@aws-sdk/lib-dynamodb';
 import {
   DeleteCommandOutput,
@@ -18,8 +19,10 @@ import {
   ScanCommandOutput,
 } from './types';
 import { v4 as uuidv4 } from 'uuid';
+import { TableName } from './table-name.const';
+import { RequireFields } from '@app/common/types';
 
-const TableName = 'JobQuest-User';
+// const TableName = 'JobQuest-User';
 // console.log(self.crypto.randomUUID);
 // console.log(new Date().toISOString());
 
@@ -27,52 +30,80 @@ type User = {
   id: string;
   email: string;
   firstName: string;
-  lastName?: string;
-  createdAt: Date;
+  lastName: string;
   role: 'SUBSCRIBER' | 'ADMIN';
   password: string; // hash later!!!!!!!!!!!
-  refreshToken: string | null;
+  refreshToken?: string;
 };
+
+type UserDBEntity = Omit<User, 'id'> & { userId: string } & UserCK;
+
+function createUserRes<T extends UserDBEntity>(data: T) {
+  return {
+    id: data.userId,
+    email: data.email,
+    firstName: data.firstName,
+    lastName: data.lastName,
+    role: data.role,
+    password: data.password,
+    refreshToken: data.refreshToken,
+  };
+}
+
+// type UserOutput = Omit<User, 'id'> & UserCK;
+
+type UserPK = `user#${string}`;
+type UserSK = `"info"`;
+type UserCK = {
+  pk: UserPK;
+  sk: UserSK;
+};
+
+function createUserCK(data: { userId: string }): UserCK {
+  const { userId } = data;
+  const pk: UserPK = `user#${userId}`;
+  const sk: UserSK = `"info"`;
+  return { pk, sk };
+}
+
+function removeKeys<T1 extends Record<any, any>, T2 extends keyof T1>(
+  data: T1,
+  keys: T2[],
+): Omit<T1, T2> {
+  const copy = { ...data };
+  keys.forEach((key) => !!copy[key] && delete copy[key]);
+  return copy;
+}
 
 @Injectable()
 export class UserDBService {
   constructor(private dbClient: DynamoDBDocumentClientService) {}
 
-  async create(user: Omit<User, 'id' | 'refreshToken' | 'createdAt'>) {
-    const Item = {
-      ...user,
-      id: uuidv4() as string,
-      createdAt: new Date().toISOString(),
-    };
+  async create(user: Omit<User, 'id' | 'refreshToken'>) {
+    const userId = uuidv4();
+    const userCk = createUserCK({ userId });
 
-    const command = new PutCommand({
-      TableName,
-      Item,
-      ReturnValues: 'ALL_OLD',
-    });
+    const Item: UserDBEntity = { userId, ...user, ...userCk };
+
+    const command = new PutCommand({ TableName, Item });
 
     await this.dbClient.send(command);
 
-    const data = await this.queryUnique(Item.id);
+    const data = await this.queryUnique(userId);
     return data;
   }
 
-  update(user: Partial<Omit<User, 'id'>> & Pick<User, 'id'>) {
-    const { id, email, ...data } = user;
+  update(user: RequireFields<Partial<User>, 'id'>) {
+    const { id, ...data } = user;
     if (!Object.keys(data).length) {
       throw new BadRequestException('No data to update');
     }
-
-    // const Item = {
-    //   id,
-    //   createdAt: new Date().toISOString(),
-    //   ...user,
-    // };
+    const userCK = createUserCK({ userId: id });
     const ExpressionAttributeValues = {};
     let UpdateExpression = 'SET';
     for (const key in data) {
       let value = data[key];
-      if (key === 'refreshToken' && value === null) {
+      if (key === 'refreshToken' && value === undefined) {
         value = '';
       }
       ExpressionAttributeValues[`:${key}`] = value;
@@ -84,46 +115,79 @@ export class UserDBService {
 
     const command = new UpdateCommand({
       TableName,
-      Key: { id, email },
+      Key: userCK,
       UpdateExpression,
       ExpressionAttributeValues,
       ReturnValues: 'ALL_NEW',
     });
 
-    return this.dbClient.send(command) as Promise<PutCommandOutput<User>>;
+    return this.dbClient.send(command) as Promise<
+      PutCommandOutput<UserDBEntity>
+    >;
   }
 
-  async queryUnique(userId: string) {
-    const command = new GetCommand({
-      TableName,
-      Key: { id: userId },
-    });
+  async queryUnique(userId: string): Promise<User> {
+    const Key = createUserCK({ userId });
+    const command = new GetCommand({ TableName, Key });
 
-    const data = (await this.dbClient.send(command)) as GetCommandOutput<User>;
-    return data;
-  }
+    const { Item: data } = (await this.dbClient.send(
+      command,
+    )) as GetCommandOutput<UserDBEntity>;
 
-  async findByEmail(email: string) {
-    const command = new ScanCommand({
-      TableName,
-      FilterExpression: 'email = :email',
-      ExpressionAttributeValues: { ':email': email },
-      Limit: 1,
-    });
-
-    const data = (await this.dbClient.send(command)) as ScanCommandOutput<User>;
-    const user = data.Items?.[0];
-    if (!user) throw new NotFoundException('User not found');
+    if (!data) throw new Error();
+    const user = createUserRes(data);
     return user;
   }
 
-  delete(userId: string) {
-    const command = new DeleteCommand({
+  async findByEmail(email: string) {
+    const userPartialCK = createUserCK({ userId: '' });
+    // improve this query
+    // improve this query
+    // improve this query
+    // improve this query
+    // improve this query
+    // improve this query
+    const command = new ScanCommand({
       TableName,
-      Key: { id: { S: userId } },
+      FilterExpression: 'sk = :sk AND begins_with(pk, :pk) AND email = :email ',
+      ExpressionAttributeValues: {
+        ':email': email,
+        ':sk': userPartialCK.sk,
+        ':pk': userPartialCK.pk,
+      },
+      ConsistentRead: true,
     });
 
-    return this.dbClient.send(command) as Promise<DeleteCommandOutput<User>>;
+    const data = (await this.dbClient.send(
+      command,
+    )) as ScanCommandOutput<UserDBEntity>;
+
+    const userDB = data.Items?.[0];
+    // if (!userDB) throw new NotFoundException('User not found');
+    // const user = createUserRes(userDB);
+
+    return userDB ? createUserRes(userDB) : null;
+  }
+
+  async delete(userId: string) {
+    const userCK = createUserCK({ userId });
+    // clean up all user data
+    // clean up all user data
+    // clean up all user data
+    // clean up all user data
+    // clean up all user data
+    // clean up all user data
+    // clean up all user data
+    // clean up all user data
+    // clean up all user data
+    const command = new DeleteCommand({
+      TableName,
+      Key: userCK,
+    });
+
+    (await this.dbClient.send(command)) as DeleteCommandOutput<UserDBEntity>;
+
+    return { id: userId };
   }
 
   // query(userId: string, email: string) {

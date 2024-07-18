@@ -5,7 +5,7 @@ import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 @Injectable()
 export class DynamoDBDocumentClientService extends DynamoDBDocumentClient {
   constructor() {
-    const client = new DynamoDBClient();
+    const client = new DynamoDBClient({ endpoint: 'http://localhost:8000' });
     super(client);
   }
 }

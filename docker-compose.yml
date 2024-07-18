@@ -28,7 +28,7 @@ services:
       - 3001:3001
     depends_on:
       - db-local
-  # ====== DB ======
+  # ====== DynamoDB ======
   db-local:
     image: postgres:13
     container_name: db-local
@@ -39,6 +39,18 @@ services:
       - .env
     volumes:
       - db-local:/var/lib/postgresql/data
+  # ====== DB ======
+  dynamodb-local:
+    image: amazon/dynamodb-local
+    container_name: dynamodb-local
+    restart: always
+    ports:
+      - 8000:8000
+    command: ['-jar', 'DynamoDBLocal.jar', '-inMemory', '-sharedDb']
+    # env_file:
+    #   - .env
+    # volumes:
+    #   - db-local:/var/lib/postgresql/data
 volumes:
   db-local:
     driver: local

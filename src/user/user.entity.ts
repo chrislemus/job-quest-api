@@ -4,16 +4,15 @@ import { Exclude } from 'class-transformer';
 
 export class UserEntity {
   id: string;
-  createdAt: Date;
   email: string;
   firstName: string;
-  lastName?: string;
+  lastName: string;
   @Exclude()
   @ApiHideProperty()
   password: string;
   @Exclude()
   @ApiHideProperty()
-  refreshToken: string | null;
+  refreshToken?: string;
   role: Role;
 
   constructor(partial: UserEntity) {

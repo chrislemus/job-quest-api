@@ -13,6 +13,8 @@ import { AuthTokens, AuthUser } from './dto';
 import { UserEntity } from '@app/user/user.entity';
 import { UserService } from '@app/user/user.service';
 import { UserDBService } from '@app/db/user-db.service';
+import { hashValue } from './hash-value.util';
+import { jwtExpiryConfig } from './jwt-expiry.config';
 
 @Injectable()
 export class AuthService {
@@ -35,23 +37,16 @@ export class AuthService {
     return this.getTokens(user);
   }
 
-  /**  Default hash encryption. */
-  private async hashValue(value: string): Promise<string> {
-    const salt = await bcrypt.genSalt(10);
-    const hash = await bcrypt.hash(value, salt);
-    return hash;
-  }
-
   /**  Generates and returns auth tokens. */
   async getTokens(user: AuthUser): Promise<AuthTokens> {
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(user, {
         secret: this.configService.get<string>('JWT_SECRET'),
-        expiresIn: '20m',
+        expiresIn: jwtExpiryConfig.accessTokenExpiry,
       }),
       this.jwtService.signAsync(user, {
         secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
-        expiresIn: '7d',
+        expiresIn: jwtExpiryConfig.refreshTokenExpiry,
       }),
     ]);
 
@@ -62,7 +57,7 @@ export class AuthService {
   /**  Sync refresh token with DB for persistence. */
   async syncRefreshToken(user: AuthUser, refreshToken: string): Promise<void> {
     try {
-      const hashRt = await this.hashValue(refreshToken);
+      const hashRt = await hashValue(refreshToken);
       await this.userDB.update({
         id: user.id,
         refreshToken: hashRt,
@@ -88,14 +83,14 @@ export class AuthService {
     // });
     await this.userDB.update({
       id: user.id,
-      refreshToken: null,
+      refreshToken: undefined,
     });
     return true;
   }
 
   /**  New user signup. */
   async signup(newUserData: CreateUserDto) {
-    const password = await this.hashValue(newUserData.password);
+    const password = await hashValue(newUserData.password);
 
     // create user with default job lists
     // const { ...user } = await this.prisma.user.create({
@@ -116,15 +111,16 @@ export class AuthService {
       });
 
     if (userExists) {
-      throw new BadRequestException('User with this email already exists');
+      throw new BadRequestException(
+        'User with this email already exists' + newUserData.email,
+      );
     }
-    const res = await this.userDB.create({
+    const user = await this.userDB.create({
       ...newUserData,
       role: 'SUBSCRIBER',
       password,
     });
 
-    const { Item: user } = res;
     if (!user) return new InternalServerErrorException('User creation failed');
 
     await this.userService.createNewUserStarterData(user);
