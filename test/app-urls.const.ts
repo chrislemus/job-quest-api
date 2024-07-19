@@ -74,4 +74,60 @@ export const appUrl = {
       },
     },
   },
+  jobList: {
+    create: {
+      path: '/job-list',
+      method: 'POST',
+      reqConfig(data: { label: string }) {
+        return {
+          url: this.path,
+          method: this.method,
+          data,
+        } as AxiosRequestConfig;
+      },
+    },
+    getAll: {
+      path: '/job-list',
+      method: 'GET',
+      reqConfig() {
+        return {
+          url: this.path,
+          method: this.method,
+        } as AxiosRequestConfig;
+      },
+    },
+    getById: {
+      path: '/job-list',
+      method: 'GET',
+      reqConfig(jobListId: string) {
+        return {
+          url: `${this.path}/${jobListId}`,
+          method: this.method,
+        } as AxiosRequestConfig;
+      },
+    },
+    update: {
+      path: '/job-list',
+      method: 'PATCH',
+      reqConfig(data: { id: string; label: string }) {
+        const { id, ...res } = data;
+        return {
+          url: `${this.path}/${id}`,
+          method: this.method,
+          data: res,
+        } as AxiosRequestConfig;
+      },
+    },
+    // delete: {
+    //   path: '/user',
+    //   method: 'DELETE',
+    //   reqConfig(config: { userId: string; accessToken: string }) {
+    //     return {
+    //       url: `${this.path}/${config.userId}`,
+    //       method: this.method,
+    //       headers: { Authorization: `Bearer ${config.accessToken}` },
+    //     } as AxiosRequestConfig;
+    //   },
+    // },
+  },
 };

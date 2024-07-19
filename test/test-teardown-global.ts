@@ -10,7 +10,7 @@ const TableName: string = globalThis.TableName;
 const client: DynamoDBDocumentClient = globalThis.client;
 
 module.exports = async function () {
-  // await deleteTableItems();
+  await deleteTableItems();
   // await deleteTable();
 };
 

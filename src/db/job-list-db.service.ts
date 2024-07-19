@@ -295,6 +295,7 @@ export class JobListDBService {
     const { Attributes: updatedJobList } = (await this.dbClient.send(
       command,
     )) as PutCommandOutput<JobList>;
+
     return updatedJobList;
   }
 

@@ -1,4 +1,4 @@
-import { AxiosResponse } from 'axios';
+import { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
 import { appHttp } from '../app-http.util';
 import { appUrl } from '../app-urls.const';
 import { v4 as uuidV4 } from 'uuid';
@@ -101,6 +101,18 @@ export class User {
   async delete() {
     const res = await this.deleteRaw();
     return res.data;
+  }
+
+  async authFetch(reqConfig: AxiosRequestConfig<any>) {
+    const config = {
+      ...reqConfig,
+      headers: {
+        Authorization: `Bearer ${this.jwt.accessToken}`,
+        ...reqConfig.headers,
+      },
+    };
+    const res = await appHttp.request(config);
+    return res;
   }
 }
 
