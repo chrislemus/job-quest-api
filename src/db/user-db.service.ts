@@ -21,6 +21,7 @@ import {
 import { v4 as uuidv4 } from 'uuid';
 import { TableName } from './table-name.const';
 import { RequireFields } from '@app/common/types';
+import { createUserCK, UserCK } from './composite-key.util';
 
 // const TableName = 'JobQuest-User';
 // console.log(self.crypto.randomUUID);
@@ -51,29 +52,6 @@ function createUserRes<T extends UserDBEntity>(data: T) {
 }
 
 // type UserOutput = Omit<User, 'id'> & UserCK;
-
-type UserPK = `user#${string}`;
-type UserSK = `"info"`;
-type UserCK = {
-  pk: UserPK;
-  sk: UserSK;
-};
-
-function createUserCK(data: { userId: string }): UserCK {
-  const { userId } = data;
-  const pk: UserPK = `user#${userId}`;
-  const sk: UserSK = `"info"`;
-  return { pk, sk };
-}
-
-function removeKeys<T1 extends Record<any, any>, T2 extends keyof T1>(
-  data: T1,
-  keys: T2[],
-): Omit<T1, T2> {
-  const copy = { ...data };
-  keys.forEach((key) => !!copy[key] && delete copy[key]);
-  return copy;
-}
 
 @Injectable()
 export class UserDBService {

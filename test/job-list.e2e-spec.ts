@@ -1,7 +1,6 @@
-import { z, ZodEffects, ZodType, ZodTypeAny, ZodTypeDef } from 'zod';
+import { z, ZodType, ZodTypeAny, ZodTypeDef } from 'zod';
 import { appUrl } from './app-urls.const';
 import { User } from './mocks/user.mock';
-import { objSize } from './utils';
 
 const jobListSchema = z
   .object({
@@ -28,24 +27,6 @@ function buildCommonApiResSchema<
     .transform((res) => res.data as { data: z.output<T6> });
 }
 
-// const createJobListResSchema = z
-//   .object({
-//     status: z.literal(201),
-//     data: z.object({ data: jobListSchema }),
-//   })
-//   .transform((res) => res.data);
-// const getJobListByIdResSchema = z
-//   .object({
-//     status: z.literal(200),
-//     data: z.object({ data: jobListSchema }),
-//   })
-//   .transform((res) => res.data);
-// const updateJobListResSchema = z
-//   .object({
-//     status: z.literal(200),
-//     data: z.object({ data: jobListSchema }),
-//   })
-//   .transform((res) => res.data);
 const createJobListResSchema = buildCommonApiResSchema(201, jobListSchema);
 const getJobListByIdResSchema = buildCommonApiResSchema(200, jobListSchema);
 const updateJobListResSchema = buildCommonApiResSchema(200, jobListSchema);
@@ -67,32 +48,21 @@ const zTest = <T1, T2 extends ZodTypeDef, T3, T6 extends ZodType<T1, T2, T3>>(
 ) => {
   const res = _zodEffect.safeParse(data);
   if (res.error) {
-    // const { data, status } = data;
     const errors = {};
     const SchemaErrors = res.error.errors.forEach((_e) => {
       const { path, ...e } = _e;
       const length = path.length;
       path.forEach((key, i) => {
+        if (!errors[key]) errors[key] = {};
+
         if (i === length - 1) {
-          if (!errors[key]) errors[key] = {};
-          let stringVal = '';
-          Object.keys(e).forEach((k) => {
-            stringVal += `${k}:${e[k]} | `;
+          const stringErrors: string[] = [];
+          Object.entries(e).forEach(([k, v]) => {
+            stringErrors.push(`${k}:${v}`);
           });
-          errors[key] = stringVal;
-          // errors[key] = e;
-        } else {
-          errors[key] = {};
+          errors[key] = stringErrors.join(' | ');
         }
       });
-      // const { path, ...e } = _e;
-      // const returnVal = {
-      //   ...e,
-      //   path: path.join('.'),
-      //   // keys: e?.['keys']?.join('.'),
-      // };
-      // if (e?.['keys']) returnVal['keys'] = e?.['keys']?.join('.');
-      // return returnVal;
     });
 
     // expect(JSON.stringify({ SchemaErrors })).toEqual(1);
@@ -108,13 +78,13 @@ const zTest = <T1, T2 extends ZodTypeDef, T3, T6 extends ZodType<T1, T2, T3>>(
   return res.data as z.output<T6>;
 };
 
-async function createJobList(data: { label: string }, user: User) {
+export async function createJobList(data: { label: string }, user: User) {
   const config = appUrl.jobList.create.reqConfig(data);
   const resRaw = await user.authFetch(config);
   const res = zTest(createJobListResSchema, resRaw);
   return res.data;
 }
-async function getAllJobList(user: User) {
+export async function getAllJobList(user: User) {
   const config = appUrl.jobList.getAll.reqConfig();
   const resRaw = await user.authFetch(config);
   const res = zTest(getAllJobListResSchema, resRaw);
@@ -132,6 +102,12 @@ async function updateJobList(data: { id: string; label: string }, user: User) {
   const res = zTest(updateJobListResSchema, resRaw);
   return res.data;
 }
+async function deleteJobList(jobListId: string, user: User) {
+  const config = appUrl.jobList.delete.reqConfig(jobListId);
+  const resRaw = await user.authFetch(config);
+  const res = zTest(updateJobListResSchema, resRaw);
+  return res.data;
+}
 
 describe.only('/job-list (e2e)', () => {
   describe(`${appUrl.jobList.create.path} (${appUrl.jobList.create.method})`, () => {
@@ -143,6 +119,52 @@ describe.only('/job-list (e2e)', () => {
 
       const jobListAll = await getAllJobList(user);
       expect(jobListAll.length).toBe(6);
+    });
+    it.skip('job list limit check', async () => {
+      // todo: implement
+      // todo: implement
+      // todo: implement
+      // todo: implement
+      // todo: implement
+      // todo: implement
+      // todo: implement
+      // todo: implement
+      // todo: implement
+      // todo: implement
+      // todo: implement
+      // todo: implement
+      // todo: implement
+      // todo: implement
+      // todo: implement
+      // todo: implement
+      // todo: implement
+      // todo: implement
+      // todo: implement
+      // todo: implement
+      // todo: implement
+      // todo: implement
+      // todo: implement
+      // todo: implement
+      // todo: implement
+      // todo: implement
+      // todo: implement
+      // todo: implement
+      // todo: implement
+      // todo: implement
+      // todo: implement
+      // todo: implement
+      // todo: implement
+      // todo: implement
+      // todo: implement
+      // todo: implement
+      // todo: implement
+      // todo: implement
+      // todo: implement
+      // todo: implement
+      // todo: implement
+      // todo: implement
+      // todo: implement
+      // todo: implement
     });
   });
 
@@ -178,16 +200,30 @@ describe.only('/job-list (e2e)', () => {
   describe(`${appUrl.jobList.update.path}/:jobListId (${appUrl.jobList.update.method})`, () => {
     it('updates job list item', async () => {
       const user = await User.createUser();
+      const userProfile = await user.profile();
       const [jobList] = await getAllJobList(user);
 
       const data = { id: jobList.id, label: 'new label' };
       const jobListRes = await updateJobList(data, user);
-      expect(data).toBe(1);
-
-      // expect(jobListRes.id).toEqual(id);
-      // expect(jobListRes.label).toEqual(label);
+      expect(jobListRes.label).toBe(data.label);
+      expect(jobListRes.id).toBe(data.id);
+      expect(jobListRes.userId).toBe(userProfile.id);
     });
   });
+
+  // describe(`${appUrl.jobList.delete.path}/:jobListId (${appUrl.jobList.delete.method})`, () => {
+  //   it('deletes job list item', async () => {
+  //     const user = await User.createUser();
+  //     const jobList = await getAllJobList(user);
+  //     const jobListDeleteId = jobList[2].id;
+
+  //     const data = { id: jobList.id, label: 'new label' };
+  //     const jobListRes = await updateJobList(data, user);
+  //     expect(jobListRes.label).toBe(data.label);
+  //     expect(jobListRes.id).toBe(data.id);
+  //     expect(jobListRes.userId).toBe(userProfile.id);
+  //   });
+  // });
 
   // describe(`${appUrl.user.delete.path} (${appUrl.user.delete.method})`, () => {
   //   it('valid response type', async () => {

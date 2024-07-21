@@ -59,7 +59,6 @@ export class JobListService {
     });
 
     if (!updatedJobList) throw new NotFoundException();
-
     return updatedJobList;
   }
 

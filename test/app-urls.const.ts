@@ -118,16 +118,39 @@ export const appUrl = {
         } as AxiosRequestConfig;
       },
     },
-    // delete: {
-    //   path: '/user',
-    //   method: 'DELETE',
-    //   reqConfig(config: { userId: string; accessToken: string }) {
-    //     return {
-    //       url: `${this.path}/${config.userId}`,
-    //       method: this.method,
-    //       headers: { Authorization: `Bearer ${config.accessToken}` },
-    //     } as AxiosRequestConfig;
-    //   },
-    // },
+    delete: {
+      path: '/job-list',
+      method: 'DELETE',
+      reqConfig(jobId: string) {
+        return {
+          url: `${this.path}/${jobId}`,
+          method: this.method,
+        } as AxiosRequestConfig;
+      },
+    },
+  },
+  job: {
+    create: {
+      path: '/job',
+      method: 'POST',
+      reqConfig(data: {
+        userId: string;
+
+        jobListId: string;
+        title: string;
+        company: string;
+        location?: string;
+        url?: string;
+        salary?: string;
+        description?: string;
+        color?: string;
+      }) {
+        return {
+          url: this.path,
+          method: this.method,
+          data,
+        } as AxiosRequestConfig;
+      },
+    },
   },
 };
