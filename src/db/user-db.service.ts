@@ -1,16 +1,15 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { DynamoDBDocumentClientService } from './dynamo-db-document-client.service';
+import { v4 as uuidv4 } from 'uuid';
+import { TableName } from './table-name.const';
+import { RequireFields } from '@app/common/types';
+import { createUserCK, UserCK } from './composite-key.util';
 import {
   DeleteCommand,
   PutCommand,
   UpdateCommand,
   GetCommand,
   ScanCommand,
-  QueryCommand,
 } from '@aws-sdk/lib-dynamodb';
 import {
   DeleteCommandOutput,
@@ -18,10 +17,6 @@ import {
   PutCommandOutput,
   ScanCommandOutput,
 } from './types';
-import { v4 as uuidv4 } from 'uuid';
-import { TableName } from './table-name.const';
-import { RequireFields } from '@app/common/types';
-import { createUserCK, UserCK } from './composite-key.util';
 
 // const TableName = 'JobQuest-User';
 // console.log(self.crypto.randomUUID);

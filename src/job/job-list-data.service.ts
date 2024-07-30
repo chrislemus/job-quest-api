@@ -1,23 +1,17 @@
-import { JobListDto, JobListRankDto } from './dto';
+import { JobListRankDto } from './dto';
 import { LexoRank } from 'lexorank';
-import { Job, JobDBService } from '@app/db/job-db.service';
-import { JobListDBService } from '@app/db/job-list-db.service';
 import {
-  BadRequestException,
   Injectable,
   InternalServerErrorException,
   Logger,
-  NotFoundException,
 } from '@nestjs/common';
+import { JobListJobRankDBService } from '@app/db/job-list-job-rank-db.service';
 
 @Injectable()
 export class JobListDataService {
   private rank = LexoRank;
   private logger = new Logger(JobListDataService.name);
-  constructor(
-    private jobDB: JobDBService,
-    private jobListDB: JobListDBService,
-  ) {}
+  constructor(private jobListJobRank: JobListJobRankDBService) {}
 
   async getJobListData(
     userId: string,
@@ -29,10 +23,11 @@ export class JobListDataService {
   }> {
     const getData = async () => {
       const config = { jobListId, jobListRankConfig };
-      const jobListRanks = await this.jobDB.getTopAndBottomJobListRanks(
-        jobListId,
-        jobListRankConfig,
-      );
+      const jobListRanks =
+        await this.jobListJobRank.getTopAndBottomJobListRanks(
+          jobListId,
+          jobListRankConfig,
+        );
 
       const data = await this.getRankPlacement({ ...config, jobListRanks });
       return data;

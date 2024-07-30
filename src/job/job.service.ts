@@ -69,7 +69,6 @@ export class JobService {
     const res = jobListId
       ? await this.jobDB.findAllByJobListId(userId, jobListId)
       : await this.jobDB.findAll(userId);
-    console.log(res);
     const data = !res.Items ? [] : res.Items;
 
     // if (jobListId && data.length > 0) {

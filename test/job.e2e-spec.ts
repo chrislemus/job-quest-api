@@ -1,27 +1,43 @@
 import { z, ZodType, ZodTypeAny, ZodTypeDef } from 'zod';
-import { appUrl } from './app-urls.const';
+import { appUrl, buildCommonApiResSchema, zTest } from './utils';
 import { User } from './mocks/user.mock';
-import { createJobList, getAllJobList } from './job-list.e2e-spec';
+import { getAllJobList } from './job-list.e2e-spec';
 
-function buildCommonApiResSchema<
-  T1,
-  T2 extends ZodTypeDef,
-  T3,
-  T6 extends ZodType<T1, T2, T3>,
->(statusCode: number, dataSchema: T6) {
-  return z
-    .object({
-      status: z.literal(statusCode),
-      data: z.object({
-        data: dataSchema,
-      }),
-    })
-    .transform((res) => res.data as { data: z.output<T6> });
-}
+// function buildCommonApiResSchema<
+//   T1,
+//   T2 extends ZodTypeDef,
+//   T3,
+//   T6 extends ZodType<T1, T2, T3>,
+// >(statusCode: number, dataSchema: T6) {
+//   return z
+//     .object({
+//       status: z.literal(statusCode),
+//       data: z.object({
+//         data: dataSchema,
+//       }),
+//     })
+//     .transform((res) => res.data as { data: z.output<T6> });
+// }
+
+const jobSchema = z
+  .object({
+    id: z.string().min(15),
+    title: z.string().min(1),
+    company: z.string().min(1),
+    location: z.string().optional(),
+    url: z.string().optional(),
+    salary: z.string().optional(),
+    description: z.string().optional(),
+    color: z.string().optional(),
+    jobListRank: z.string().min(5),
+    jobListId: z.string().min(15),
+    userId: z.string().min(15),
+  })
+  .strict();
+const createJobResSchema = buildCommonApiResSchema(201, jobSchema);
 
 async function createJob(
   data: {
-    userId: string;
     jobListId: string;
     title: string;
     company: string;
@@ -35,29 +51,36 @@ async function createJob(
 ) {
   const config = appUrl.job.create.reqConfig(data);
   const resRaw = await user.authFetch(config);
-  return resRaw;
-  // const res = zTest(createJobListResSchema, resRaw);
-  // return res.data;
+  const res = zTest(createJobResSchema, resRaw);
+  return res.data;
 }
 
-describe.only('/job (e2e)', () => {
+describe('/job (e2e)', () => {
   describe(`${appUrl.job.create.path} (${appUrl.job.create.method})`, () => {
-    it('creates job list', async () => {
+    it('creates job', async () => {
       const user = await User.createUser();
-      const userProfile = await user.profile();
-      // const reqBody = { label: 'test' };
+
       const jobList = await getAllJobList(user);
-      console.log(jobList);
       const job = await createJob(
         {
-          userId: userProfile.id,
+          // userId: userProfile.id,
           jobListId: jobList[0].id,
           title: 'janitor',
           company: 'google',
         },
         user,
       );
-      expect(job).toBe(1);
+      const job2 = await createJob(
+        {
+          // userId: userProfile.id,
+          jobListId: jobList[0].id,
+          title: 'janitor',
+          company: 'google',
+        },
+        user,
+      );
+
+      expect(job).toBeDefined();
     });
   });
 

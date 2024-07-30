@@ -10,7 +10,6 @@ import {
   GetCommand,
   PutCommand,
   QueryCommand,
-  QueryCommandInput,
   UpdateCommand,
   TransactWriteCommand,
   TransactWriteCommandInput,
@@ -23,18 +22,17 @@ import {
 } from './types';
 import { v4 as uuidv4 } from 'uuid';
 import { RequireFields } from '@app/common/types';
-import { JobListRankDto } from '@app/job/dto';
 import { TableName } from './table-name.const';
-import { JobListDBService, JobListJobRankItem } from './job-list-db.service';
+import { JobListDBService } from './job-list-db.service';
 import { ConfigService } from '@nestjs/config';
-import { getExpAttrValues, removeKeys } from './db-util';
+import { getExpAttrValues, removeCK } from './db-util';
 import {
   getJobCK,
   getJobCountCK,
   JobCK,
   getJobListCK,
-  getJobListJobRankCK,
 } from './composite-key.util';
+import { JobListJobRankDBService } from './job-list-job-rank-db.service';
 
 // const TableName = 'JobQuest-Job';
 
@@ -64,6 +62,7 @@ export class JobDBService {
     private dbClient: DynamoDBDocumentClientService,
     private jobListDB: JobListDBService,
     private configService: ConfigService,
+    private jobListJobRank: JobListJobRankDBService,
   ) {}
 
   async totalJobCount(userId: string, allowCreate = true) {
@@ -109,13 +108,11 @@ export class JobDBService {
     const jobCK = getJobCK({ userId, jobId });
     const jobItem: JobItem = { id: jobId, ...job, ...jobCK };
 
-    const jobListJobRankCK = getJobListJobRankCK({ jobListId, jobListRank });
-    const jobListJobRankItem: JobListJobRankItem = {
-      ...jobListJobRankCK,
+    const jobListJobRankPutCmdInput = this.jobListJobRank.putCmdInput({
       jobId,
       jobListId,
       jobListRank,
-    };
+    });
 
     const jobListCK = getJobListCK({ userId, jobListId });
 
@@ -133,12 +130,7 @@ export class JobDBService {
           },
         },
         {
-          Put: {
-            TableName,
-            Item: jobListJobRankItem,
-            ConditionExpression:
-              'attribute_not_exists(pk) AND attribute_not_exists(sk)',
-          },
+          Put: jobListJobRankPutCmdInput,
         },
         {
           ConditionCheck: {
@@ -151,7 +143,7 @@ export class JobDBService {
     });
 
     await this.dbClient.send(command);
-    return removeKeys(jobItem, ['sk', 'pk']);
+    return removeCK(jobItem);
   }
 
   updateCountCmdInput(userId: string, action: 'increment' | 'decrement') {
@@ -181,13 +173,16 @@ export class JobDBService {
     const { jobListId, jobListRank } = data.Item || {};
     if (!jobListId || !jobListRank) throw new NotFoundException();
 
-    const deleteJobRankCK = getJobListJobRankCK({ jobListId, jobListRank });
+    const deleteJobRankCmdInput = this.jobListJobRank.deleteCmdInput({
+      jobListId,
+      jobListRank,
+    });
 
     const command = new TransactWriteCommand({
       TransactItems: [
         { Update: this.updateCountCmdInput(userId, 'decrement') },
         { Delete: { TableName, Key: jobCK } },
-        { Delete: { TableName, Key: deleteJobRankCK } },
+        { Delete: deleteJobRankCmdInput },
       ],
     });
 
@@ -235,30 +230,20 @@ export class JobDBService {
         const jobListRankMismatch = res.jobListRank !== data.jobListRank;
         const jobListIdMismatch = res.jobListId !== data.jobListId;
         if (jobListRankMismatch || jobListIdMismatch) {
-          // const { jobListId, jobListRank } = data;
+          const jobListJobRankCmdUpdateInput =
+            this.jobListJobRank.updateCmdInput(
+              {
+                jobId: res.id,
+                jobListId: res.jobListId,
+                jobListRank: res.jobListRank,
+              },
+              {
+                jobListId: data.jobListId,
+                jobListRank: data.jobListRank,
+              },
+            );
 
-          const oldJobListJobRankCK = getJobListJobRankCK(res);
-
-          const newJobListJobRankCK = getJobListJobRankCK({
-            jobListId: data.jobListId,
-            jobListRank: data.jobListRank,
-          });
-          const jobListJobRankItem: JobListJobRankItem = {
-            ...newJobListJobRankCK,
-            jobId: id,
-            jobListId: data.jobListId,
-            jobListRank: data.jobListRank,
-          };
-
-          const jobListJobRankCKUpdate: TxItem['Update'] = {
-            TableName,
-            Key: oldJobListJobRankCK,
-            UpdateExpression:
-              'SET pk = :pk , sk = :sk, jobId = :jobId, jobListId = :jobListId, jobListRank = :jobListRank',
-            ExpressionAttributeValues: getExpAttrValues(jobListJobRankItem),
-          };
-
-          TransactItems.push({ Update: jobListJobRankCKUpdate });
+          TransactItems.push({ Update: jobListJobRankCmdUpdateInput });
         }
       }
 
@@ -296,7 +281,7 @@ export class JobDBService {
 
     if (!data.Item) throw new NotFoundException();
 
-    const jobRaw = removeKeys(data.Item, ['pk', 'sk']);
+    const jobRaw = removeCK(data.Item);
     Object.assign(jobRaw, { userId, id: jobId });
     if (!AttributesToGet) return jobRaw as ResT;
     const job = {} as ResT;
@@ -305,47 +290,6 @@ export class JobDBService {
       job[key as any] = jobRaw[key as any];
     });
     return job;
-  }
-
-  async getTopAndBottomJobListRanks(
-    jobListId: string,
-    jobListRank?: JobListRankDto,
-  ) {
-    const queryInput = this.getTopAndBottomJobListRanksQueryInput(
-      jobListId,
-      jobListRank,
-    );
-
-    const res = (await this.dbClient.send(
-      new QueryCommand(queryInput),
-    )) as QueryCommandOutput<JobCK>;
-
-    const ranks = res.Items?.map((item) => item.sk.split('#')[1]);
-    return { topRank: ranks?.[1], bottomRank: ranks?.[0] };
-  }
-
-  getTopAndBottomJobListRanksQueryInput(
-    jobListId: string,
-    jobListRank?: JobListRankDto,
-  ) {
-    let dir = '<=';
-    if (jobListRank?.placement === 'bottom') dir = '>=';
-
-    const skCondition = jobListRank
-      ? (`sk ${dir} :sk` as const)
-      : ('begins_with(sk, :sk)' as const);
-
-    const jobListRankCK = getJobListJobRankCK({
-      jobListId,
-      jobListRank: jobListRank?.rank || '',
-    });
-
-    return {
-      TableName,
-      Limit: 2,
-      KeyConditionExpression: `pk = :pk And ${skCondition}`,
-      ExpressionAttributeValues: getExpAttrValues(jobListRankCK),
-    } as QueryCommandInput;
   }
 
   async findAll(userId: string) {
@@ -360,9 +304,7 @@ export class JobDBService {
   }
 
   async findAllByJobListId(userId: string, jobListId: string) {
-    const jobListJobRanks = await this.jobListDB.findAllJobListJobRanks(
-      jobListId,
-    );
+    const jobListJobRanks = await this.jobListJobRank.findAll(jobListId);
 
     const ExpressionAttributeValues = {};
     const KeyConditionExpressionList: string[] = [];

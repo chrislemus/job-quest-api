@@ -1,7 +1,6 @@
 import { z } from 'zod';
-import { appUrl } from './app-urls.const';
 import { User } from './mocks/user.mock';
-import { objSize } from './utils';
+import { objSize, appUrl } from './utils';
 
 const deleteUserResSchema = z
   .object({
@@ -23,7 +22,7 @@ const userProfileResSchema = z
   })
   .strict();
 
-describe.skip('/user (e2e)', () => {
+describe('/user (e2e)', () => {
   describe(`${appUrl.user.profile.path} (${appUrl.user.profile.method})`, () => {
     it('should return user profile', async () => {
       const user = await User.createUser();
@@ -55,10 +54,11 @@ describe.skip('/user (e2e)', () => {
       try {
         await user.login();
         expect(1).toBe(2); // should fail
-      } catch (error) {
-        expect(error.response.status).toBe(401);
-        expect(error.response.data.statusCode).toBe(401);
-        expect(error.response.data.error).toBe('UnauthorizedException');
+      } catch (_error) {
+        const error = JSON.parse(_error);
+        expect(error.status).toBe(401);
+        expect(error.data.statusCode).toBe(401);
+        expect(error.data.error).toBe('UnauthorizedException');
       }
     });
   });

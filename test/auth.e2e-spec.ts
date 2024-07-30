@@ -1,5 +1,5 @@
 import { User } from './mocks/user.mock';
-import { appUrl } from './app-urls.const';
+import { appUrl } from './utils/app-urls.util';
 import { z } from 'zod';
 
 const jwtSchema = z
@@ -17,7 +17,7 @@ const jwtPayloadSchema = z
   .strict()
   .transform((data) => data.data);
 
-describe.skip('/auth (e2e)', () => {
+describe('/auth (e2e)', () => {
   describe(`${appUrl.auth.signup.path} (${appUrl.auth.signup.method})`, () => {
     it('should create a new user', async () => {
       const { createUserRes } = await User.createUser();

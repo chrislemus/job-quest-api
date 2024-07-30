@@ -21,13 +21,9 @@ import { v4 as uuidv4 } from 'uuid';
 import { TableName } from './table-name.const';
 import { ConfigService } from '@nestjs/config';
 import { RequireFields } from '@app/common/types';
-import { getExpAttrValues, removeKeys } from './db-util';
-import {
-  getJobListCK,
-  getJobListJobRankCK,
-  JobListCK,
-  JobListJobRankCK,
-} from './composite-key.util';
+import { getExpAttrValues, removeCK } from './db-util';
+import { getJobListCK, JobListCK } from './composite-key.util';
+import { JobListJobRankDBService } from './job-list-job-rank-db.service';
 
 type JobList = {
   userId: string;
@@ -38,19 +34,12 @@ type JobList = {
 
 type JobListItem = JobList & JobListCK;
 
-export type JobListJobRank = {
-  jobListId: string;
-  jobListRank: string;
-  jobId: string;
-};
-
-export type JobListJobRankItem = JobListJobRank & JobListJobRankCK;
-
 @Injectable()
 export class JobListDBService {
   constructor(
     private dbClient: DynamoDBDocumentClientService,
     private configService: ConfigService,
+    private jobListJobRank: JobListJobRankDBService,
   ) {}
 
   async create(jobList: Omit<JobList, 'id' | 'order'>): Promise<JobList> {
@@ -107,21 +96,6 @@ export class JobListDBService {
     const res = await this.dbClient.send(command);
 
     return res;
-  }
-
-  async jobListIsEmpty(jobListId: string) {
-    const ck = getJobListJobRankCK({ jobListId, jobListRank: '' });
-    const ExpressionAttributeValues = getExpAttrValues(ck);
-
-    const command = new QueryCommand({
-      TableName,
-      KeyConditionExpression: 'pk = :pk AND begins_with(sk, :sk)',
-      ExpressionAttributeValues,
-      Limit: 1,
-    });
-
-    const data = (await this.dbClient.send(command)) as QueryCommandOutput<any>;
-    return data.Items?.length === 0;
   }
 
   async getLastJobListId(userId: string): Promise<number | null> {
@@ -185,7 +159,7 @@ export class JobListDBService {
     if (!updatedJobListRaw) {
       throw new BadRequestException('Job List not found');
     }
-    const updatedJobList = removeKeys(updatedJobListRaw, ['pk', 'sk']);
+    const updatedJobList = removeCK(updatedJobListRaw);
 
     return { ...updatedJobList, id, userId };
   }
@@ -216,7 +190,7 @@ export class JobListDBService {
     )) as GetCommandOutput<JobListItem>;
 
     if (!data.Item) return undefined;
-    const jobList = removeKeys(data.Item, ['pk', 'sk']);
+    const jobList = removeCK(data.Item);
     return jobList;
   }
 
@@ -234,28 +208,8 @@ export class JobListDBService {
     )) as QueryCommandOutput<JobListItem>;
 
     const jobLists = res.Items?.map((jobList) => {
-      return removeKeys(jobList, ['pk', 'sk']);
+      return removeCK(jobList);
     });
-    return jobLists ?? [];
-  }
-  async findAllJobListJobRanks(jobListId: string): Promise<JobListJobRank[]> {
-    const ck = getJobListJobRankCK({ jobListId, jobListRank: '' });
-    const ExpressionAttributeValues = getExpAttrValues(ck);
-
-    const command = new QueryCommand({
-      TableName,
-      ScanIndexForward: true,
-      KeyConditionExpression: 'pk = :pk And begins_with(sk, :sk)',
-      ExpressionAttributeValues,
-    });
-    const res = (await this.dbClient.send(
-      command,
-    )) as QueryCommandOutput<JobListJobRankItem>;
-
-    const jobLists = res.Items?.map((item) => {
-      return removeKeys(item, ['pk', 'sk']);
-    });
-
     return jobLists ?? [];
   }
 }

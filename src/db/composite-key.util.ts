@@ -1,57 +1,37 @@
-export type JobCK = {
-  pk: `user#${string}#job`;
-  sk: `job#${string}`;
-};
-
-export function getJobCK(data: { userId: string; jobId: string }): {
-  pk: `user#${string}#job`;
-  sk: `job#${string}`;
-} {
-  const { userId, jobId } = data;
-  return { pk: `user#${userId}#job`, sk: `job#${jobId}` } as JobCK;
+export type JobCK = ReturnType<typeof getJobCK>;
+type JobCKInput = { userId: string; jobId: string };
+export function getJobCK(input: JobCKInput) {
+  const { userId, jobId } = input;
+  return { pk: `user#${userId}#job`, sk: `job#${jobId}` } as const;
 }
 
-export type JobCountCK = {
-  pk: `user#${string}#jobCount`;
-  sk: `"count"`;
-};
-
-export function getJobCountCK(data: { userId: string }): JobCountCK {
-  const { userId } = data;
-  return { pk: `user#${userId}#jobCount`, sk: `"count"` };
+export type JobCountCK = ReturnType<typeof getJobCountCK>;
+type JobCountCKInput = { userId: string };
+export function getJobCountCK(input: JobCountCKInput) {
+  const { userId } = input;
+  return { pk: `user#${userId}#jobCount`, sk: `"count"` } as const;
 }
 
-export type JobListJobRankCK = {
-  pk: `jobList#${string}#jobRank`;
-  sk: `jobRank#${string}`;
-};
-
-export function getJobListJobRankCK(data: {
-  jobListId: string;
-  jobListRank: string;
-}): JobListJobRankCK {
-  const { jobListId, jobListRank } = data;
-  return { pk: `jobList#${jobListId}#jobRank`, sk: `jobRank#${jobListRank}` };
+export type JobListJobRankCK = ReturnType<typeof getJobListJobRankCK>;
+type JobListJobRankCKInput = { jobListId: string; jobListRank: string };
+export function getJobListJobRankCK(input: JobListJobRankCKInput) {
+  const { jobListId, jobListRank } = input;
+  return {
+    pk: `jobList#${jobListId}#jobRank`,
+    sk: `jobRank#${jobListRank}`,
+  } as const;
 }
 
-export type JobListCK = {
-  pk: `user#${string}#jobList`;
-  sk: `jobList#${string}`;
-};
-
-export function getJobListCK(data: {
-  userId: string;
-  jobListId: string;
-}): JobListCK {
-  const { userId, jobListId } = data;
-  return { pk: `user#${userId}#jobList`, sk: `jobList#${jobListId}` };
+export type JobListCK = ReturnType<typeof getJobListCK>;
+type JobListCKInput = { userId: string; jobListId: string };
+export function getJobListCK(input: JobListCKInput) {
+  const { userId, jobListId } = input;
+  return { pk: `user#${userId}#jobList`, sk: `jobList#${jobListId}` } as const;
 }
 
-export type UserCK = {
-  pk: `user#${string}`;
-  sk: `"info"`;
-};
-export function createUserCK(data: { userId: string }): UserCK {
-  const { userId } = data;
-  return { pk: `user#${userId}`, sk: `"info"` };
+export type UserCK = ReturnType<typeof createUserCK>;
+type UserCKInput = { userId: string };
+export function createUserCK(input: UserCKInput) {
+  const { userId } = input;
+  return { pk: `user#${userId}`, sk: `"info"` } as const;
 }

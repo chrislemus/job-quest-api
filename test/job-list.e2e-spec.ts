@@ -1,5 +1,5 @@
-import { z, ZodType, ZodTypeAny, ZodTypeDef } from 'zod';
-import { appUrl } from './app-urls.const';
+import { z } from 'zod';
+import { appUrl, buildCommonApiResSchema, zTest } from './utils';
 import { User } from './mocks/user.mock';
 
 const jobListSchema = z
@@ -10,22 +10,6 @@ const jobListSchema = z
     order: z.number(),
   })
   .strict();
-
-function buildCommonApiResSchema<
-  T1,
-  T2 extends ZodTypeDef,
-  T3,
-  T6 extends ZodType<T1, T2, T3>,
->(statusCode: number, dataSchema: T6) {
-  return z
-    .object({
-      status: z.literal(statusCode),
-      data: z.object({
-        data: dataSchema,
-      }),
-    })
-    .transform((res) => res.data as { data: z.output<T6> });
-}
 
 const createJobListResSchema = buildCommonApiResSchema(201, jobListSchema);
 const getJobListByIdResSchema = buildCommonApiResSchema(200, jobListSchema);
@@ -41,42 +25,6 @@ const getAllJobListResSchema = buildCommonApiResSchema(
 //     data: z.object({ data: z.array(jobListSchema) }),
 //   })
 // .transform((res) => res.data);
-
-const zTest = <T1, T2 extends ZodTypeDef, T3, T6 extends ZodType<T1, T2, T3>>(
-  _zodEffect: T6,
-  data: any,
-) => {
-  const res = _zodEffect.safeParse(data);
-  if (res.error) {
-    const errors = {};
-    const SchemaErrors = res.error.errors.forEach((_e) => {
-      const { path, ...e } = _e;
-      const length = path.length;
-      path.forEach((key, i) => {
-        if (!errors[key]) errors[key] = {};
-
-        if (i === length - 1) {
-          const stringErrors: string[] = [];
-          Object.entries(e).forEach(([k, v]) => {
-            stringErrors.push(`${k}:${v}`);
-          });
-          errors[key] = stringErrors.join(' | ');
-        }
-      });
-    });
-
-    // expect(JSON.stringify({ SchemaErrors })).toEqual(1);
-    expect({ data: data?.data, status: data?.status }).toEqual({
-      data: { data: errors },
-    });
-    expect({ data: data?.data, status: data?.status }).toEqual(SchemaErrors);
-    // expect({ data: data?.data, status: data?.status }).toEqual(SchemaErrors);
-
-    throw new Error(JSON.stringify({ SchemaErrors }, null, 2));
-  }
-  if (!res.data) throw new Error(JSON.stringify(res.error));
-  return res.data as z.output<T6>;
-};
 
 export async function createJobList(data: { label: string }, user: User) {
   const config = appUrl.jobList.create.reqConfig(data);
@@ -109,7 +57,7 @@ async function deleteJobList(jobListId: string, user: User) {
   return res.data;
 }
 
-describe.only('/job-list (e2e)', () => {
+describe('/job-list (e2e)', () => {
   describe(`${appUrl.jobList.create.path} (${appUrl.jobList.create.method})`, () => {
     it('creates job list', async () => {
       const user = await User.createUser();
@@ -120,7 +68,7 @@ describe.only('/job-list (e2e)', () => {
       const jobListAll = await getAllJobList(user);
       expect(jobListAll.length).toBe(6);
     });
-    it.skip('job list limit check', async () => {
+    it('job list limit check', async () => {
       // todo: implement
       // todo: implement
       // todo: implement

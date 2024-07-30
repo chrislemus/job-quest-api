@@ -1,5 +1,5 @@
 import { AxiosRequestConfig } from 'axios';
-import { CreateUserReqSchemaInput } from './mocks/user.mock';
+import { CreateUserReqSchemaInput } from '../mocks/user.mock';
 
 export const appUrl = {
   auth: {
@@ -134,8 +134,6 @@ export const appUrl = {
       path: '/job',
       method: 'POST',
       reqConfig(data: {
-        userId: string;
-
         jobListId: string;
         title: string;
         company: string;

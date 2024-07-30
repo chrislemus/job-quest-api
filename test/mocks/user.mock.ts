@@ -1,9 +1,8 @@
 import { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
-import { appHttp } from '../app-http.util';
-import { appUrl } from '../app-urls.const';
+import { appHttp } from '../utils';
+import { appUrl } from '../utils/app-urls.util';
 import { v4 as uuidV4 } from 'uuid';
 import { z } from 'zod';
-import { objSize } from 'test/utils';
 
 export class User {
   email: string;
@@ -54,7 +53,6 @@ export class User {
 
   async login() {
     const res = await this.loginRaw();
-
     return res.data.data;
   }
 

@@ -4,7 +4,7 @@ import { DynamoDBDocumentClientService } from './dynamo-db-document-client.servi
 import { JobListDBService } from './job-list-db.service';
 import { UserDBService } from './user-db.service';
 import { JobDBService } from './job-db.service';
-import { JobJobListRankDBService } from './job-job-list-rank-db.service';
+import { JobListJobRankDBService } from './job-list-job-rank-db.service';
 import { ConfigModule } from '@nestjs/config';
 
 @Module({
@@ -16,14 +16,14 @@ import { ConfigModule } from '@nestjs/config';
     UserDBService,
     JobListDBService,
     JobDBService,
-    JobJobListRankDBService,
+    JobListJobRankDBService,
   ],
   exports: [
     JobListDBService,
     DynamoDBDocumentClientService,
     UserDBService,
     JobDBService,
-    JobJobListRankDBService,
+    JobListJobRankDBService,
   ],
   // controllers: [UserController],
 })

@@ -22,6 +22,14 @@ export function removeKeys<T1 extends Record<any, any>, T2 extends keyof T1>(
   return copy;
 }
 
+/** remove composite keys */
+export function removeCK<T1 extends { pk: string; sk: string }>(
+  _data: T1,
+): Omit<T1, 'pk' | 'sk'> {
+  const { pk, sk, ...data } = _data;
+  return data;
+}
+
 // /** get expression attribute names */
 // export function getExpAttrNames<
 //   PropT extends string,
