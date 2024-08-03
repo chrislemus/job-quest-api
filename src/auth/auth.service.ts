@@ -5,14 +5,11 @@ import {
   Logger,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { CreateUserDto } from '@app/user/dto';
-import bcrypt from 'bcryptjs';
-import { PrismaService } from '@app/prisma';
+import { CreateUserDto } from 'src/user/dto';
 import { ConfigService } from '@nestjs/config';
 import { AuthTokens, AuthUser } from './dto';
-import { UserEntity } from '@app/user/user.entity';
-import { UserService } from '@app/user/user.service';
-import { UserDBService } from '@app/db/user-db.service';
+import { UserService } from 'src/user/user.service';
+import { UserDBService } from 'src/db/user-db.service';
 import { hashValue } from './hash-value.util';
 import { jwtExpiryConfig } from './jwt-expiry.config';
 
@@ -21,7 +18,6 @@ export class AuthService {
   private logger = new Logger(AuthService.name);
   constructor(
     private jwtService: JwtService,
-    private prisma: PrismaService,
     private configService: ConfigService,
     private userService: UserService,
     private userDB: UserDBService,

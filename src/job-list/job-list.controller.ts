@@ -1,5 +1,5 @@
 import { JobListEntity } from './entities/job-list.entity';
-import { ApiPageResponse, Page, PaginatedQuery } from '@app/common/pagination';
+import { ApiPageResponse, Page, PaginatedQuery } from 'src/common/pagination';
 import {
   ApiBearerAuth,
   ApiNotFoundResponse,
@@ -12,7 +12,7 @@ import {
   ApiCreatedResponse,
   ApiOkResponse,
   GetAuthUser,
-} from '@app/common/decorators';
+} from 'src/common/decorators';
 import {
   Controller,
   Get,
@@ -37,7 +37,6 @@ import {
 import { z, ZodObject, ZodRawShape, ZodType } from 'zod';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 import { SchemaObject } from '@nestjs/swagger/dist/interfaces/open-api-spec.interface';
-import { SkipAuth } from '@app/auth/decorators';
 
 import {
   PipeTransform,
@@ -45,43 +44,6 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { ZodSchema } from 'zod';
-import { Response } from 'express';
-
-import {
-  Injectable,
-  NestInterceptor,
-  ExecutionContext,
-  CallHandler,
-} from '@nestjs/common';
-import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
-import { Reflector } from '@nestjs/core';
-import { SetMetadata } from '@nestjs/common';
-
-@Injectable()
-export class TestInterceptor implements NestInterceptor {
-  private logger = new Logger(TestInterceptor.name);
-
-  constructor(private reflector: Reflector) {}
-
-  intercept(ctx: ExecutionContext, next: CallHandler): Observable<any> {
-    return next.handle().pipe(
-      map((value) => {
-        const { statusCode } = ctx.switchToHttp().getResponse<Response>();
-        const handler = ctx.getHandler();
-        const schema = this.reflector.get(`SchemaRes${statusCode}`, handler);
-        if (!schema) return value;
-
-        try {
-          return schema.parse(value);
-        } catch (error) {
-          this.logger.error(error);
-          throw new InternalServerErrorException('Error parsing response');
-        }
-      }),
-    );
-  }
-}
 
 export class ZodValidationPipe implements PipeTransform {
   constructor(private schema: ZodSchema) {}
@@ -98,29 +60,9 @@ export class ZodValidationPipe implements PipeTransform {
       }
       return parsedValue.data;
     }
+    return value;
   }
 }
-
-// export class TransformPipe implements PipeTransform {
-//   // constructor(private schema: ZodSchema) {}
-
-//   transform(value: unknown, metadata: ArgumentMetadata) {
-//     console.log({ value });
-//     console.log({ metadata });
-//     console.log('.........');
-//     // if (metadata.type === 'query') {
-//     //   const parsedValue = this.schema.safeParse(value);
-//     //   if (!parsedValue.success) {
-//     //     const { fieldErrors } = parsedValue.error.flatten();
-//     //     const errMessages = Object.entries(fieldErrors).map((KV) =>
-//     //       KV.join(': '),
-//     //     );
-//     //     throw new BadRequestException(errMessages);
-//     //   }
-//     //   return parsedValue.data;
-//     // }
-//   }
-// }
 
 const ApiResponse = <TModel extends ZodSchema>(
   schema: TModel,
@@ -131,13 +73,13 @@ const ApiResponse = <TModel extends ZodSchema>(
 
   if (!description) throw new Error('Description is required');
   jsonSchema.title = description;
-  const SchemaRes = () => SetMetadata(`SchemaRes${options.status}`, schema);
+  // const SchemaRes = () => SetMetadata(`SchemaRes${options.status}`, schema);
 
-  return applyDecorators(
-    _ApiResponse({ schema: jsonSchema as SchemaObject, ...options }),
-    SchemaRes(),
-    // UsePipes(new TransformPipe()),
-  );
+  return _ApiResponse({ schema: jsonSchema as SchemaObject, ...options });
+  // return applyDecorators(
+  //   _ApiResponse({ schema: jsonSchema as SchemaObject, ...options }),
+  //   SchemaRes(),
+  // );
 };
 
 const apiSchema = <A extends string, T extends ZodSchema>(s: A, type: T) => {
@@ -192,7 +134,6 @@ const ApiQuery = <T extends ZodSchema>(mainSchema: T) => {
 @Controller('job-list')
 @ApiTags('job-list')
 @ApiBearerAuth()
-@UseInterceptors(TestInterceptor)
 export class JobListController {
   constructor(private readonly jobListService: JobListService) {}
 
@@ -208,43 +149,17 @@ export class JobListController {
 
   /** Get all Job Lists */
   @Get()
-  // @ApiPageResponse(JobListEntity)
   @ApiResponse(jobListSchema, { status: 200 })
   @ApiQuery(PaginatedQuery2)
-  // @_ApiQuery( { name: 'page', schema: { type: 'number' } });
-  // @_ApiQuery({
-  //   name: 'customNamePage',
-  //   required: false,
-  //   schema: {
-  //     // name: 'page',
-  //     // title: 'customTitlePaginatedQuery',
-  //     type: 'number',
-  //     // anyOf: [{ type: 'number', title: 'Page number' }],
-  //     description: 'Page number',
-  //   },
-  // })
-  // @ApiQuery({ name: 'id', schema: { oneOf: [{ type: 'number' }] } })
-  // @ApiQuery({ name: 'name', isArray: true, schema: queryJsonSchema })
-  @SkipAuth()
   findAll(
-    // @Query() query: PaginatedQuery,
     @Query() query: PaginatedQuery2,
-    // @ApiQuery({ name: 'id', schema: { type: 'string' } })
-    @GetAuthUser('id')
-    userId: string,
+    @GetAuthUser('id') userId: string,
   ): Promise<Page<JobListEntity>> {
-    // console.log({ controllerQuery: query });
-    // return this.jobListService.test(userId) as any;
-    return 'test' as any;
-    return this.jobListService.findAll({} as any, userId);
-    // return this.jobListService.findAll(query, userId);
+    return this.jobListService.findAll(query, userId);
   }
 
   /** Get Job List by ID */
   @Get(':id')
-  // @ApiOkResponse(JobListEntity)
-  // @_ApiOkResponse({ schema: jsonSchema })
-  // @_ApiOkResponse({ schema: jsonSchema })
   @ApiNotFoundResponse()
   async findOne(
     @Param('id') id: string,

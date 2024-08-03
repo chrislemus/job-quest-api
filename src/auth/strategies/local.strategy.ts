@@ -3,7 +3,7 @@ import { PassportStrategy } from '@nestjs/passport';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import bcrypt from 'bcryptjs';
 import { LocalPayload } from '../types';
-import { UserDBService } from '@app/db/user-db.service';
+import { UserDBService } from 'src/db/user-db.service';
 
 @Injectable()
 export class LocalStrategy extends PassportStrategy(Strategy) {

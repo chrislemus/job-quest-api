@@ -1,4 +1,4 @@
-import { PaginatedQuery } from '@app/common/pagination';
+import { PaginatedQuery } from 'src/common/pagination';
 import { Transform } from 'class-transformer';
 import { IsNumber, IsOptional } from 'class-validator';
 

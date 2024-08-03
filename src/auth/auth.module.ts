@@ -6,14 +6,13 @@ import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './guards';
 import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from './jwt.module';
-import { PrismaService } from '@app/prisma';
-import { UserModule } from '@app/user/user.module';
+import { UserModule } from 'src/user/user.module';
 import {
   JwtRefreshTokenStrategy,
   JwtStrategy,
   LocalStrategy,
 } from './strategies';
-import { DBModule } from '@app/db/db.module';
+import { DBModule } from 'src/db/db.module';
 
 @Module({
   imports: [
@@ -29,7 +28,6 @@ import { DBModule } from '@app/db/db.module';
     LocalStrategy,
     JwtStrategy,
     JwtRefreshTokenStrategy,
-    PrismaService,
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,

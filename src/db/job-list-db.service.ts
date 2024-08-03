@@ -20,7 +20,7 @@ import {
 import { v4 as uuidv4 } from 'uuid';
 import { TableName } from './table-name.const';
 import { ConfigService } from '@nestjs/config';
-import { RequireFields } from '@app/common/types';
+import { RequireFields } from 'src/common/types';
 import { getExpAttrValues, removeCK } from './db-util';
 import { getJobListCK, JobListCK } from './composite-key.util';
 import { JobListJobRankDBService } from './job-list-job-rank-db.service';

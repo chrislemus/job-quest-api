@@ -1,4 +1,4 @@
-import { UserEntity } from '@app/user/user.entity';
+import { UserEntity } from 'src/user/user.entity';
 
 /** Delete User response data */
 export class DeleteUserResDto {

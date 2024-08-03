@@ -3,10 +3,10 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
-import { Page, PaginatedQuery } from '@app/common/pagination';
+import { Page, PaginatedQuery } from 'src/common/pagination';
 import { CreateJobListDto, UpdateJobListDto } from './dto';
 import { JobListEntity } from './entities/job-list.entity';
-import { JobListDBService } from '@app/db/job-list-db.service';
+import { JobListDBService } from 'src/db/job-list-db.service';
 
 @Injectable()
 export class JobListService {

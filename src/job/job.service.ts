@@ -1,4 +1,4 @@
-import { Page } from '@app/common/pagination';
+import { Page } from 'src/common/pagination';
 import { ConfigService } from '@nestjs/config';
 import { FindAllJobsQueryDto } from './dto';
 import { CreateJobDto } from './dto/create-job.dto';
@@ -11,8 +11,8 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
-import { JobDBService } from '@app/db/job-db.service';
-import { JobListDBService } from '@app/db/job-list-db.service';
+import { JobDBService } from 'src/db/job-db.service';
+import { JobListDBService } from 'src/db/job-list-db.service';
 
 @Injectable()
 export class JobService {

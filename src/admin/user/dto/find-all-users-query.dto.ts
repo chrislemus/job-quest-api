@@ -1,3 +1,3 @@
-import { PaginatedQuery } from '@app/common/pagination';
+import { PaginatedQuery } from 'src/common/pagination';
 
 export class FindAllUsersDto extends PaginatedQuery {}

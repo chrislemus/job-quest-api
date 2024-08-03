@@ -1,5 +1,5 @@
-import { AuthUser } from '@app/auth/dto';
-import { GetAuthUser } from '@app/common/decorators';
+import { AuthUser } from 'src/auth/dto';
+import { GetAuthUser } from 'src/common/decorators';
 import {
   Controller,
   Delete,
@@ -8,7 +8,6 @@ import {
   Param,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { Role } from '@prisma/client';
 import { DeleteUserResDto } from './dto';
 import { UserEntity } from './user.entity';
 import { UserService } from './user.service';
@@ -31,7 +30,7 @@ export class UserController {
     @Param('id') userId: string,
     @GetAuthUser() authUser: AuthUser,
   ): Promise<DeleteUserResDto> {
-    if (authUser.role === Role.ADMIN) {
+    if (authUser.role === 'ADMIN') {
       return this.userService.delete(authUser);
     } else if (authUser.id === userId) {
       return this.userService.delete(authUser);

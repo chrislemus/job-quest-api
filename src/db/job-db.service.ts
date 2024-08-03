@@ -21,7 +21,7 @@ import {
   QueryCommandOutput,
 } from './types';
 import { v4 as uuidv4 } from 'uuid';
-import { RequireFields } from '@app/common/types';
+import { RequireFields } from 'src/common/types';
 import { TableName } from './table-name.const';
 import { JobListDBService } from './job-list-db.service';
 import { ConfigService } from '@nestjs/config';

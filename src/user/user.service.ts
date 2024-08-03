@@ -1,16 +1,14 @@
-import { PrismaService } from '@app/prisma';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { DeleteUserResDto } from './dto';
 import { UserEntity } from './user.entity';
-import { JobListDataService } from '@app/job/job-list-data.service';
-import { AuthUser } from '@app/auth/dto';
-import { UserDBService } from '@app/db/user-db.service';
-import { JobListDBService } from '@app/db/job-list-db.service';
+import { JobListDataService } from 'src/job/job-list-data.service';
+import { AuthUser } from 'src/auth/dto';
+import { UserDBService } from 'src/db/user-db.service';
+import { JobListDBService } from 'src/db/job-list-db.service';
 
 @Injectable()
 export class UserService {
   constructor(
-    private prisma: PrismaService,
     private jobListData: JobListDataService,
     private userDB: UserDBService,
     private jobListDB: JobListDBService,

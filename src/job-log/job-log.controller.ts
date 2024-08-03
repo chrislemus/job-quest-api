@@ -16,10 +16,10 @@ import {
   ApiCreatedResponse,
   ApiOkResponse,
   GetAuthUser,
-} from '@app/common/decorators';
+} from 'src/common/decorators';
 import { FindAllJobLogsQueryDto } from './dto';
 import { JobLogEntity } from './entities/job-log.entity';
-import { ApiPageResponse, Page } from '@app/common/pagination';
+import { ApiPageResponse, Page } from 'src/common/pagination';
 
 @Controller('job-log')
 @ApiTags('job-log')

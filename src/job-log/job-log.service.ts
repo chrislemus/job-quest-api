@@ -1,5 +1,4 @@
-import { Page, pageQuery } from '@app/common/pagination';
-import { PrismaService } from '@app/prisma';
+import { Page, pageQuery } from 'src/common/pagination';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { JobLogEntity } from './entities/job-log.entity';
 import {
@@ -10,57 +9,60 @@ import {
 
 @Injectable()
 export class JobLogService {
-  constructor(private prisma: PrismaService) {}
-
   async create(
     createJobLogDto: CreateJobLogDto,
     userId: number,
   ): Promise<JobLogEntity> {
-    const job = await this.prisma.job.findUnique({
-      where: { id: createJobLogDto.jobId },
-      select: { userId: true },
-    });
+    throw new Error('Method not implemented.');
+    // const job = await this.prisma.job.findUnique({
+    //   where: { id: createJobLogDto.jobId },
+    //   select: { userId: true },
+    // });
 
-    if (job?.userId !== userId) throw new NotFoundException();
+    // if (job?.userId !== userId) throw new NotFoundException();
 
-    const jobLog = await this.prisma.jobLog.create({
-      data: { jobId: createJobLogDto.jobId, content: createJobLogDto.content },
-    });
+    // const jobLog = await this.prisma.jobLog.create({
+    //   data: { jobId: createJobLogDto.jobId, content: createJobLogDto.content },
+    // });
 
-    return jobLog;
+    // return jobLog;
   }
 
   findAll(
     findAllJobLogsQuery: FindAllJobLogsQueryDto,
     userId: number,
   ): Promise<Page<JobLogEntity>> {
-    return pageQuery({
-      pageConfig: findAllJobLogsQuery as any,
-      queryFn: this.prisma.jobLog.findMany,
-      queryArgs: {
-        where: {
-          job: { userId },
-          AND: [
-            {
-              OR: findAllJobLogsQuery.jobId?.map((id) => ({ jobId: id })),
-            },
-          ],
-        },
-      },
-      countFn: this.prisma.jobLog.count,
-    });
+    throw new Error('Method not implemented.');
+
+    // return pageQuery({
+    //   pageConfig: findAllJobLogsQuery as any,
+    //   queryFn: this.prisma.jobLog.findMany,
+    //   queryArgs: {
+    //     where: {
+    //       job: { userId },
+    //       AND: [
+    //         {
+    //           OR: findAllJobLogsQuery.jobId?.map((id) => ({ jobId: id })),
+    //         },
+    //       ],
+    //     },
+    //   },
+    //   countFn: this.prisma.jobLog.count,
+    // });
   }
 
   async findOne(jobLogId: number, userId: number): Promise<JobLogEntity> {
-    const res = await this.prisma.jobLog.findUnique({
-      where: { id: jobLogId },
-      include: { job: { select: { userId: true } } },
-    });
-    if (!res) throw new NotFoundException();
+    throw new Error('Method not implemented.');
 
-    const { job, ...jobLog } = res;
-    if (job?.userId !== userId) throw new NotFoundException();
-    return { ...jobLog };
+    // const res = await this.prisma.jobLog.findUnique({
+    //   where: { id: jobLogId },
+    //   include: { job: { select: { userId: true } } },
+    // });
+    // if (!res) throw new NotFoundException();
+
+    // const { job, ...jobLog } = res;
+    // if (job?.userId !== userId) throw new NotFoundException();
+    // return { ...jobLog };
   }
 
   async update(
@@ -68,33 +70,37 @@ export class JobLogService {
     updateJobLogDto: UpdateJobLogDto,
     userId: number,
   ): Promise<JobLogEntity> {
-    const jobLog = await this.prisma.jobLog.findUnique({
-      where: { id: jobLogId },
-      include: { job: { select: { userId: true } } },
-    });
+    throw new Error('Method not implemented.');
 
-    if (jobLog?.job?.userId !== userId) throw new NotFoundException();
+    // const jobLog = await this.prisma.jobLog.findUnique({
+    //   where: { id: jobLogId },
+    //   include: { job: { select: { userId: true } } },
+    // });
 
-    const updatedJobLog = await this.prisma.jobLog.update({
-      data: { content: updateJobLogDto.content },
-      where: { id: jobLogId },
-    });
+    // if (jobLog?.job?.userId !== userId) throw new NotFoundException();
 
-    return updatedJobLog;
+    // const updatedJobLog = await this.prisma.jobLog.update({
+    //   data: { content: updateJobLogDto.content },
+    //   where: { id: jobLogId },
+    // });
+
+    // return updatedJobLog;
   }
 
   async remove(id: number, userId: number): Promise<JobLogEntity> {
-    const jobLog = await this.prisma.jobLog.findUnique({
-      where: { id: id },
-      include: { job: { select: { userId: true } } },
-    });
+    throw new Error('Method not implemented.');
 
-    if (jobLog?.job?.userId !== userId) throw new NotFoundException();
+    // const jobLog = await this.prisma.jobLog.findUnique({
+    //   where: { id: id },
+    //   include: { job: { select: { userId: true } } },
+    // });
 
-    const deletedJobLog = await this.prisma.jobLog.delete({
-      where: { id: id },
-    });
+    // if (jobLog?.job?.userId !== userId) throw new NotFoundException();
 
-    return deletedJobLog;
+    // const deletedJobLog = await this.prisma.jobLog.delete({
+    //   where: { id: id },
+    // });
+
+    // return deletedJobLog;
   }
 }

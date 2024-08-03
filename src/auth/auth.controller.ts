@@ -1,5 +1,5 @@
-import { GetAuthUser } from '@app/common/decorators';
-import { CreateUserDto } from '@app/user/dto';
+import { GetAuthUser } from 'src/common/decorators';
+import { CreateUserDto } from 'src/user/dto';
 import { ApiBearerAuth, ApiBody, ApiTags } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { SkipAuth } from './decorators';
@@ -15,7 +15,7 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
-import { UserEntity } from '@app/user/user.entity';
+import { UserEntity } from 'src/user/user.entity';
 
 @Controller('auth')
 @ApiBearerAuth()

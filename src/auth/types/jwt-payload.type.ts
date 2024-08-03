@@ -1,4 +1,4 @@
-import { Role } from '@prisma/client';
+import { Role } from './role.type';
 
 /** User JWT payload data */
 export type JwtPayload = {

@@ -1,5 +1,5 @@
+import { Role } from 'src/auth/types';
 import { ApiHideProperty, ApiProperty, OmitType } from '@nestjs/swagger';
-import { Role, User } from '@prisma/client';
 import { Exclude } from 'class-transformer';
 
 export class UserEntity {

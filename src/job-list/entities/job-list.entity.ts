@@ -1,5 +1,3 @@
-import { JobList } from '@prisma/client';
-
 export class JobListEntity {
   /** Job List ID */
   id: string;

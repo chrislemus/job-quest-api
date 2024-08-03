@@ -2,7 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { DynamoDBDocumentClientService } from './dynamo-db-document-client.service';
 import { v4 as uuidv4 } from 'uuid';
 import { TableName } from './table-name.const';
-import { RequireFields } from '@app/common/types';
+import { RequireFields } from 'src/common/types';
 import { createUserCK, UserCK } from './composite-key.util';
 import {
   DeleteCommand,

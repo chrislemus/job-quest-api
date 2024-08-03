@@ -1,7 +1,7 @@
 import { JobService } from './job.service';
 import { CreateJobDto, FindAllJobsQueryDto, UpdateJobDto } from './dto';
 import { JobEntity } from './entities';
-import { ApiPageResponse, Page } from '@app/common/pagination';
+import { ApiPageResponse, Page } from 'src/common/pagination';
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
@@ -22,7 +22,7 @@ import {
   ApiCreatedResponse,
   ApiOkResponse,
   GetAuthUser,
-} from '@app/common/decorators';
+} from 'src/common/decorators';
 import { ApiOkResponse as _ApiOkResponse } from '@nestjs/swagger';
 
 @Controller('job')

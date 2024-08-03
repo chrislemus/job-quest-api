@@ -5,7 +5,7 @@ import {
   InternalServerErrorException,
   Logger,
 } from '@nestjs/common';
-import { JobListJobRankDBService } from '@app/db/job-list-job-rank-db.service';
+import { JobListJobRankDBService } from 'src/db/job-list-job-rank-db.service';
 
 @Injectable()
 export class JobListDataService {

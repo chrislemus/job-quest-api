@@ -5,7 +5,7 @@ import { QueryCommandOutput } from './types';
 import { getExpAttrValues, removeCK } from './db-util';
 import { getJobListJobRankCK, JobListJobRankCK } from './composite-key.util';
 import { TableName } from './table-name.const';
-import { JobListRankDto } from '@app/job/dto';
+import { JobListRankDto } from 'src/job/dto';
 // import { JobListJobRankItem } from './job-list-db.service';
 
 export type JobListJobRank = {

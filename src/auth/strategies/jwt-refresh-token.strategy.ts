@@ -6,7 +6,7 @@ import { ConfigService } from '@nestjs/config';
 import { JwtPayload } from '../types';
 import { AuthUser } from '../dto';
 import bcrypt from 'bcryptjs';
-import { UserDBService } from '@app/db/user-db.service';
+import { UserDBService } from 'src/db/user-db.service';
 
 @Injectable()
 export class JwtRefreshTokenStrategy extends PassportStrategy(

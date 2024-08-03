@@ -1,6 +1,5 @@
-import { Page, pageQuery } from '@app/common/pagination';
-import { PrismaService } from '@app/prisma';
-import { UserEntity } from '@app/user/user.entity';
+import { Page, pageQuery } from 'src/common/pagination';
+import { UserEntity } from 'src/user/user.entity';
 import { Injectable } from '@nestjs/common';
 import { FindAllUsersDto } from './dto';
 

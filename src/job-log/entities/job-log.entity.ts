@@ -1,6 +1,4 @@
-import { JobLog as _JobLog } from '@prisma/client';
-
-export class JobLogEntity implements _JobLog {
+export class JobLogEntity {
   id: number;
   createdAt: Date;
   updatedAt: Date;
