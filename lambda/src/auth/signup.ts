@@ -1,14 +1,12 @@
 import { APIGatewayProxyEvent, APIGatewayProxyHandler } from 'aws-lambda';
 import passport from 'passport';
-import { getReqData } from './get-req-data';
+// import { getReqData } from './get-req-data';
 import { pathToRegexp, match, parse, compile } from 'path-to-regexp';
-// import express from 'express';
-// const express = require('express');
+import express from 'express';
 
 // import express from 'express';
 // import serverlessExpress from '@vendia/serverless-express';
 // const app = express();
-// console.log(app);
 // const port = 3000;
 
 // app.get('/', (req, res) => {
@@ -26,8 +24,8 @@ import { pathToRegexp, match, parse, compile } from 'path-to-regexp';
 // app.listen(port, () => {
 //   console.log(`Example app listening on port ${port}`);
 // });
-
-export const handler: APIGatewayProxyHandler = async (event, ctx) => {
+//
+export const get: APIGatewayProxyHandler = async (event, ctx) => {
   const { multiValueHeaders, ...filteredEvent } = event;
 
   const path = pathToRegexp('/books/:id/:name');
@@ -49,14 +47,14 @@ export const handler: APIGatewayProxyHandler = async (event, ctx) => {
 
   // console.log(passport);
 
-  const { params, query } = getReqData(event);
+  // const { params, query } = getReqData(event);
 
   return {
     statusCode: 400,
     body: JSON.stringify({
       message: 'Hello from default!',
-      params,
-      query,
+      // params,
+      // query,
       input: filteredEvent,
       // ctx,
     }),

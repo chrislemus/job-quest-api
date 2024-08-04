@@ -1,28 +1,67 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 const TerserPlugin = require('terser-webpack-plugin');
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+const fs = require('fs');
 const path = require('path');
-// const nodeExternals = require('webpack-node-externals');
-// nest build --webpack --webpackPath webpack.config
+const swaggerUiAssetPath = require('swagger-ui-dist').getAbsoluteFSPath();
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+const { CleanWebpackPlugin } = require('clean-webpack-plugin');
+const CopyWebpackPlugin = require('copy-webpack-plugin');
+//swagger-ui-bundle.js
+const openapiSpec = JSON.stringify(require('./api-json.json'));
+//----------------------------------------------------------------
+//----------------------------------------------------------------
+//----------------------------------------------------------------
+//----------------------------------------------------------------
+// const  SwaggerUI = require('swagger-ui');
+// import 'swagger-ui/dist/swagger-ui.css';
 
+function* readAllFiles(dir) {
+  const files = fs.readdirSync(dir, { withFileTypes: true });
+  for (const file of files) {
+    if (file.isDirectory()) {
+      yield* readAllFiles(path.join(dir, file.name));
+    } else {
+      yield path.join(dir, file.name);
+    }
+  }
+}
 /**
  * Webpack configuration for building a Lambda function.
  * @type {import('webpack').Configuration}
  */
 module.exports = {
-  // entry: ['./src/main.ts'],
-  // entry: ['./src/main.ts', './src/auth/signup.ts'],
-  // entry: {
-  //   main: './src/main.ts',
-  //   'auth/signup': './src/auth/signup.ts',
-  //   // auth: './auth.ts',
-  // },
-  entry: {
-    main: path.join(__dirname, './src/main.ts'),
-    'api/auth/signup': path.join(__dirname, './src/api/auth/signup.ts'),
-    // auth: './auth.ts',
+  mode: 'development',
+  entry: () => {
+    const entries = {};
+    for (const file of readAllFiles('./src')) {
+      if (file.endsWith('controller.ts')) {
+        const path = file.split('/').slice(1).join('/');
+        const pathWithoutExt = path.slice(0, -3);
+        entries[`api/${pathWithoutExt}`] = `./${file}`;
+      }
+    }
+    console.log({ entries });
+    return entries;
+  },
+  devServer: {
+    static: {
+      directory: path.join(__dirname, 'dist'),
+    },
+    compress: true,
+    port: 9000,
+    // proxy: [
+    //   {
+    //     context: ['**', '!/index.html'],
+    //     // ...
+    //   },
+    // ],
   },
   // target: 'node',
   target: 'node',
+  resolve: {
+    extensions: ['.ts', '.js'],
+  },
   // externals: [nodeExternals()],
   optimization: {
     minimizer: [
@@ -32,62 +71,22 @@ module.exports = {
       }),
     ],
   },
+
   module: {
     rules: [
       {
         test: /.ts?$/,
         // test: /(src).*\.ts?$/,
+        exclude: /node_modules/,
         use: 'ts-loader',
       },
-      // {
-      //   test: /.tsx?$/,
-      //   use: 'ts-loader',
-      //   exclude: /node_modules/,
-      // },
-    ],
-  },
-  mode: 'production',
-  resolve: {
-    // root: [
-    //   path.resolve(__dirname, 'src'),
-    //   path.resolve(__dirname, 'node_modules'),
-    // ],
-    // roots: [path.resolve(__dirname, 'lambda')],
-
-    extensions: ['.tsx', '.ts', '.js'],
-    // extensions: [/(src)\/.*\.ts?$/, /(src)\/.*\.js?$/],
-    // exclude: [path.resolve(__dirname, '../src')],
-    // modules: [path.resolve(__dirname, 'src'), 'node_modules'],
-    // alias: {
-    //   '@app': path.resolve(__dirname, 'src/'),
-    //   // '@nestjs/core': path.resolve(__dirname, 'node_modules/@nestjs/core'),
-    // },
-
-    plugins: [
-      function () {
-        // console.log(this);
-        console.log('nest\n\n\n');
-        // console.log(this.hooks);
-        // console.log(this.hooks);
-        // console.log(Object.keys(this.hooks));
-        // console.log(this.hooks.resolve);
-        // this.hooks.result.tap('DonePlugin', (resolveData) => {
-        //   console.log(Object.keys(resolveData));
-        // });
-        // this.hooks.done.tap('DonePlugin', (stats) => {
-        //   console.log('Webpack done');
-        //   console.log('Webpack done');
-        //   console.log('Webpack done');
-        //   console.log('Webpack done');
-        //   console.log('Webpack done');
-        //   console.log('Webpack done');
-        //   console.log('Webpack done');
-        //   console.log(stats.toJson().assetsByChunkName);
-        //   // console.log(path.resolve(__dirname));
-        // });
+      {
+        test: /\.json$/,
+        loader: 'json-loader',
       },
     ],
   },
+  // mode: 'production',
   output: {
     path: path.join(__dirname, 'dist'),
     // filename: '[name].js',
@@ -95,26 +94,59 @@ module.exports = {
     // filename: '[file]',
     // filename: 'app/[path]-[name].js',
 
-    libraryTarget: 'commonjs2',
+    // libraryTarget: 'commonjs2',
   },
   plugins: [
+    new CleanWebpackPlugin(),
+    new CopyWebpackPlugin({
+      patterns: [
+        {
+          from: require.resolve('swagger-ui/dist/swagger-ui.css'),
+          to: 'index.css',
+        },
+        {
+          from: require.resolve(swaggerUiAssetPath + '/swagger-ui-bundle.js'),
+          to: 'index.js',
+        },
+      ],
+    }),
+    new HtmlWebpackPlugin({
+      template: path.join(__dirname, 'src/index.html'),
+      filename: 'index.html',
+      // chunks: ['index'],
+      chunks: [],
+      // minify: false,
+    }),
     // new webpack.IgnorePlugin(/\.(md|yml.encrypted|sh|vm)$/),
     function () {
-      this.hooks.done.tap('DonePlugin', (stats) => {
-        const chunkGroups = stats.toJson().namedChunkGroups;
-        const apiChunks = Object.keys(chunkGroups).filter((chunk) =>
-          chunk.startsWith('api/'),
+      this.hooks.done.tap('done', (stats) => {
+        const openApiSpec = JSON.stringify({ openapi: '3.0.0' });
+        // const rawReadSpec = fs.readFileSync(
+        //   path.join(__dirname, './api-json.json'),
+        // );
+        fs.writeFileSync(
+          path.join(__dirname, './dist/api-json.json'),
+          openapiSpec,
         );
-        apiChunks.forEach((chunk) => {
-          const module = require(path.join(__dirname, 'dist', `${chunk}.js`));
-          console.log(module);
-          // const chunkFiles = chunkGroups[chunk].assets;
-          // console.log(chunkFiles);
-        });
+
+        //
+        //
+
+        // const chunkGroups = stats.toJson().namedChunkGroups;
+        // const apiChunks = Object.keys(chunkGroups).filter((chunk) =>
+        //   chunk.startsWith('api/'),
+        // );
+        // apiChunks.forEach((chunk) => {
+        // const module = require(path.join(__dirname, 'dist', `${chunk}.js`));
+        // console.log(module);
+        // const chunkFiles = chunkGroups[chunk].assets;
+        // console.log(chunkFiles);
+        // });
 
         // console.log(stats.toJson());
         // console.log(stats.toJson());
-        console.log(apiChunks);
+        // console.log(apiChunks);
+        // console.log(swaggerUiAssetPath);
         // console.log(path.resolve(__dirname));
       });
     },
