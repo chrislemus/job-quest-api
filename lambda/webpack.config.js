@@ -7,14 +7,8 @@ const swaggerUiAssetPath = require('swagger-ui-dist').getAbsoluteFSPath();
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
+const OpenApiWebpackPlugin = require('./build/openapi-webpack.plugin.js');
 //swagger-ui-bundle.js
-const openapiSpec = JSON.stringify(require('./api-json.json'));
-//----------------------------------------------------------------
-//----------------------------------------------------------------
-//----------------------------------------------------------------
-//----------------------------------------------------------------
-// const  SwaggerUI = require('swagger-ui');
-// import 'swagger-ui/dist/swagger-ui.css';
 
 function* readAllFiles(dir) {
   const files = fs.readdirSync(dir, { withFileTypes: true });
@@ -32,13 +26,14 @@ function* readAllFiles(dir) {
  */
 module.exports = {
   mode: 'development',
+  // mode: 'production',
   entry: () => {
     const entries = {};
     for (const file of readAllFiles('./src')) {
       if (file.endsWith('controller.ts')) {
-        const path = file.split('/').slice(1).join('/');
-        const pathWithoutExt = path.slice(0, -3);
-        entries[`api/${pathWithoutExt}`] = `./${file}`;
+        const path = file.split('/').slice(1, -1).join('/');
+        // const pathWithoutExt = path.slice(0, -3);
+        entries[`api/${path}/index`] = `./${file}`;
       }
     }
     console.log({ entries });
@@ -50,6 +45,10 @@ module.exports = {
     },
     compress: true,
     port: 9000,
+    hot: true,
+    liveReload: true,
+    // inline: true,
+
     // proxy: [
     //   {
     //     context: ['**', '!/index.html'],
@@ -77,7 +76,7 @@ module.exports = {
       {
         test: /.ts?$/,
         // test: /(src).*\.ts?$/,
-        exclude: /node_modules/,
+        // exclude: /node_modules/,
         use: 'ts-loader',
       },
       {
@@ -89,15 +88,17 @@ module.exports = {
   // mode: 'production',
   output: {
     path: path.join(__dirname, 'dist'),
-    // filename: '[name].js',
+    filename: '[name].js',
     // filename: '[path][name]',
     // filename: '[file]',
     // filename: 'app/[path]-[name].js',
 
-    // libraryTarget: 'commonjs2',
+    libraryTarget: 'commonjs2',
+    // libraryTarget: 'umd',
   },
   plugins: [
-    new CleanWebpackPlugin(),
+    // new CleanWebpackPlugin(),
+    new OpenApiWebpackPlugin(),
     new CopyWebpackPlugin({
       patterns: [
         {
@@ -118,37 +119,37 @@ module.exports = {
       // minify: false,
     }),
     // new webpack.IgnorePlugin(/\.(md|yml.encrypted|sh|vm)$/),
-    function () {
-      this.hooks.done.tap('done', (stats) => {
-        const openApiSpec = JSON.stringify({ openapi: '3.0.0' });
-        // const rawReadSpec = fs.readFileSync(
-        //   path.join(__dirname, './api-json.json'),
-        // );
-        fs.writeFileSync(
-          path.join(__dirname, './dist/api-json.json'),
-          openapiSpec,
-        );
+    // function () {
+    //   this.hooks.done.tap('done', (stats) => {
+    //     const openApiSpec = JSON.stringify({ openapi: '3.0.0' });
+    //     // const rawReadSpec = fs.readFileSync(
+    //     //   path.join(__dirname, './api-json.json'),
+    //     // );
+    //     fs.writeFileSync(
+    //       path.join(__dirname, './dist/api-json.json'),
+    //       openapiSpec,
+    //     );
 
-        //
-        //
+    //     //
+    //     //
 
-        // const chunkGroups = stats.toJson().namedChunkGroups;
-        // const apiChunks = Object.keys(chunkGroups).filter((chunk) =>
-        //   chunk.startsWith('api/'),
-        // );
-        // apiChunks.forEach((chunk) => {
-        // const module = require(path.join(__dirname, 'dist', `${chunk}.js`));
-        // console.log(module);
-        // const chunkFiles = chunkGroups[chunk].assets;
-        // console.log(chunkFiles);
-        // });
+    //     // const chunkGroups = stats.toJson().namedChunkGroups;
+    //     // const apiChunks = Object.keys(chunkGroups).filter((chunk) =>
+    //     //   chunk.startsWith('api/'),
+    //     // );
+    //     // apiChunks.forEach((chunk) => {
+    //     // const module = require(path.join(__dirname, 'dist', `${chunk}.js`));
+    //     // console.log(module);
+    //     // const chunkFiles = chunkGroups[chunk].assets;
+    //     // console.log(chunkFiles);
+    //     // });
 
-        // console.log(stats.toJson());
-        // console.log(stats.toJson());
-        // console.log(apiChunks);
-        // console.log(swaggerUiAssetPath);
-        // console.log(path.resolve(__dirname));
-      });
-    },
+    //     // console.log(stats.toJson());
+    //     // console.log(stats.toJson());
+    //     // console.log(apiChunks);
+    //     // console.log(swaggerUiAssetPath);
+    //     // console.log(path.resolve(__dirname));
+    //   });
+    // },
   ],
 };
