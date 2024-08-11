@@ -25,10 +25,32 @@ function* readAllFiles(dir) {
  * @type {import('webpack').Configuration}
  */
 module.exports = {
-  mode: 'development',
+  mode: 'production',
   // mode: 'production',
+  cache: false,
+  // watch: true,
+  watchOptions: {
+    // ignored: ['**/node_modules', '**/dist', '**/public'],
+    // ignored: ['**/node_modules'],
+    // ignored: /node_modules|public|build/,
+    // ignored: /node_modules|public|build/,
+    // ignored: ['**/node_modules'],
+    // ignored: ['**/dist/**', '**/node_modules'],
+    // ignored: ['**/node_modules', '**/dist/index.html'],
+    // aggregateTimeout: 3000,
+    // poll: 3000,
+  },
   entry: () => {
-    const entries = {};
+    // const entries = {};
+    const entries = {
+      openapi: './src/openapi.config.ts',
+      // openapi: {
+      //   import: './src/openapi.config.ts',
+      //   dependOn: 'openapi-format',
+      //   async: false,
+      // },
+      'openapi-format': './src/openapi-format.ts',
+    };
     for (const file of readAllFiles('./src')) {
       if (file.endsWith('controller.ts')) {
         const path = file.split('/').slice(1, -1).join('/');
@@ -39,37 +61,43 @@ module.exports = {
     console.log({ entries });
     return entries;
   },
-  devServer: {
-    static: {
-      directory: path.join(__dirname, 'dist'),
-    },
-    compress: true,
-    port: 9000,
-    hot: true,
-    liveReload: true,
-    // inline: true,
+  // devServer: {
+  //   static: {
+  //     directory: path.join(__dirname, 'dist'),
+  //   },
 
-    // proxy: [
-    //   {
-    //     context: ['**', '!/index.html'],
-    //     // ...
-    //   },
-    // ],
-  },
+  //   compress: false,
+  //   port: 9000,
+  //   hot: true,
+  //   // liveReload: true,
+  //   // // inline: true,
+  //   watchFiles: ['./src/**/*'],
+  //   open: true,
+  //   // contentBase: './dist/',
+  //   // Make webpack-dev-server live-reload when your
+  //   // shell page changes
+  //   // watchContentBase: true,
+  //   // proxy: [
+  //   //   {
+  //   //     context: ['**', '!/index.html'],
+  //   //     // ...
+  //   //   },
+  //   // ],
+  // },
   // target: 'node',
   target: 'node',
   resolve: {
     extensions: ['.ts', '.js'],
   },
   // externals: [nodeExternals()],
-  optimization: {
-    minimizer: [
-      new TerserPlugin({
-        // include: /node_modules/,
-        extractComments: false,
-      }),
-    ],
-  },
+  // optimization: {
+  //   minimizer: [
+  //     new TerserPlugin({
+  //       // include: /node_modules/,
+  //       extractComments: false,
+  //     }),
+  //   ],
+  // },
 
   module: {
     rules: [
@@ -81,6 +109,7 @@ module.exports = {
       },
       {
         test: /\.json$/,
+        // exclude: /node_modules/,
         loader: 'json-loader',
       },
     ],
@@ -89,35 +118,49 @@ module.exports = {
   output: {
     path: path.join(__dirname, 'dist'),
     filename: '[name].js',
+    // publicPath: '/build/',
     // filename: '[path][name]',
     // filename: '[file]',
     // filename: 'app/[path]-[name].js',
-
     libraryTarget: 'commonjs2',
+
+    // libraryTarget: 'web',
+    // target: 'web',
     // libraryTarget: 'umd',
   },
+  // cache: {
+  //   type: 'filesystem',
+  //   cacheLocation: path.resolve(__dirname, '.test_cache'),
+  // },
+  // cache: false,
   plugins: [
     // new CleanWebpackPlugin(),
     new OpenApiWebpackPlugin(),
-    new CopyWebpackPlugin({
-      patterns: [
-        {
-          from: require.resolve('swagger-ui/dist/swagger-ui.css'),
-          to: 'index.css',
-        },
-        {
-          from: require.resolve(swaggerUiAssetPath + '/swagger-ui-bundle.js'),
-          to: 'index.js',
-        },
-      ],
-    }),
-    new HtmlWebpackPlugin({
-      template: path.join(__dirname, 'src/index.html'),
-      filename: 'index.html',
-      // chunks: ['index'],
-      chunks: [],
-      // minify: false,
-    }),
+    // new CopyWebpackPlugin({
+    //   patterns: [
+    //     {
+    //       from: require.resolve('swagger-ui/dist/swagger-ui.css'),
+    //       to: 'index.css',
+    //       // to: path.join(__dirname, 'public/index.css'),
+    //     },
+    //     // {
+    //     //   from: path.join(__dirname, 'src/openapi.json'),
+    //     //   to: 'openapi.json',
+    //     // },
+    //     {
+    //       from: require.resolve(swaggerUiAssetPath + '/swagger-ui-bundle.js'),
+    //       to: 'index.js',
+    //       // to: path.join(__dirname, 'public/index.js'),
+    //     },
+    //   ],
+    // }),
+    // new HtmlWebpackPlugin({
+    //   template: path.join(__dirname, 'src/index.html'),
+    //   filename: 'index.html',
+    //   // chunks: ['openapi', 'openapi-format'],
+    //   chunks: [],
+    //   // minify: false,
+    // }),
     // new webpack.IgnorePlugin(/\.(md|yml.encrypted|sh|vm)$/),
     // function () {
     //   this.hooks.done.tap('done', (stats) => {

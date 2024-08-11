@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+  <html>
+    <head>
+      <meta charset="UTF-8" />
+      <title>JobQuest API</title>
+      <link rel="stylesheet" href="./index.css" />
+    </head>
+  
+    <body>
+      <div id="swagger"></div>
+      <script src="./index.js"></script>
+      <script>
+        window.onload = () => {
+          window.ui = SwaggerUIBundle({ url: './openapi.json', dom_id: '#swagger'});
+        };
+      </script>
+    </body>
+  </html>
+  
