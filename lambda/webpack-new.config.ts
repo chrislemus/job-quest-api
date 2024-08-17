@@ -1,8 +1,9 @@
 import path from 'path';
-import { Configuration } from 'webpack';
+import { Compiler, Configuration } from 'webpack';
 import fs from 'fs';
 import { CleanWebpackPlugin } from 'clean-webpack-plugin';
 import TsconfigPathsPlugin from 'tsconfig-paths-webpack-plugin';
+import { myPlugin } from './build-api';
 
 function* readAllFiles(dir) {
   const files = fs.readdirSync(dir, { withFileTypes: true });

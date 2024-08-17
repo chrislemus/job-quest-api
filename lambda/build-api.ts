@@ -1,8 +1,12 @@
 import fs from 'fs';
-import { openApiSpec } from './src/openapi.config';
 import __ from 'lodash';
 import path from 'path';
 import * as prettier from 'prettier';
+import {
+  buildOpenapiSpec,
+  BuildOpenApiSpecArg,
+} from './src/api/common/build-openapi-spec.util';
+
 function* readAllFiles(dir) {
   const files = fs.readdirSync(dir, { withFileTypes: true });
   for (const file of files) {
@@ -35,6 +39,26 @@ const res = await childHandler(event, ctx);
 return res;
 };`;
 
+const htmlContent = `<!DOCTYPE html>
+  <html>
+    <head>
+      <meta charset="UTF-8" />
+      <title>JobQuest API</title>
+      <link rel="stylesheet" href="./index.css" />
+    </head>
+  
+    <body>
+      <div id="swagger"></div>
+      <script src="./index.js"></script>
+      <script>
+        window.onload = () => {
+          window.ui = SwaggerUIBundle({ url: './openapi.json', dom_id: '#swagger'});
+        };
+      </script>
+    </body>
+  </html>
+  `;
+
 type RawHandlersMetadata = {
   [path: string]: { [httpMethod: string]: string };
 };
@@ -59,11 +83,11 @@ async function getRawHandlersMetaData(
   callbacks.forEach((cb) => cb(rawHandlersMetadata));
 }
 
-getRawHandlersMetaData([buildAppHandler, buildOpenapiSpec]);
+getRawHandlersMetaData([buildAppHandler, buildOpenapiSpecCode]);
 
 async function buildAppHandler(rawHandlersMetadata: RawHandlersMetadata) {
-  let newImportStatementsStr = `import { APIGatewayProxyHandler } from 'aws-lambda';import { EventHandler } from './common/types';`;
-  let newResourceHandlersStr = 'const resourceHandlers = {';
+  let importStatementsStr = `import { APIGatewayProxyHandler } from 'aws-lambda';import { EventHandler } from './api/common/types';`;
+  let resourceHandlersStr = 'const resourceHandlers = {';
   __.forIn(rawHandlersMetadata, (handlers, apiPath) => {
     const httpMethodHandlers: string[] = [];
     __.forIn(handlers, (filePath, httpMethod) => {
@@ -72,34 +96,50 @@ async function buildAppHandler(rawHandlersMetadata: RawHandlersMetadata) {
         .replace('.ts', '');
 
       const handlerName = __.camelCase(importPathRelative);
-      newImportStatementsStr += `import { handler as ${handlerName} } from './${importPathRelative}';`;
+      importStatementsStr += `import { handler as ${handlerName} } from '${importPathRelative}';`;
       httpMethodHandlers.push(`${httpMethod}: ${handlerName}`);
     });
     const apiPathObjStr = `['${apiPath}']: {${httpMethodHandlers.join(',')}},`;
-    newResourceHandlersStr += apiPathObjStr;
+    resourceHandlersStr += apiPathObjStr;
   });
-  const strCode = `${newImportStatementsStr}\n\n${newResourceHandlersStr}}\n\n${handlerStr}`;
+  const strCode = `${importStatementsStr}\n\n${resourceHandlersStr}}\n\n${handlerStr}`;
   const formatted2 = await prettier.format(strCode, {
     parser: 'typescript',
     singleQuote: true,
   });
 
-  // console.log({
-  //   rawHandlersMetadata,
-  //   formatted2,
-  // });
   fs.writeFileSync('src/app.controller.ts', formatted2);
 }
-async function buildOpenapiSpec(rawHandlersMetadata: RawHandlersMetadata) {
-  console.log(buildOpenapiSpec.name);
+async function buildOpenapiSpecCode(rawHandlersMetadata: RawHandlersMetadata) {
+  console.log(buildOpenapiSpecCode.name);
+  const openApiSpec: BuildOpenApiSpecArg = {
+    openapi: '3.0.0',
+    info: { title: 'What up !', version: '1.0.0' },
+    servers: [{ url: 'http://localhost:3000' }],
+    paths: {},
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+        },
+      },
+    },
+  };
 
   for (const [path, methods] of Object.entries(rawHandlersMetadata)) {
     for (const [method, filePath] of Object.entries(methods)) {
-      const { handler2 } = await import('./' + filePath.replace('.ts', ''));
-
-      console.log({ path, method, filePath, handler2 });
+      const { openapi } = await import('./' + filePath.replace('.ts', ''));
+      if (!openapi) continue;
+      __.set(openApiSpec, ['paths', path, method], openapi);
     }
   }
+
+  const output = buildOpenapiSpec(openApiSpec);
+  fs.writeFileSync('public/index.html', htmlContent);
+  fs.writeFileSync('public/openapi.json', JSON.stringify(output));
+  // console.log({ output });
 }
 // const allFiles = readAllFiles('./src');
 // console.log('hi');
@@ -107,32 +147,32 @@ async function buildOpenapiSpec(rawHandlersMetadata: RawHandlersMetadata) {
 // console.log(allFiles);
 // console.log(JSON.stringify(allFiles, null, 2));
 
-try {
-  const specStr = JSON.stringify(openApiSpec, null, 2);
+// try {
+//   const specStr = JSON.stringify(openApiSpec, null, 2);
 
-  const htmlContent = `<!DOCTYPE html>
-  <html>
-    <head>
-      <meta charset="UTF-8" />
-      <title>JobQuest API</title>
-      <link rel="stylesheet" href="./index-dark.css" />
-      <link rel="stylesheet" href="./index.css" />
-    </head>
-  
-    <body>
-      <div id="swagger"></div>
-      <script src="./index.js"></script>
-      <script>
-        window.onload = () => {
-          window.ui = SwaggerUIBundle({ url: './openapi.json', dom_id: '#swagger'});
-        };
-      </script>
-    </body>
-  </html>
-  `;
+//   const htmlContent = `<!DOCTYPE html>
+//   <html>
+//     <head>
+//       <meta charset="UTF-8" />
+//       <title>JobQuest API</title>
+//       <link rel="stylesheet" href="./index-dark.css" />
+//       <link rel="stylesheet" href="./index.css" />
+//     </head>
 
-  fs.writeFileSync('public/index.html', htmlContent);
-  fs.writeFileSync('public/openapi.json', specStr);
-} catch (error) {
-  console.error(error);
-}
+//     <body>
+//       <div id="swagger"></div>
+//       <script src="./index.js"></script>
+//       <script>
+//         window.onload = () => {
+//           window.ui = SwaggerUIBundle({ url: './openapi.json', dom_id: '#swagger'});
+//         };
+//       </script>
+//     </body>
+//   </html>
+//   `;
+
+//   fs.writeFileSync('public/index.html', htmlContent);
+//   fs.writeFileSync('public/openapi.json', specStr);
+// } catch (error) {
+//   console.error(error);
+// }

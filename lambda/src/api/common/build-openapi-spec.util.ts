@@ -34,7 +34,7 @@ const schemaPath = `${mediaPath}.schema`;
 const zodSchemaPath = `${mediaPath}.zodSchema`;
 
 export type BuildOpenApiSpecReturn = ReturnType<typeof buildOpenapiSpec>;
-type BuildOpenApiSpecArg = Parameters<typeof buildOpenapiSpec>[0];
+export type BuildOpenApiSpecArg = Parameters<typeof buildOpenapiSpec>[0];
 export type BuildOpenApiSpecArgOperationObj = NonNullable<
   BuildOpenApiSpecArg['paths'][string]
 >[OpenAPIV3.HttpMethods];

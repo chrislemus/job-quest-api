@@ -1,7 +1,15 @@
 import { BuildOpenApiSpecArgOperationObj } from '../../common';
-import { EventHandler } from '../common.types';
+import { EventHandler } from '../../common/types';
+import { userDeletePathParamsSchema } from '../schemas';
 
-export const openapi: BuildOpenApiSpecArgOperationObj = {};
+export const openapi: BuildOpenApiSpecArgOperationObj = {
+  security: [{ bearerAuth: [] }],
+  tags: ['user'],
+  zodPathParamsSchema: userDeletePathParamsSchema,
+  responses: {
+    200: { description: 'delete' },
+  },
+};
 
 export const handler: EventHandler = async (event, ctx) => {
   // const queryParams = {};
@@ -14,9 +22,9 @@ export const handler: EventHandler = async (event, ctx) => {
   //   );
   // }
   // event['queryParams'] = queryParams;
-  // console.log(event);
+  console.log(event);
   return {
     statusCode: 200,
-    body: JSON.stringify({ event, custom: 'GEThandler' }),
+    body: JSON.stringify({ event, custom: 'GETSuserDeletelephandler' }),
   };
 };

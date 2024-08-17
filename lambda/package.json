@@ -19,7 +19,8 @@
     "start": "node dist/index.js",
     "dev": "nodemon src/index.ts",
     "api": "ts-node build-api.ts",
-    "api:watch": "nodemon --watch 'src/openapi.config.ts' --exec \"npm run api\""
+    "api:watchBU": "nodemon --watch 'src/openapi.config.ts' --exec \"npm run api\"",
+    "api:watch": "nodemon --watch 'src' --ext handler.ts --exec \"npm run api\""
   },
   "keywords": [],
   "author": "",

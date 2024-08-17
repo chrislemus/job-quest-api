@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { userSchema } from '../..//user/schemas/user.schema';
+import { userSchema } from '../../user/schemas';
 
 export const authSignupReqBodySchema = z.object({
   email: userSchema.shape.email,

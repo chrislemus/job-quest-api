@@ -1,14 +1,19 @@
 import { APIGatewayProxyHandler } from 'aws-lambda';
-import { EventHandler } from './common/types';
-import { handler as authLoginGetHandler } from '././auth/login/get.handler';
-import { handler as authLoginPostHandler } from '././auth/login/post.handler';
-import { handler as authSignupGetHandler } from '././auth/signup/get.handler';
-import { handler as jobGetHandler } from '././job/get.handler';
+import { EventHandler } from './api/common/types';
+import { handler as apiAuthLoginPostHandler } from './api/auth/login/post.handler';
+import { handler as apiAuthRefreshPostHandler } from './api/auth/refresh/post.handler';
+import { handler as apiAuthSignupPostHandler } from './api/auth/signup/post.handler';
+import { handler as apiJobGetHandler } from './api/job/get.handler';
+import { handler as apiUserProfileGetHandler } from './api/user/profile/get.handler';
+import { handler as apiUserIdDeleteHandler } from './api/user/{id}/delete.handler';
 
 const resourceHandlers = {
-  ['/auth/login']: { get: authLoginGetHandler, post: authLoginPostHandler },
-  ['/auth/signup']: { get: authSignupGetHandler },
-  ['/job']: { get: jobGetHandler },
+  ['/api/auth/login']: { post: apiAuthLoginPostHandler },
+  ['/api/auth/refresh']: { post: apiAuthRefreshPostHandler },
+  ['/api/auth/signup']: { post: apiAuthSignupPostHandler },
+  ['/api/job']: { get: apiJobGetHandler },
+  ['/api/user/profile']: { get: apiUserProfileGetHandler },
+  ['/api/user/{id}']: { delete: apiUserIdDeleteHandler },
 };
 
 export const handler: APIGatewayProxyHandler = async (event, ctx) => {
