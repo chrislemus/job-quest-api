@@ -1,4 +1,5 @@
 import { buildOpenapiSpec, zodToJson } from '../common';
+import { authLoginHandler } from './auth-login.handler';
 import {
   authLoginReqBodySchema,
   authSignupReqBodySchema,

@@ -14,7 +14,7 @@ import { z } from 'zod';
 import { OpenAPIV3 } from 'openapi-types';
 import { EventHandler, Resources } from './common.types';
 import { routeBuilder } from './route-builder.util';
-import openApiSpec from '../openapi.config';
+// import openApiSpec from '../openapi.config';
 // const routeScema = z.object({});
 // import express from 'express';
 // import serverlessExpress from '@vendia/serverless-express';
@@ -42,17 +42,20 @@ const reqSchema = z.object({});
 export const handler: EventHandler = async (event, ctx) => {
   // console.log(reqSchema);
   // message: 'path: auth/loginGET',
-  console.log(openApiSpec);
+  const queryParams = {};
+  if (event.multiValueQueryStringParameters) {
+    Object.entries(event.multiValueQueryStringParameters).forEach(
+      ([key, value]) => {
+        if (!value) return;
+        queryParams[key] = value.length === 1 ? value[0] : value;
+      },
+    );
+  }
+  event['queryParams'] = queryParams;
+  console.log(event);
   return {
     statusCode: 200,
-    headers: {
-      'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*', // Required for CORS support to work
-      'Access-Control-Allow-Credentials': true, // Required for cookies, authorization headers with HTTPS,
-
-      Origin: '*',
-    },
-    body: JSON.stringify(openApiSpec),
+    body: JSON.stringify({ event, ctx }),
     // body: JSON.stringify({
     //   message: 'whyhow',
     //   // event,

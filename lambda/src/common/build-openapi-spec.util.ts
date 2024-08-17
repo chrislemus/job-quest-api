@@ -1,7 +1,6 @@
 import _ from 'lodash';
 import { OpenAPIV3 } from 'openapi-types';
-import { z, ZodObject, ZodTypeAny } from 'zod';
-import zodToJsonSchema from 'zod-to-json-schema';
+import { z, ZodObject } from 'zod';
 import { zodToJson, zodToParamJson } from './zod-json-formatters.util';
 
 export type OpenAPIV3Internal = OpenAPIV3.Document<{
@@ -35,6 +34,11 @@ const schemaPath = `${mediaPath}.schema`;
 const zodSchemaPath = `${mediaPath}.zodSchema`;
 
 export type BuildOpenApiSpecReturn = ReturnType<typeof buildOpenapiSpec>;
+type BuildOpenApiSpecArg = Parameters<typeof buildOpenapiSpec>[0];
+export type BuildOpenApiSpecArgOperationObj = NonNullable<
+  BuildOpenApiSpecArg['paths'][string]
+>[OpenAPIV3.HttpMethods];
+
 export function buildOpenapiSpec<
   T extends Omit<OpenAPIV3Internal, 'openapi' | 'info'> &
     Partial<Pick<OpenAPIV3Internal, 'openapi' | 'info'>>,
@@ -44,6 +48,14 @@ export function buildOpenapiSpec<
     _.forIn(pathConfig, function (methodObj, method) {
       if (!methodObj) return;
 
+      methodObj['x-amazon-apigateway-integration'] = {
+        httpMethod: 'POST',
+        payloadFormatVersion: '2.0',
+        type: 'AWS_PROXY',
+        uri: '${lambda_arn}',
+      };
+      // if (methodObj['handlerFn']) _.unset(methodObj, 'handlerFn');
+      // _.set(methodObj, 'responses', {});
       const responses = _.get(methodObj, 'responses');
       if (responses) {
         _.forIn(responses, function (responseObj, responseCode) {

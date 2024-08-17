@@ -8,5 +8,4 @@ export const paginationReqQuerySchema = z.object({
     .default(false)
     .optional()
     .describe('Retrieve total Count of Pages'),
-  // pageSize: z.number().optional().default(10),
 });
