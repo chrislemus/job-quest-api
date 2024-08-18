@@ -3,7 +3,7 @@ import { Compiler, Configuration } from 'webpack';
 import fs from 'fs';
 import { CleanWebpackPlugin } from 'clean-webpack-plugin';
 import TsconfigPathsPlugin from 'tsconfig-paths-webpack-plugin';
-import { myPlugin } from './build-api';
+// import { myPlugin } from './build-api';
 
 function* readAllFiles(dir) {
   const files = fs.readdirSync(dir, { withFileTypes: true });
@@ -23,7 +23,7 @@ const config: Configuration = {
   entry: () => {
     // return { 'api/auth/index': './src/auth/auth.controller.ts' };
     const entries = {
-      openapi: './src/openapi.config.ts',
+      // openapi: './src/openapi.config.ts',
       // openapi: {
       //   import: './src/openapi.config.ts',
       //   dependOn: 'openapi-format',

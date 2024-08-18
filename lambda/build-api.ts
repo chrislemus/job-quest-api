@@ -5,7 +5,8 @@ import * as prettier from 'prettier';
 import {
   buildOpenapiSpec,
   BuildOpenApiSpecArg,
-} from './src/api/common/build-openapi-spec.util';
+  BuildOpenApiSpecArgOperationObj,
+} from './src/common/build-openapi-spec.util';
 
 function* readAllFiles(dir) {
   const files = fs.readdirSync(dir, { withFileTypes: true });
@@ -18,7 +19,7 @@ function* readAllFiles(dir) {
   }
 }
 
-const handlerStr = `export const handler: APIGatewayProxyHandler = async (event, ctx) => {
+const handlerStr = `export const handler: EventHandler = async (event, ctx) => {
 const { resource, httpMethod, multiValueQueryStringParameters } = event;
 const method = httpMethod.toLowerCase();
 
@@ -72,6 +73,7 @@ async function getRawHandlersMetaData(
     if (
       file.endsWith('get.handler.ts') ||
       file.endsWith('post.handler.ts') ||
+      file.endsWith('patch.handler.ts') ||
       file.endsWith('put.handler.ts') ||
       file.endsWith('delete.handler.ts')
     ) {
@@ -86,8 +88,9 @@ async function getRawHandlersMetaData(
 getRawHandlersMetaData([buildAppHandler, buildOpenapiSpecCode]);
 
 async function buildAppHandler(rawHandlersMetadata: RawHandlersMetadata) {
-  let importStatementsStr = `import { APIGatewayProxyHandler } from 'aws-lambda';import { EventHandler } from './api/common/types';`;
-  let resourceHandlersStr = 'const resourceHandlers = {';
+  let importStatementsStr = `import { EventHandler } from './common/types';`;
+  let resourceHandlersStr =
+    'const resourceHandlers: Record<string, Record<string, EventHandler>> = {';
   __.forIn(rawHandlersMetadata, (handlers, apiPath) => {
     const httpMethodHandlers: string[] = [];
     __.forIn(handlers, (filePath, httpMethod) => {
@@ -99,7 +102,9 @@ async function buildAppHandler(rawHandlersMetadata: RawHandlersMetadata) {
       importStatementsStr += `import { handler as ${handlerName} } from '${importPathRelative}';`;
       httpMethodHandlers.push(`${httpMethod}: ${handlerName}`);
     });
-    const apiPathObjStr = `['${apiPath}']: {${httpMethodHandlers.join(',')}},`;
+    const apiPathObjStr = `['/v1/${apiPath}']: {${httpMethodHandlers.join(
+      ',',
+    )}},`;
     resourceHandlersStr += apiPathObjStr;
   });
   const strCode = `${importStatementsStr}\n\n${resourceHandlersStr}}\n\n${handlerStr}`;
@@ -129,10 +134,16 @@ async function buildOpenapiSpecCode(rawHandlersMetadata: RawHandlersMetadata) {
   };
 
   for (const [path, methods] of Object.entries(rawHandlersMetadata)) {
+    const pathWithPrefix = `/v1${path}`;
     for (const [method, filePath] of Object.entries(methods)) {
-      const { openapi } = await import('./' + filePath.replace('.ts', ''));
+      const { openapi } = (await import(
+        './' + filePath.replace('.ts', '')
+      )) as { openapi?: BuildOpenApiSpecArgOperationObj };
+      // console.log(openapi);
       if (!openapi) continue;
-      __.set(openApiSpec, ['paths', path, method], openapi);
+      if (!openapi.security) openapi.security = [{ bearerAuth: [] }];
+      if (!openapi.tags) openapi.tags = [path.split('/')[1]];
+      __.set(openApiSpec, ['paths', pathWithPrefix, method], openapi);
     }
   }
 
