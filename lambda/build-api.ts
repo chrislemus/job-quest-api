@@ -33,7 +33,10 @@ if (multiValueQueryStringParameters) {
 event['queryParams'] = queryParams;
 
 const childHandler: EventHandler = resourceHandlers[resource]?.[method];
-if (!childHandler) throw new Error('No handler found');
+  if (!childHandler) {
+    console.log(Object.keys(resourceHandlers));
+    throw new Error(\`NoHandler|resource:\${resource}|method:\${method}\`);
+  }
 
 
 const res = await childHandler(event, ctx);
@@ -102,7 +105,7 @@ async function buildAppHandler(rawHandlersMetadata: RawHandlersMetadata) {
       importStatementsStr += `import { handler as ${handlerName} } from '${importPathRelative}';`;
       httpMethodHandlers.push(`${httpMethod}: ${handlerName}`);
     });
-    const apiPathObjStr = `['/v1/${apiPath}']: {${httpMethodHandlers.join(
+    const apiPathObjStr = `['/v1${apiPath}']: {${httpMethodHandlers.join(
       ',',
     )}},`;
     resourceHandlersStr += apiPathObjStr;
@@ -116,19 +119,17 @@ async function buildAppHandler(rawHandlersMetadata: RawHandlersMetadata) {
   fs.writeFileSync('src/app.controller.ts', formatted2);
 }
 async function buildOpenapiSpecCode(rawHandlersMetadata: RawHandlersMetadata) {
-  console.log(buildOpenapiSpecCode.name);
   const openApiSpec: BuildOpenApiSpecArg = {
     openapi: '3.0.0',
-    info: { title: 'What up !', version: '1.0.0' },
-    servers: [{ url: 'http://localhost:3000' }],
+    info: {
+      title: 'Job Quest',
+      version: '1.0.0',
+      description: 'Qob Quest API Docs',
+    },
     paths: {},
     components: {
       securitySchemes: {
-        bearerAuth: {
-          type: 'http',
-          scheme: 'bearer',
-          bearerFormat: 'JWT',
-        },
+        bearerAuth: { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
       },
     },
   };
@@ -149,41 +150,84 @@ async function buildOpenapiSpecCode(rawHandlersMetadata: RawHandlersMetadata) {
 
   const output = buildOpenapiSpec(openApiSpec);
   fs.writeFileSync('public/index.html', htmlContent);
-  fs.writeFileSync('public/openapi.json', JSON.stringify(output));
-  // console.log({ output });
+  fs.writeFileSync('public/api-spec.json', JSON.stringify(output));
 }
-// const allFiles = readAllFiles('./src');
-// console.log('hi');
-// console.log(fs.readdirSync('./src'));
-// console.log(allFiles);
-// console.log(JSON.stringify(allFiles, null, 2));
+//
+//
+//
+//
+//
+//
+//
+// async function buildOpenapiSpecCode(rawHandlersMetadata: RawHandlersMetadata) {
+//   const openApiSpec: BuildOpenApiSpecArg = {
+//     openapi: '3.0.0',
+//     info: { title: 'What up !', version: '1.0.0' },
+//     servers: [{ url: 'http://localhost:3000' }],
+//     paths: {},
+//     components: {
+//       securitySchemes: {
+//         bearerAuth: {
+//           type: 'http',
+//           scheme: 'bearer',
+//           bearerFormat: 'JWT',
+//         },
+//       },
+//     },
+//   };
 
-// try {
-//   const specStr = JSON.stringify(openApiSpec, null, 2);
+//   for (const [path, methods] of Object.entries(rawHandlersMetadata)) {
+//     const pathWithPrefix = `/v1${path}`;
+//     for (const [method, filePath] of Object.entries(methods)) {
+//       const { openapi } = (await import(
+//         './' + filePath.replace('.ts', '')
+//       )) as { openapi?: BuildOpenApiSpecArgOperationObj };
+//       // console.log(openapi);
+//       if (!openapi) continue;
+//       // if (!openapi.security) openapi.security = [{ bearerAuth: [] }];
+//       if (!openapi.tags) openapi.tags = [path.split('/')[1]];
+//       __.set(openApiSpec, ['paths', pathWithPrefix, method], openapi);
+//     }
+//   }
 
-//   const htmlContent = `<!DOCTYPE html>
+//   const output = buildOpenapiSpec(openApiSpec);
+//   const apiSpec = JSON.stringify(output);
+//   // fs.writeFileSync('public/index.html', htmlContent);
+
+//   const content = `
+//   import { BuildOpenApiSpecArgOperationObj } from './common';
+// import { EventHandler } from './common/types';
+// import fs from 'fs';
+
+// export const openapi: BuildOpenApiSpecArgOperationObj = {
+//   responses: { 200: { description: '', content: { 'text/html': {} } } },
+// };
+
+// export const handler: EventHandler = async () => {
+//   const css = fs.readFileSync('./swagger.css').toString();
+//   const js = fs.readFileSync('./swagger.js').toString();
+
+//   return {
+//     statusCode: 200,
+//     headers: { 'Content-Type': 'text/html' },
+//     body: \`<!DOCTYPE html>
 //   <html>
 //     <head>
 //       <meta charset="UTF-8" />
 //       <title>JobQuest API</title>
-//       <link rel="stylesheet" href="./index-dark.css" />
-//       <link rel="stylesheet" href="./index.css" />
+//       <style>\${css}</style>
 //     </head>
-
 //     <body>
 //       <div id="swagger"></div>
-//       <script src="./index.js"></script>
+//       <script>\${js}</script>
 //       <script>
-//         window.onload = () => {
-//           window.ui = SwaggerUIBundle({ url: './openapi.json', dom_id: '#swagger'});
-//         };
+//         window.onload = () => {  window.ui = SwaggerUIBundle({ url: './v1/openapi.json', dom_id: '#swagger'}); };
 //       </script>
 //     </body>
 //   </html>
-//   `;
-
-//   fs.writeFileSync('public/index.html', htmlContent);
-//   fs.writeFileSync('public/openapi.json', specStr);
-// } catch (error) {
-//   console.error(error);
+//   \`,
+//   };
+// };
+// `;
+//   fs.writeFileSync('src/get.handler.ts', content);
 // }

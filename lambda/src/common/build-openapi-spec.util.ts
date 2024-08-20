@@ -10,7 +10,7 @@ export type OpenAPIV3Internal = OpenAPIV3.Document<{
   responses?: {
     [code: string]: {
       content?: {
-        ['application/json']: {
+        ['application/json']?: {
           zodSchema?: Record<string, z.ZodObject<any, any>>;
         };
       };
@@ -19,7 +19,7 @@ export type OpenAPIV3Internal = OpenAPIV3.Document<{
   requestBody?: {
     content?: {
       ['application/json']: {
-        zodSchema?: Record<string, z.ZodObject<any, any>>;
+        zodSchema?: Record<string, z.ZodSchema<any>>;
         schema?: OpenAPIV3.SchemaObject;
         // schema: {
         // };

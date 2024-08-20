@@ -12,5 +12,5 @@ export const jwtSchema = z.object({
   accessToken: accessTokenSchema,
   refreshToken: refreshTokenSchema,
 });
-export type jwtSchema = z.input<typeof jwtSchema>;
+export type JwtSchema = z.input<typeof jwtSchema>;
 export type jwtSchemaDto = z.output<typeof jwtSchema>;

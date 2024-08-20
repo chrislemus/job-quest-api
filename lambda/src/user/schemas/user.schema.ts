@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const userRoleEnum = z.enum(['admin', 'user']);
+export const userRoleEnum = z.enum(['ADMIN', 'SUBSCRIBER']);
 export type UserRoleEnum = z.input<typeof userRoleEnum>;
 export type UserRoleDto = z.output<typeof userRoleEnum>;
 
@@ -11,6 +11,7 @@ export const userSchema = z.object({
   firstName: z.string().min(2),
   lastName: z.string().min(2),
   role: userRoleEnum,
+  refreshToken: z.string().optional(),
 });
 export type UserSchema = z.input<typeof userSchema>;
 export type UserDto = z.output<typeof userSchema>;

@@ -18,6 +18,20 @@ export const openapi: BuildOpenApiSpecArgOperationObj = {
 export const handler: EventHandler = async (event, ctx) => {
   // const queryParams = {};
   // if (event.multiValueQueryStringParameters) {
+  console.log('user profile hit');
+  console.log('user profile hit');
+  console.log('user profile hit');
+  console.log('user profile hit');
+  console.log('user profile hit');
+  console.log('user profile hit');
+  console.log('user profile hit');
+  console.log('user profile hit');
+  console.log('user profile hit');
+  console.log('user profile hit');
+  console.log('user profile hit');
+  console.log('user profile hit');
+  console.log('user profile hit');
+  console.log('user profile hit');
   //   Object.entries(event.multiValueQueryStringParameters).forEach(
   //     ([key, value]) => {
   //       if (!value) return;

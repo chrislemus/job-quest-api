@@ -3,6 +3,7 @@ import { handler as authLoginPostHandler } from './auth/login/post.handler';
 import { handler as authLogoutPostHandler } from './auth/logout/post.handler';
 import { handler as authRefreshPostHandler } from './auth/refresh/post.handler';
 import { handler as authSignupPostHandler } from './auth/signup/post.handler';
+import { handler as getHandler } from './get.handler';
 import { handler as jobGetHandler } from './job/get.handler';
 import { handler as jobPostHandler } from './job/post.handler';
 import { handler as jobIdDeleteHandler } from './job/{id}/delete.handler';
@@ -17,24 +18,25 @@ import { handler as userProfileGetHandler } from './user/profile/get.handler';
 import { handler as userIdDeleteHandler } from './user/{id}/delete.handler';
 
 const resourceHandlers: Record<string, Record<string, EventHandler>> = {
-  ['/v1//auth/login']: { post: authLoginPostHandler },
-  ['/v1//auth/logout']: { post: authLogoutPostHandler },
-  ['/v1//auth/refresh']: { post: authRefreshPostHandler },
-  ['/v1//auth/signup']: { post: authSignupPostHandler },
-  ['/v1//job']: { get: jobGetHandler, post: jobPostHandler },
-  ['/v1//job/{id}']: {
+  ['/v1/auth/login']: { post: authLoginPostHandler },
+  ['/v1/auth/logout']: { post: authLogoutPostHandler },
+  ['/v1/auth/refresh']: { post: authRefreshPostHandler },
+  ['/v1/auth/signup']: { post: authSignupPostHandler },
+  ['/v1/']: { get: getHandler },
+  ['/v1/job']: { get: jobGetHandler, post: jobPostHandler },
+  ['/v1/job/{id}']: {
     delete: jobIdDeleteHandler,
     get: jobIdGetHandler,
     patch: jobIdPatchHandler,
   },
-  ['/v1//job-list']: { get: jobListGetHandler, post: jobListPostHandler },
-  ['/v1//job-list/{id}']: {
+  ['/v1/job-list']: { get: jobListGetHandler, post: jobListPostHandler },
+  ['/v1/job-list/{id}']: {
     delete: jobListIdDeleteHandler,
     get: jobListIdGetHandler,
     patch: jobListIdPatchHandler,
   },
-  ['/v1//user/profile']: { get: userProfileGetHandler },
-  ['/v1//user/{id}']: { delete: userIdDeleteHandler },
+  ['/v1/user/profile']: { get: userProfileGetHandler },
+  ['/v1/user/{id}']: { delete: userIdDeleteHandler },
 };
 
 export const handler: EventHandler = async (event, ctx) => {
@@ -51,7 +53,10 @@ export const handler: EventHandler = async (event, ctx) => {
   event['queryParams'] = queryParams;
 
   const childHandler: EventHandler = resourceHandlers[resource]?.[method];
-  if (!childHandler) throw new Error('No handler found');
+  if (!childHandler) {
+    console.log(Object.keys(resourceHandlers));
+    throw new Error(`NoHandler|resource:${resource}|method:${method}`);
+  }
 
   const res = await childHandler(event, ctx);
   return res;

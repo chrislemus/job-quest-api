@@ -1,9 +1,10 @@
 import path from 'path';
-import { Compiler, Configuration } from 'webpack';
+import { Configuration } from 'webpack';
 import fs from 'fs';
 import { CleanWebpackPlugin } from 'clean-webpack-plugin';
-import TsconfigPathsPlugin from 'tsconfig-paths-webpack-plugin';
-// import { myPlugin } from './build-api';
+import CopyWebpackPlugin from 'copy-webpack-plugin';
+
+import { getAbsoluteFSPath } from 'swagger-ui-dist';
 
 function* readAllFiles(dir) {
   const files = fs.readdirSync(dir, { withFileTypes: true });
@@ -52,14 +53,31 @@ const config: Configuration = {
   },
   resolve: {
     extensions: ['.js', '.ts'],
-    // plugins: [new TsconfigPathsPlugin()],
     alias: {
       '@': path.resolve(__dirname, './src/'),
     },
   },
   target: 'node',
-  plugins: [new CleanWebpackPlugin()],
-  // more
+  plugins: [
+    new CleanWebpackPlugin(),
+    new CopyWebpackPlugin({
+      patterns: [
+        {
+          from: require.resolve('swagger-ui/dist/swagger-ui.css'),
+          to: 'api/swagger.css',
+        },
+
+        {
+          from: path.resolve(__dirname, 'public/api-spec.json'),
+          to: 'api/api-spec.json',
+        },
+        {
+          from: require.resolve(getAbsoluteFSPath() + '/swagger-ui-bundle.js'),
+          to: 'api/swagger.js',
+        },
+      ],
+    }),
+  ],
 };
 
 export default config;
