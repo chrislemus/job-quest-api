@@ -1,11 +1,11 @@
-import { EventHandler } from '../../common/types';
-import { jwtSchema } from '../schemas';
+import { appConfig, BuildOpenApiSpecArgOperationObj } from '@/common';
+import { EventHandler } from '@/common/types';
+import { jwtSchema } from '@/auth/schemas';
 import jwt from 'jsonwebtoken';
-import { getTokens } from '../utils';
-import { UserDBService } from '../../db/user-db.service';
+import { getTokens } from '@/auth/utils';
+import { userDB } from '@/db/user-db.service';
 import bcrypt from 'bcryptjs';
-import { JwtPayload } from '../types';
-import { appConfig, BuildOpenApiSpecArgOperationObj } from '../../common';
+import { JwtPayload } from '@/auth/types';
 
 export const openapi: BuildOpenApiSpecArgOperationObj = {
   responses: {
@@ -26,10 +26,8 @@ export const handler: EventHandler = async (event) => {
     if (!refreshToken) throw new Error('No token provided');
     const payload = jwt.verify(
       refreshToken,
-      appConfig().JWT_REFRESH_SECRET,
+      appConfig.jwtRefreshSecret,
     ) as JwtPayload;
-
-    const userDB = new UserDBService();
 
     const dbUser = await userDB.queryUnique(payload.id);
     if (!dbUser?.refreshToken) throw new Error('User refresh token not found');

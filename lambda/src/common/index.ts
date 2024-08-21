@@ -4,3 +4,4 @@ export * from './hash-value.util';
 export * from './app.config';
 export * from './api-error.util';
 export * from './uuid.util';
+export * from './http-exceptions.util';

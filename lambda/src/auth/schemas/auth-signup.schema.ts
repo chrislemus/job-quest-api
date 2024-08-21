@@ -1,7 +1,7 @@
 import { z } from 'zod';
-import { userSchema } from '../../user/schemas';
-import { hashValue } from '../../common';
-import { UserDBService } from '../../db/user-db.service';
+import { userSchema } from '@/user/schemas';
+import { hashValue } from '@/common';
+import { userDB } from '@/db/user-db.service';
 
 export const authSignupReqBodySchema = z
   .object({
@@ -11,8 +11,6 @@ export const authSignupReqBodySchema = z
       return await hashValue(password);
     }),
     email: userSchema.shape.email.superRefine(async (email, ctx) => {
-      const userDB = new UserDBService();
-
       const code = z.ZodIssueCode.custom;
       try {
         const existingUser = await userDB.findByEmail(email);
@@ -21,6 +19,7 @@ export const authSignupReqBodySchema = z
           ctx.addIssue({ code, message });
         }
       } catch (error) {
+        console.error(error);
         const message = 'Error validating user email';
         ctx.addIssue({ code, message });
       }

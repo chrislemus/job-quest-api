@@ -39,8 +39,23 @@ const childHandler: EventHandler = resourceHandlers[resource]?.[method];
   }
 
 
-const res = await childHandler(event, ctx);
-return res;
+  try {
+    const res = await childHandler(event, ctx);
+    return res;
+  } catch (error) {
+    if (error instanceof ExceptionError) {
+      return {
+        statusCode: error.statusCode,
+        body: JSON.stringify({ message: error.message, error: error.error }),
+      };
+    } else {
+      console.error(error);
+      return {
+        statusCode: 500,
+        body: JSON.stringify({ message: 'Internal Server Error' }),
+      };
+    }
+  }
 };`;
 
 const htmlContent = `<!DOCTYPE html>
@@ -91,7 +106,7 @@ async function getRawHandlersMetaData(
 getRawHandlersMetaData([buildAppHandler, buildOpenapiSpecCode]);
 
 async function buildAppHandler(rawHandlersMetadata: RawHandlersMetadata) {
-  let importStatementsStr = `import { EventHandler } from './common/types';`;
+  let importStatementsStr = `import { EventHandler } from './common/types';import { ExceptionError } from './common';`;
   let resourceHandlersStr =
     'const resourceHandlers: Record<string, Record<string, EventHandler>> = {';
   __.forIn(rawHandlersMetadata, (handlers, apiPath) => {

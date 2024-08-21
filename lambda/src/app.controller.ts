@@ -1,4 +1,5 @@
 import { EventHandler } from './common/types';
+import { ExceptionError } from './common';
 import { handler as authLoginPostHandler } from './auth/login/post.handler';
 import { handler as authLogoutPostHandler } from './auth/logout/post.handler';
 import { handler as authRefreshPostHandler } from './auth/refresh/post.handler';
@@ -58,6 +59,21 @@ export const handler: EventHandler = async (event, ctx) => {
     throw new Error(`NoHandler|resource:${resource}|method:${method}`);
   }
 
-  const res = await childHandler(event, ctx);
-  return res;
+  try {
+    const res = await childHandler(event, ctx);
+    return res;
+  } catch (error) {
+    if (error instanceof ExceptionError) {
+      return {
+        statusCode: error.statusCode,
+        body: JSON.stringify({ message: error.message, error: error.error }),
+      };
+    } else {
+      console.error(error);
+      return {
+        statusCode: 500,
+        body: JSON.stringify({ message: 'Internal Server Error' }),
+      };
+    }
+  }
 };

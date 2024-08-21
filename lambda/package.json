@@ -18,9 +18,9 @@
     "build": "npx tsc",
     "start": "node dist/index.js",
     "dev": "nodemon src/index.ts",
-    "api": "ts-node build-api.ts",
-    "api:watchBU": "nodemon --watch 'src/openapi.config.ts' --exec \"npm run api\"",
-    "api:watch": "nodemon --watch 'src' --ext .ts -i app.controller.ts --exec \"npm run api\""
+    "api": "ts-node -P ./tsconfig.json build-api.ts",
+    "api:watch": "nodemon --watch 'src' --ext .ts -i app.controller.ts --exec \"npm run api\"",
+    "api:watchBackUp": "nodemon --watch 'src/openapi.config.ts' --exec \"npm run api\""
   },
   "keywords": [],
   "author": "",
@@ -66,6 +66,7 @@
     "swagger-ui-dist": "^5.17.14",
     "ts-loader": "^9.5.1",
     "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
     "tsconfig-paths-webpack-plugin": "^4.1.0",
     "typescript": "^5.5.4",
     "webpack": "^5.93.0",
