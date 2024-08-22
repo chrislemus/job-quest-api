@@ -3,7 +3,7 @@ import { Configuration } from 'webpack';
 import fs from 'fs';
 import { CleanWebpackPlugin } from 'clean-webpack-plugin';
 import CopyWebpackPlugin from 'copy-webpack-plugin';
-
+import Webpack from 'webpack';
 import { getAbsoluteFSPath } from 'swagger-ui-dist';
 
 function* readAllFiles(dir) {

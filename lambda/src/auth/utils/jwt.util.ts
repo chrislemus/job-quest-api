@@ -12,8 +12,8 @@ export async function getTokens(user: AuthUserSchema): Promise<JwtSchema> {
     appConfig;
 
   const [accessToken, refreshToken] = await Promise.all([
-    jwt.sign(authUser, jwtSecret, { expiresIn: jwtAccessExpiry }),
-    jwt.sign(authUser, jwtRefreshSecret, { expiresIn: jwtRefreshExpiry }),
+    jwt.sign(authUser, jwtSecret, { expiresIn: `${jwtAccessExpiry}` }),
+    jwt.sign(authUser, jwtRefreshSecret, { expiresIn: `${jwtRefreshExpiry}` }),
   ]);
 
   await syncRefreshToken(authUser, refreshToken);

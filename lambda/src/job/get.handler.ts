@@ -1,7 +1,8 @@
-import { z } from 'zod';
-import { BuildOpenApiSpecArgOperationObj } from '../common';
+import { apiError, BuildOpenApiSpecArgOperationObj } from '../common';
 import { EventHandler } from '../common/types';
 import { getJobsQueryParamsSchema, jobPageResSchema } from './schemas';
+import { jobDB } from '@/db/job-db.service';
+import { authHandler } from '@/auth';
 
 export const openapi: BuildOpenApiSpecArgOperationObj = {
   zodQueryParamsSchema: getJobsQueryParamsSchema,
@@ -17,11 +18,16 @@ export const openapi: BuildOpenApiSpecArgOperationObj = {
   },
 };
 
-export const handler: EventHandler = async (event) => {
-  // const data = eventSchema.parse(event);
-  // event.body
+export const handler: EventHandler = authHandler(async (authUser, event) => {
+  const res = getJobsQueryParamsSchema.safeParse(event.queryStringParameters);
+  if (res.error) return apiError(res.error);
+  if (res.data.jobListId) throw new Error('jobListId is not implemented yet');
+
+  const { Items } = await jobDB.findAll(authUser.id);
+  const items = !Items ? [] : Items;
+
   return {
     statusCode: 200,
-    body: JSON.stringify({ event, custom: 'GETSignuphandler' }),
+    body: JSON.stringify({ items }),
   };
-};
+});

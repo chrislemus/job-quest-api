@@ -1,7 +1,13 @@
-import { EventHandler } from '../../common/types';
-import { BuildOpenApiSpecArgOperationObj } from '../../common';
+import { EventHandler } from '@/common/types';
+import {
+  apiError,
+  BuildOpenApiSpecArgOperationObj,
+  notFoundException,
+} from '../../common';
 import { jobListSchema } from './schemas';
 import { jobListIdPathParamsSchema } from './schemas';
+import { jobListDB } from '@/db/job-list-db.service';
+import { authHandler } from '@/auth';
 
 export const openapi: BuildOpenApiSpecArgOperationObj = {
   zodPathParamsSchema: jobListIdPathParamsSchema,
@@ -18,9 +24,16 @@ export const openapi: BuildOpenApiSpecArgOperationObj = {
   },
 };
 
-export const handler: EventHandler = async (event) => {
+export const handler: EventHandler = authHandler(async (authUser, event) => {
+  const res = jobListIdPathParamsSchema.safeParse(event.pathParameters);
+  if (res.error) return apiError(res.error);
+
+  const jobList = await jobListDB.queryUnique(authUser.id, res.data.id);
+  if (!jobList) throw notFoundException();
+
+  const body = jobListSchema.parse(jobList);
   return {
     statusCode: 200,
-    body: JSON.stringify({ event, custom: 'GETSignuphandler' }),
+    body: JSON.stringify(body),
   };
-};
+});

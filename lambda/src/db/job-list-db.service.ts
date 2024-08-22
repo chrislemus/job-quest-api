@@ -37,22 +37,24 @@ async function create(
   const TableName = appConfig.tableName;
   const { label, userId } = jobList;
   const jobListId = uuid();
-  const lastJobListId = await getLastJobListId(userId);
-  const order = lastJobListId ? lastJobListId + 1 : 1; // must start at index 1
+  const lastJobListId = await getLastJobListOrderNum(userId);
+  console.log({ lastJobListId });
+  throw new Error('Not implemented');
+  // const order = lastJobListId ? lastJobListId + 1 : 1; // must start at index 1
 
-  // hard limit due to storage constraints
-  const { jobListCreateLimit } = appConfig;
-  if (order >= jobListCreateLimit) {
-    throw conflictException(
-      `Exceeded Job List limit (${jobListCreateLimit}). Consider deleting Job Lists to free up some space.`,
-    );
-  }
-  const ck = getJobListCK({ userId, jobListId });
-  const Item: JobListItem = { order, label, userId, id: jobListId, ...ck };
-  const command = new PutCommand({ TableName, Item });
-  await dbClient().send(command);
+  // // hard limit due to storage constraints
+  // const { jobListCreateLimit } = appConfig;
+  // if (order >= jobListCreateLimit) {
+  //   throw conflictException(
+  //     `Exceeded Job List limit (${jobListCreateLimit}). Consider deleting Job Lists to free up some space.`,
+  //   );
+  // }
+  // const ck = getJobListCK({ userId, jobListId });
+  // const Item: JobListItem = { order, label, userId, id: jobListId, ...ck };
+  // const command = new PutCommand({ TableName, Item });
+  // await dbClient().send(command);
 
-  return { order, label, id: jobListId, userId };
+  // return { order, label, id: jobListId, userId };
 }
 
 async function createMany(
@@ -60,7 +62,7 @@ async function createMany(
   jobListItems: Omit<JobList, 'userId' | 'id' | 'order'>[],
 ) {
   if (jobListItems.length === 0) throw badRequestException('No data');
-  const lastJobListId = await getLastJobListId(userId);
+  const lastJobListId = await getLastJobListOrderNum(userId);
   const startOrder = lastJobListId ? lastJobListId + 1 : 1; // must start at index 1
   const totalJobListItemsAfterCreate = startOrder + jobListItems.length;
 
@@ -88,28 +90,23 @@ async function createMany(
   return res;
 }
 
-async function getLastJobListId(userId: string): Promise<number | null> {
+async function getLastJobListOrderNum(userId: string): Promise<number | null> {
   const ck: JobListCK = getJobListCK({ userId, jobListId: '' });
   const ExpressionAttributeValues = getExpAttrValues(ck);
   const TableName = appConfig.tableName;
   const command = new QueryCommand({
     TableName,
-    ScanIndexForward: false,
+    ScanIndexForward: true,
     ConsistentRead: true,
     KeyConditionExpression: 'pk = :pk And begins_with(sk, :sk)',
     ExpressionAttributeValues,
-    Select: 'SPECIFIC_ATTRIBUTES',
-    ProjectionExpression: 'sk',
     Limit: 1,
   });
 
-  const res = (await dbClient().send(command)) as QueryCommandOutput<
-    Pick<JobListCK, 'sk'>
-  >;
+  const res = (await dbClient().send(command)) as QueryCommandOutput<JobList>;
 
-  const lastJobListId = res.Items?.[0]?.sk.split('#')[1];
-  const lastJobListIdNum = lastJobListId ? parseInt(lastJobListId) : null;
-  return lastJobListIdNum ?? null;
+  const jobListOrder = res.Items?.[0]?.order;
+  return jobListOrder ?? null;
 }
 
 async function update(
@@ -208,4 +205,4 @@ async function findAll(userId: string): Promise<JobList[]> {
   return jobLists ?? [];
 }
 
-export const jobListDB = { createMany, findAll };
+export const jobListDB = { createMany, findAll, queryUnique, update, create };

@@ -21,5 +21,9 @@ export function conflictException(message?: string) {
 }
 
 export function badRequestException(message?: string) {
-  return new ExceptionError(400, 'Bad Request', message);
+  return new ExceptionError(400, 'Bad request', message);
+}
+
+export function internalServerException(message?: string) {
+  return new ExceptionError(500, 'Internal server error', message);
 }

@@ -1,6 +1,8 @@
+import { userDB } from '@/db/user-db.service';
 import { BuildOpenApiSpecArgOperationObj } from '../../common';
 import { EventHandler } from '../../common/types';
 import { userProfileResBodySchema } from '../schemas';
+import { authHandler } from '@/auth';
 
 export const openapi: BuildOpenApiSpecArgOperationObj = {
   responses: {
@@ -15,34 +17,12 @@ export const openapi: BuildOpenApiSpecArgOperationObj = {
   },
 };
 
-export const handler: EventHandler = async (event, ctx) => {
-  // const queryParams = {};
-  // if (event.multiValueQueryStringParameters) {
-  console.log('user profile hit');
-  console.log('user profile hit');
-  console.log('user profile hit');
-  console.log('user profile hit');
-  console.log('user profile hit');
-  console.log('user profile hit');
-  console.log('user profile hit');
-  console.log('user profile hit');
-  console.log('user profile hit');
-  console.log('user profile hit');
-  console.log('user profile hit');
-  console.log('user profile hit');
-  console.log('user profile hit');
-  console.log('user profile hit');
-  //   Object.entries(event.multiValueQueryStringParameters).forEach(
-  //     ([key, value]) => {
-  //       if (!value) return;
-  //       queryParams[key] = value.length === 1 ? value[0] : value;
-  //     },
-  //   );
-  // }
-  // event['queryParams'] = queryParams;
-  // console.log(event);
+export const handler: EventHandler = authHandler(async (authUser) => {
+  const user = await userDB.queryUnique(authUser.id);
+  const body = userProfileResBodySchema.parse(user);
+
   return {
     statusCode: 200,
-    body: JSON.stringify({ event, custom: 'GETSuserProfilephandler' }),
+    body: JSON.stringify(body),
   };
-};
+});

@@ -16,6 +16,9 @@ export const userSchema = z.object({
 export type UserSchema = z.input<typeof userSchema>;
 export type UserDto = z.output<typeof userSchema>;
 
-export const userProfileResBodySchema = userSchema.omit({ password: true });
+export const userProfileResBodySchema = userSchema.omit({
+  password: true,
+  refreshToken: true,
+});
 export type UserProfileResBodySchema = z.input<typeof userProfileResBodySchema>;
 export type UserProfileResBodyDto = z.output<typeof userProfileResBodySchema>;

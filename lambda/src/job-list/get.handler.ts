@@ -18,20 +18,20 @@ export const openapi: BuildOpenApiSpecArgOperationObj = {
   },
 };
 
-export const handler: EventHandler = authHandler(async (authUser, event) => {
-  const data = await jobListDB.findAll(authUser.id);
+export const handler: EventHandler = authHandler(async (authUser) => {
+  const items = await jobListDB.findAll(authUser.id);
 
-  const body = JSON.stringify({
-    data,
+  const body = {
+    items,
     pageInfo: {
       currentPage: 0,
       currentPageSize: 0,
       currentPageCount: 0,
     },
-  });
+  };
 
   return {
     statusCode: 200,
-    body: JSON.stringify({ event, custom: 'GETSignuphandler' }),
+    body: JSON.stringify(body),
   };
 });

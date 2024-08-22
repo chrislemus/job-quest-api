@@ -1,3 +1,5 @@
+import { getExpAttrValues, removeCK } from './db-util';
+import { jobListJobRankDB } from './job-list-job-rank-db.service';
 import dbClient from './dynamo-db-document-client.service';
 import {
   GetCommand,
@@ -21,15 +23,12 @@ import {
   notFoundException,
   uuid,
 } from '@/common';
-
-import { getExpAttrValues, removeCK } from './db-util';
 import {
   getJobCK,
   getJobCountCK,
   JobCK,
   getJobListCK,
 } from './composite-key.util';
-import { jobListJobRankDB } from './job-list-job-rank-db.service';
 
 // const TableName = 'JobQuest-Job';
 
@@ -104,6 +103,30 @@ async function create(job: Omit<Job, 'id'>) {
   });
 
   const jobListCK = getJobListCK({ userId, jobListId });
+  // console.log({ jobItem, jobListCK, jobListJobRankPutCmdInput });
+  // console.log({ jobItem, jobListCK, jobListJobRankPutCmdInput });
+  // console.log({ jobItem, jobListCK, jobListJobRankPutCmdInput });
+  // console.log({ jobItem, jobListCK, jobListJobRankPutCmdInput });
+  // console.log({ jobItem, jobListCK, jobListJobRankPutCmdInput });
+  // console.log({ jobItem, jobListCK, jobListJobRankPutCmdInput });
+  // console.log({ jobItem, jobListCK, jobListJobRankPutCmdInput });
+  // console.log({ jobItem, jobListCK, jobListJobRankPutCmdInput });
+  // console.log({ jobItem, jobListCK, jobListJobRankPutCmdInput });
+  // console.log({ jobItem, jobListCK, jobListJobRankPutCmdInput });
+  // console.log({ jobItem, jobListCK, jobListJobRankPutCmdInput });
+  // console.log({ jobItem, jobListCK, jobListJobRankPutCmdInput });
+  // console.log({ jobItem, jobListCK, jobListJobRankPutCmdInput });
+  // console.log({ jobItem, jobListCK, jobListJobRankPutCmdInput });
+  // console.log({ jobItem, jobListCK, jobListJobRankPutCmdInput });
+  // console.log({ jobItem, jobListCK, jobListJobRankPutCmdInput });
+  // console.log({ jobItem, jobListCK, jobListJobRankPutCmdInput });
+  // console.log({ jobItem, jobListCK, jobListJobRankPutCmdInput });
+  // console.log({ jobItem, jobListCK, jobListJobRankPutCmdInput });
+  // console.log({ jobItem, jobListCK, jobListJobRankPutCmdInput });
+  // console.log({ jobItem, jobListCK, jobListJobRankPutCmdInput });
+  // console.log({ jobItem, jobListCK, jobListJobRankPutCmdInput });
+  // console.log({ jobItem, jobListCK, jobListJobRankPutCmdInput });
+  // console.log({ jobItem, jobListCK, jobListJobRankPutCmdInput });
 
   const command = new TransactWriteCommand({
     TransactItems: [
@@ -318,4 +341,4 @@ async function findAllByJobListId(userId: string, jobListId: string) {
   return dbClient().send(command) as Promise<QueryCommandOutput<Job>>;
 }
 
-export const jobDB = {};
+export const jobDB = { findAll, create };
