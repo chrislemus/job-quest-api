@@ -10,6 +10,7 @@ import { getTokens } from '@/auth/utils';
 import bcrypt from 'bcryptjs';
 
 export const openapi: BuildOpenApiSpecArgOperationObj = {
+  description: '',
   security: [],
   requestBody: {
     required: true,
@@ -31,6 +32,28 @@ export const openapi: BuildOpenApiSpecArgOperationObj = {
     401: { description: '' },
   },
 };
+// export const openapi = buildOpenapOperationalObj({
+//   security: [],
+//   requestBody: {
+//     required: true,
+//     content: {
+//       'application/json': {
+//         zodSchema: { authLoginReqBodySchema },
+//       },
+//     },
+//   },
+//   responses: {
+//     200: {
+//       description: 'new working?',
+//       content: {
+//         'application/json': {
+//           zodSchema: { jwtSchema },
+//         },
+//       },
+//     },
+//     401: { description: '' },
+//   },
+// });
 
 export const handler: EventHandler = async (event) => {
   const res = authLoginReqBodySchema.safeParse(JSON.parse(event.body || '{}'));

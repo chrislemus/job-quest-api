@@ -54,6 +54,8 @@ export function buildOpenapiSpec<
         type: 'AWS_PROXY',
         uri: '${lambda_arn}',
       };
+      if (!methodObj['security']) methodObj['security'] = [{ bearerAuth: [] }];
+      if (!methodObj['tags']) methodObj['tags'] = [path.split('/')[2]];
       // if (methodObj['handlerFn']) _.unset(methodObj, 'handlerFn');
       // _.set(methodObj, 'responses', {});
       const responses = _.get(methodObj, 'responses');

@@ -23,7 +23,7 @@ const resourceHandlers: Record<string, Record<string, EventHandler>> = {
   ['/v1/auth/logout']: { post: authLogoutPostHandler },
   ['/v1/auth/refresh']: { post: authRefreshPostHandler },
   ['/v1/auth/signup']: { post: authSignupPostHandler },
-  ['/v1/']: { get: getHandler },
+  ['/v1']: { get: getHandler },
   ['/v1/job']: { get: jobGetHandler, post: jobPostHandler },
   ['/v1/job/{id}']: {
     delete: jobIdDeleteHandler,
