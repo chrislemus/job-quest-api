@@ -50,10 +50,6 @@ async function getRankPlacement(config: {
     }
   | 'rebalance required'
 > {
-  console.log({
-    getRankPlacement: getRankPlacement.name,
-    ...config,
-  });
   const rebalanceRes = 'rebalance required' as const;
   const rank = LexoRank;
   const { jobListId, jobListRanks, jobListRankConfig } = config;

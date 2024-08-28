@@ -7,6 +7,7 @@ import {
   QueryCommand,
   UpdateCommand,
   TransactWriteCommand,
+  BatchGetCommand,
   TransactWriteCommandInput,
 } from '@aws-sdk/lib-dynamodb';
 import {
@@ -85,6 +86,7 @@ async function create(job: Omit<Job, 'id'>) {
   const createLimit = appConfig.jobCreateLimit;
   if (!createLimit) throw new Error('No createLimit');
   const JobCount = await totalJobCount(job.userId);
+
   if (JobCount >= createLimit) {
     throw conflictException(
       `Exceeded Job limit (${createLimit}). Consider deleting Jobs to free up some space.`,
@@ -323,7 +325,8 @@ async function findAllByJobListId(userId: string, jobListId: string) {
   const TableName = appConfig.tableName;
 
   const jobListJobRanks = await jobListJobRankDB.findAll(jobListId);
-
+  if (!(jobListJobRanks.length >= 1)) return [];
+  console.log({ jobListJobRanks });
   const ExpressionAttributeValues = {};
   const KeyConditionExpressionList: string[] = [];
   jobListJobRanks.forEach((jobRank, idx) => {
@@ -333,12 +336,19 @@ async function findAllByJobListId(userId: string, jobListId: string) {
     KeyConditionExpressionList.push(`(pk = :pk${idx} AND sk = :sk${idx})`);
   });
 
-  const command = new QueryCommand({
-    TableName,
-    KeyConditionExpression: KeyConditionExpressionList.join(' OR '),
-    ExpressionAttributeValues,
+  const command = new BatchGetCommand({
+    RequestItems: {
+      [TableName]: {
+        Keys: jobListJobRanks.map((jobRank) => {
+          const jobCK = getJobCK({ userId, jobId: jobRank.jobId });
+          return jobCK;
+        }),
+      },
+    },
   });
-  return dbClient().send(command) as Promise<QueryCommandOutput<Job>>;
+  const res = await dbClient().send(command);
+  const jobs = (res?.Responses?.[TableName] || []) as Job[];
+  return jobs;
 }
 
-export const jobDB = { findAll, create };
+export const jobDB = { findAll, create, findAllByJobListId };

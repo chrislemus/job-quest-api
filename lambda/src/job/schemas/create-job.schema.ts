@@ -8,5 +8,5 @@ export const createJobSchema = jobSchema
     jobListRank: true,
   })
   .extend({
-    jobListRank: jobListRankDto.optional().default({}),
+    jobListRank: jobListRankDto.optional(),
   });

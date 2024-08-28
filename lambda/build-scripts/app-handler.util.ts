@@ -51,13 +51,14 @@ event['queryParams'] = queryParams;
 
 const childHandler: EventHandler = resourceHandlers[resource]?.[method];
   if (!childHandler) {
-    console.log(Object.keys(resourceHandlers));
     throw new Error(\`NoHandler|resource:\${resource}|method:\${method}\`);
   }
 
 
   try {
     const res = await childHandler(event, ctx);
+    if(!res['headers']) res['headers'] = {};
+    res['headers']['Access-Control-Allow-Origin'] = '*';
     return res;
   } catch (error) {
     if (error instanceof ExceptionError) {

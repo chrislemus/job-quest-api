@@ -13,6 +13,10 @@ export class ServerlessPlugin {
 
   apply(compiler: Webpack.Compiler) {
     compiler.hooks.beforeCompile.tap('customWebpackPlugin', async () => {
+      try {
+        fs.unlinkSync(path.resolve(this.rootPath, 'dist/api-spec.json'));
+        fs.unlinkSync(path.resolve(this.rootPath, 'apiSpec.js'));
+      } catch (error) {}
       await buildLambdaHandlers(this.rootPath);
     });
     compiler.hooks.done.tap('customWebpackPlugin', async (_stats) => {

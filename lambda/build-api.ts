@@ -29,7 +29,6 @@ event['queryParams'] = queryParams;
 
 const childHandler: EventHandler = resourceHandlers[resource]?.[method];
   if (!childHandler) {
-    console.log(Object.keys(resourceHandlers));
     throw new Error(\`NoHandler|resource:\${resource}|method:\${method}\`);
   }
 

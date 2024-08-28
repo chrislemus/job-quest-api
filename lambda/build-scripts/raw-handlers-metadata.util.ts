@@ -16,13 +16,13 @@ export function getRawHandlersMetaData(rootPath: string) {
       file.endsWith('post.handler.ts') ||
       file.endsWith('patch.handler.ts') ||
       file.endsWith('put.handler.ts') ||
+      file.endsWith('options.handler.ts') ||
       file.endsWith('delete.handler.ts')
     ) {
       const httpMethod = file.split('/').slice(-1)[0].split('.')[0];
       let path: string = '/' + file.split('/').slice(1, -1).join('/');
       path = path.replace(absolutePath, '');
       path = path.endsWith('/') ? path.slice(0, -1) : path;
-      console.log({ path });
       const fileFinal = file.replace(absolutePath, '.');
       __.set(rawHandlersMetadata, [path, httpMethod], fileFinal);
     }

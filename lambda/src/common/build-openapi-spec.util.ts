@@ -48,12 +48,14 @@ export function buildOpenapiSpec<
     _.forIn(pathConfig, function (methodObj, method) {
       if (!methodObj) return;
 
-      methodObj['x-amazon-apigateway-integration'] = {
-        httpMethod: 'POST',
-        payloadFormatVersion: '2.0',
-        type: 'AWS_PROXY',
-        uri: '${lambda_arn}',
-      };
+      if (!methodObj['x-amazon-apigateway-integration']) {
+        methodObj['x-amazon-apigateway-integration'] = {
+          httpMethod: 'POST',
+          payloadFormatVersion: '2.0',
+          type: 'AWS_PROXY',
+          uri: '${lambda_arn}',
+        };
+      }
       if (!methodObj['security']) methodObj['security'] = [{ bearerAuth: [] }];
       if (!methodObj['tags']) methodObj['tags'] = [path.split('/')[2]];
       // if (methodObj['handlerFn']) _.unset(methodObj, 'handlerFn');

@@ -121,7 +121,6 @@ async function getTopAndBottomJobListRanks(
     new QueryCommand(queryInput),
   )) as QueryCommandOutput<JobListJobRankItem>;
 
-  console.log({ res, queryInput });
   const ranks = res.Items?.map((item) => item.jobListRank);
   return { topRank: ranks?.[1], bottomRank: ranks?.[0] };
 }

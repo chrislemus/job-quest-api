@@ -38,7 +38,6 @@ async function create(
   const { label, userId } = jobList;
   const jobListId = uuid();
   const lastJobListId = await getLastJobListOrderNum(userId);
-  console.log({ lastJobListId });
   throw new Error('Not implemented');
   // const order = lastJobListId ? lastJobListId + 1 : 1; // must start at index 1
 

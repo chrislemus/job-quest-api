@@ -67,5 +67,8 @@ export const handler: EventHandler = async (event) => {
 
   const tokens = await getTokens(user);
   const body = JSON.stringify(tokens);
-  return { statusCode: 200, body };
+  return {
+    statusCode: 200,
+    body,
+  };
 };

@@ -28,7 +28,6 @@ const config: Configuration = {
     //     entries[`api/${path}/index`] = `./${file}`;
     //   }
     // }
-    console.log({ entries });
     return entries;
   },
   output: {

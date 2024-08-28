@@ -37,5 +37,8 @@ export const handler: EventHandler = async (event) => {
   await createNewUserStarterData(user);
   const tokens = await getTokens(user);
 
-  return { statusCode: 200, body: JSON.stringify(tokens) };
+  return {
+    statusCode: 200,
+    body: JSON.stringify(tokens),
+  };
 };
