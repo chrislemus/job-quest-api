@@ -1,3 +1,5 @@
-import { createJobSchema } from '../../schemas';
+import { createJobBaseSchema, jobListRankSuperRefine } from '../../schemas';
 
-export const updateJobSchema = createJobSchema.partial();
+export const updateJobSchema = createJobBaseSchema
+  .partial()
+  .superRefine(jobListRankSuperRefine);

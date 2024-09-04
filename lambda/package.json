@@ -5,7 +5,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "buildOld": "webpack --config webpack.config.js",
-    "buildN": "webpack --config webpack-new.config.ts --watch",
+    "buildN:watch": "webpack --config webpack-new.config.ts --watch",
+    "buildN": "webpack --config webpack-new.config.ts",
     "build:watc:plugin": "nodemon --watch build/openapi-webpack.plugin.js --exec \"webpack --config webpack.config.js\" ",
     "build:watch": "webpack --config webpack.config.js --watch",
     "build:watchNodemon": "nodemon --watch src/ --exec \"webpack --config webpack.config.js --watch\" ",

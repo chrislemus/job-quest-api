@@ -105,30 +105,6 @@ async function create(job: Omit<Job, 'id'>) {
   });
 
   const jobListCK = getJobListCK({ userId, jobListId });
-  // console.log({ jobItem, jobListCK, jobListJobRankPutCmdInput });
-  // console.log({ jobItem, jobListCK, jobListJobRankPutCmdInput });
-  // console.log({ jobItem, jobListCK, jobListJobRankPutCmdInput });
-  // console.log({ jobItem, jobListCK, jobListJobRankPutCmdInput });
-  // console.log({ jobItem, jobListCK, jobListJobRankPutCmdInput });
-  // console.log({ jobItem, jobListCK, jobListJobRankPutCmdInput });
-  // console.log({ jobItem, jobListCK, jobListJobRankPutCmdInput });
-  // console.log({ jobItem, jobListCK, jobListJobRankPutCmdInput });
-  // console.log({ jobItem, jobListCK, jobListJobRankPutCmdInput });
-  // console.log({ jobItem, jobListCK, jobListJobRankPutCmdInput });
-  // console.log({ jobItem, jobListCK, jobListJobRankPutCmdInput });
-  // console.log({ jobItem, jobListCK, jobListJobRankPutCmdInput });
-  // console.log({ jobItem, jobListCK, jobListJobRankPutCmdInput });
-  // console.log({ jobItem, jobListCK, jobListJobRankPutCmdInput });
-  // console.log({ jobItem, jobListCK, jobListJobRankPutCmdInput });
-  // console.log({ jobItem, jobListCK, jobListJobRankPutCmdInput });
-  // console.log({ jobItem, jobListCK, jobListJobRankPutCmdInput });
-  // console.log({ jobItem, jobListCK, jobListJobRankPutCmdInput });
-  // console.log({ jobItem, jobListCK, jobListJobRankPutCmdInput });
-  // console.log({ jobItem, jobListCK, jobListJobRankPutCmdInput });
-  // console.log({ jobItem, jobListCK, jobListJobRankPutCmdInput });
-  // console.log({ jobItem, jobListCK, jobListJobRankPutCmdInput });
-  // console.log({ jobItem, jobListCK, jobListJobRankPutCmdInput });
-  // console.log({ jobItem, jobListCK, jobListJobRankPutCmdInput });
 
   const command = new TransactWriteCommand({
     TransactItems: [
@@ -228,9 +204,11 @@ async function update(job: RequireFields<Partial<Job>, 'id' | 'userId'>) {
 
   type TxItems = NonNullable<TransactWriteCommandInput['TransactItems']>;
   type TxItem = TxItems[number];
+  const Key = getJobCK({ userId, jobId: id });
+
   const jobUpdateCommandInput: TxItem['Update'] = {
     TableName,
-    Key: { id, userId },
+    Key,
     ExpressionAttributeNames,
     UpdateExpression,
     ExpressionAttributeValues,
@@ -241,13 +219,13 @@ async function update(job: RequireFields<Partial<Job>, 'id' | 'userId'>) {
       { Update: jobUpdateCommandInput },
     ];
 
-    const res = await getUnique(userId, id, ['jobListId', 'jobListRank']);
+    const res = await getUnique(userId, id);
 
     if (data.jobListRank && data.jobListId) {
       const jobListRankMismatch = res.jobListRank !== data.jobListRank;
       const jobListIdMismatch = res.jobListId !== data.jobListId;
       if (jobListRankMismatch || jobListIdMismatch) {
-        const jobListJobRankCmdUpdateInput = jobListJobRankDB.updateCmdInput(
+        const JobListRankTransactItems = jobListJobRankDB.updateCmdInput(
           {
             jobId: res.id,
             jobListId: res.jobListId,
@@ -259,7 +237,7 @@ async function update(job: RequireFields<Partial<Job>, 'id' | 'userId'>) {
           },
         );
 
-        TransactItems.push({ Update: jobListJobRankCmdUpdateInput });
+        TransactItems.push(...JobListRankTransactItems);
       }
     }
 
@@ -271,40 +249,16 @@ async function update(job: RequireFields<Partial<Job>, 'id' | 'userId'>) {
   return dbClient().send(command) as Promise<PutCommandOutput<Job>>;
 }
 
-async function getUnique<
-  JobT extends Job,
-  AttrToGetT extends keyof JobT | undefined,
-  // ResT extends AttrToGetT extends undefined ? Job : Pick<Job, AttrToGetT>,
-  ResT extends AttrToGetT extends undefined
-    ? Job
-    : {
-        [P in keyof JobT]: P extends AttrToGetT ? JobT[P] : never;
-      },
->(
-  userId: string,
-  jobId: string,
-  AttributesToGet?: AttrToGetT[],
-): Promise<ResT> {
+async function getUnique(userId: string, jobId: string): Promise<Job> {
+  const Key = getJobCK({ userId, jobId });
   const TableName = appConfig.tableName;
 
-  const command = new GetCommand({
-    TableName,
-    Key: { userId, id: jobId },
-    AttributesToGet: AttributesToGet as string[],
-  });
-
+  const command = new GetCommand({ TableName, Key });
   const data = (await dbClient().send(command)) as GetCommandOutput<JobItem>;
 
   if (!data.Item) throw notFoundException();
 
-  const jobRaw = removeCK(data.Item);
-  Object.assign(jobRaw, { userId, id: jobId });
-  if (!AttributesToGet) return jobRaw as ResT;
-  const job = {} as ResT;
-
-  AttributesToGet.forEach((key) => {
-    job[key as any] = jobRaw[key as any];
-  });
+  const job = removeCK(data.Item);
   return job;
 }
 
@@ -326,7 +280,6 @@ async function findAllByJobListId(userId: string, jobListId: string) {
 
   const jobListJobRanks = await jobListJobRankDB.findAll(jobListId);
   if (!(jobListJobRanks.length >= 1)) return [];
-  console.log({ jobListJobRanks });
   const ExpressionAttributeValues = {};
   const KeyConditionExpressionList: string[] = [];
   jobListJobRanks.forEach((jobRank, idx) => {
@@ -351,4 +304,4 @@ async function findAllByJobListId(userId: string, jobListId: string) {
   return jobs;
 }
 
-export const jobDB = { findAll, create, findAllByJobListId };
+export const jobDB = { findAll, create, findAllByJobListId, getUnique, update };

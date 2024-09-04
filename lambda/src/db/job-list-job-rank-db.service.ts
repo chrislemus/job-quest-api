@@ -1,4 +1,8 @@
-import { QueryCommand, QueryCommandInput } from '@aws-sdk/lib-dynamodb';
+import {
+  QueryCommand,
+  QueryCommandInput,
+  TransactWriteCommandInput,
+} from '@aws-sdk/lib-dynamodb';
 import { QueryCommandOutput } from './types';
 import { getExpAttrValues, removeCK } from './db-util';
 import { getJobListJobRankCK, JobListJobRankCK } from './composite-key.util';
@@ -74,7 +78,6 @@ function updateCmdInput(
   jobListJobRankOld: JobListJobRank,
   jobListJobRankNew: Pick<JobListJobRank, 'jobListId' | 'jobListRank'>,
 ) {
-  const TableName = appConfig.tableName;
   let updatesExist = false;
   Object.keys(jobListJobRankNew).forEach((key) => {
     if (jobListJobRankOld[key] !== jobListJobRankNew[key]) {
@@ -84,28 +87,17 @@ function updateCmdInput(
   if (!updatesExist) {
     throw new Error('No updates to perform');
   }
-  const oldJobListJobRankCK = getJobListJobRankCK(jobListJobRankOld);
-  const newJobListJobRankCK = getJobListJobRankCK(jobListJobRankNew);
 
-  const jobListJobRankItem = {
-    ...newJobListJobRankCK,
-    jobId: jobListJobRankOld.jobId,
-    jobListIdNew: jobListJobRankNew.jobListId,
-    jobListRankNew: jobListJobRankNew.jobListRank,
-    jobListIdOld: jobListJobRankOld.jobListId,
-    jobListRankOld: jobListJobRankOld.jobListRank,
-  };
-
-  const jobListJobRankCKUpdate = {
-    TableName,
-    Key: oldJobListJobRankCK,
-    UpdateExpression:
-      'SET pk = :pk , sk = :sk, jobListId = :jobListIdNew, jobListRank = :jobListRankNew',
-    ExpressionAttributeValues: getExpAttrValues(jobListJobRankItem),
-    ConditionExpression:
-      'jobId = :jobId AND jobListId = :jobListIdOld AND jobListRank = :jobListRankOld',
-  } as const;
-  return jobListJobRankCKUpdate;
+  const TransactItems: TransactWriteCommandInput['TransactItems'] = [
+    {
+      Put: putCmdInput({
+        ...jobListJobRankNew,
+        jobId: jobListJobRankOld.jobId,
+      }),
+    },
+    { Delete: deleteCmdInput(jobListJobRankOld) },
+  ];
+  return TransactItems;
 }
 
 async function getTopAndBottomJobListRanks(

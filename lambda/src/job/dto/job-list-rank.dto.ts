@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 export const jobListRankDto = z.object({
-  rank: z.string().optional(),
+  rank: z.string(),
   placement: z.enum(['top', 'bottom']).optional(),
 });
 
