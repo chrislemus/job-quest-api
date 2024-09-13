@@ -12,18 +12,18 @@ export class ServerlessPlugin {
   }
 
   apply(compiler: Webpack.Compiler) {
-    compiler.hooks.beforeCompile.tap('customWebpackPlugin', async () => {
-      try {
-        fs.unlinkSync(path.resolve(this.rootPath, 'dist/api-spec.json'));
-        fs.unlinkSync(path.resolve(this.rootPath, 'apiSpec.js'));
-      } catch (error) {}
-      await buildLambdaHandlers(this.rootPath);
-    });
+    // compiler.hooks.beforeCompile.tap('customWebpackPlugin', async () => {
+    //   try {
+    //     fs.unlinkSync(path.resolve(this.rootPath, 'dist/api-spec.json'));
+    //     fs.unlinkSync(path.resolve(this.rootPath, 'apiSpec.js'));
+    //   } catch (error) {}
+    //   await buildLambdaHandlers(this.rootPath);
+    // });
     compiler.hooks.done.tap('customWebpackPlugin', async (_stats) => {
       const { rootPath } = this;
 
       const { apiSpec } = await import(
-        `${path.resolve(rootPath, 'dist/apiSpec.js')}`
+        `${path.resolve(rootPath, 'dist/api/index.js')}`
       );
       fs.writeFileSync(
         path.resolve(rootPath, 'dist/api-spec.json'),

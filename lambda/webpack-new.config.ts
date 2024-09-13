@@ -10,15 +10,15 @@ const config: Configuration = {
   mode: 'development',
   watchOptions: {
     ignored: [
-      '**/*.controller.ts',
-      path.resolve(__dirname, 'src/get.handler.ts'),
+      // '**/*.controller.ts',
+      // path.resolve(__dirname, 'src/get.handler.ts'),
       '**/node_modules',
     ],
   },
   entry: async () => {
     const entries = {
-      apiSpec: './src/get.handler.ts',
-      ['api/index']: './src/app.controller.ts',
+      // apiSpec: './src/api-spec.ts',
+      ['api/index']: './src/app.module.ts',
     };
 
     // for (const file of readAllFiles(path.join(__dirname, 'src'))) {
