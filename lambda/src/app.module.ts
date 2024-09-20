@@ -5,6 +5,7 @@ import { appController } from './app.controller';
 import { authController } from './features/auth/auth.controller';
 import { jobListController } from './features/job-list/job-list.controller';
 import { jobController } from './features/job/job.controller';
+import { jobLogController } from './features/job-log/job-log.controller';
 
 const allControllers = {
   ...authController,
@@ -12,6 +13,7 @@ const allControllers = {
   ...appController,
   ...jobController,
   ...jobListController,
+  ...jobLogController,
 };
 
 export const apiSpec = buildOpenapiSpec({

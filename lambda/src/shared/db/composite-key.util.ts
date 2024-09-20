@@ -5,6 +5,13 @@ export function getJobCK(input: JobCKInput) {
   return { pk: `user#${userId}#job`, sk: `job#${jobId}` } as const;
 }
 
+export type JobLogCK = ReturnType<typeof getJobLogCK>;
+type JobLogCKInput = { userId: string; jobLogId: string };
+export function getJobLogCK(input: JobLogCKInput) {
+  const { userId, jobLogId } = input;
+  return { pk: `user#${userId}#jobLog`, sk: `jobLog#${jobLogId}` } as const;
+}
+
 export type JobCountCK = ReturnType<typeof getJobCountCK>;
 type JobCountCKInput = { userId: string };
 export function getJobCountCK(input: JobCountCKInput) {

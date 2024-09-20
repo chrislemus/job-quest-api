@@ -4,7 +4,6 @@ import { getJobListCK, JobListCK } from './composite-key.util';
 import dbClient from './dynamo-db-document-client.service';
 import {
   GetCommand,
-  PutCommand,
   QueryCommand,
   TransactWriteCommand,
   TransactWriteCommandInput,
