@@ -9,10 +9,10 @@ const handler: EventHandler = async () => {
   apiSpec.paths['/v1/'] = undefined as any;
   const strSpec = JSON.stringify(apiSpec, null, 2);
 
-    return {
-      status: 200,
-      headers: { 'Content-Type': 'text/html' },
-      body: `<!DOCTYPE html>
+  return {
+    status: 200,
+    headers: { 'Content-Type': 'text/html' },
+    body: `<!DOCTYPE html>
     <html>
       <head> <meta charset="UTF-8" /> <title>Job Quest API</title> <style>${css}</style> </head>
       <body>
@@ -24,14 +24,14 @@ const handler: EventHandler = async () => {
       </body>
     </html>
     `,
-    };
   };
+
   // return {
   //   status: 200,
   //   headers: { 'Content-Type': 'text/html' },
   //   body: `<!DOCTYPE html>
   // <html>
-  //   <head> <meta charset="UTF-8" /> <title>Job Quest API</title> 
+  //   <head> <meta charset="UTF-8" /> <title>Job Quest API</title>
   //      <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5.11.0/swagger-ui.css" />
   //   </head>
   //   <body>
