@@ -18,15 +18,14 @@ export const getAJobHandlerSpec: BuildOpenApiSpecArgOperationObj = {
   },
 };
 
-export const getAJobHandler: EventHandler = authHandler(
-  async (authUser, event) => {
-    const res = JobIdPathParamsDto.safeParse(event.pathParameters);
-    if (res.error) return apiError(res.error);
-    const job = await jobDB.getUnique(authUser.id, res.data.id);
+export const getAJobHandler: EventHandler = authHandler(async (req, ctx) => {
+  const { authUser } = ctx;
+  const res = JobIdPathParamsDto.safeParse(req.pathParams);
+  if (res.error) return apiError(res.error);
+  const job = await jobDB.getUnique(authUser.id, res.data.id);
 
-    return {
-      statusCode: 200,
-      body: JSON.stringify(job),
-    };
-  },
-);
+  return {
+    status: 200,
+    body: job,
+  };
+});

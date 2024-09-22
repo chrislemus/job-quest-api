@@ -18,27 +18,26 @@ export const getJobsHandlerSpec: BuildOpenApiSpecArgOperationObj = {
   },
 };
 
-export const getJobsHandler: EventHandler = authHandler(
-  async (authUser, event) => {
-    const res = GetJobsQueryParamsDto.safeParse(event.queryStringParameters);
-    if (res.error) return apiError(res.error);
-    let items: Job[] = [];
+export const getJobsHandler: EventHandler = authHandler(async (req, ctx) => {
+  const { authUser } = ctx;
+  const res = GetJobsQueryParamsDto.safeParse(req.queryParams);
+  if (res.error) return apiError(res.error);
+  let items: Job[] = [];
 
-    if (res.data.jobListId) {
-      const jobs = await jobDB.findAllByJobListId(
-        authUser.id,
-        res.data.jobListId,
-      );
-      if (jobs) items = jobs;
-      // throw new Error('jobListId is not implemented yet');
-    } else {
-      const { Items } = await jobDB.findAll(authUser.id);
-      if (Items) items = Items;
-    }
+  if (res.data.jobListId) {
+    const jobs = await jobDB.findAllByJobListId(
+      authUser.id,
+      res.data.jobListId,
+    );
+    if (jobs) items = jobs;
+    // throw new Error('jobListId is not implemented yet');
+  } else {
+    const { Items } = await jobDB.findAll(authUser.id);
+    if (Items) items = Items;
+  }
 
-    return {
-      statusCode: 200,
-      body: JSON.stringify({ items }),
-    };
-  },
-);
+  return {
+    status: 200,
+    body: { items },
+  };
+});

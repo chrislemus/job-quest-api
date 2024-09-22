@@ -19,17 +19,16 @@ export const getAJobLogHandlerSpec: BuildOpenApiSpecArgOperationObj = {
   },
 };
 
-export const getAJobLogHandler: EventHandler = authHandler(
-  async (authUser, event) => {
-    const res = GetAJobLogPathParamsDto.safeParse(event.pathParameters);
-    if (res.error) return apiError(res.error);
-    const jobLog = await jobLogDB.getUnique(authUser.id, res.data.id);
-    console.log({ jobLog });
-    const resBody = JobLogEntity.parse(jobLog);
-    console.log({ resBody });
-    return {
-      statusCode: 200,
-      body: JSON.stringify(resBody),
-    };
-  },
-);
+export const getAJobLogHandler: EventHandler = authHandler(async (req, ctx) => {
+  const { authUser } = ctx;
+  const res = GetAJobLogPathParamsDto.safeParse(req.pathParams);
+  if (res.error) return apiError(res.error);
+  const jobLog = await jobLogDB.getUnique(authUser.id, res.data.id);
+  console.log({ jobLog });
+  const resBody = JobLogEntity.parse(jobLog);
+  console.log({ resBody });
+  return {
+    status: 200,
+    body: resBody,
+  };
+});

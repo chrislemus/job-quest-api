@@ -18,7 +18,8 @@ export const getJobListHandlerSpec: BuildOpenApiSpecArgOperationObj = {
   },
 };
 
-export const getJobListHandler: EventHandler = authHandler(async (authUser) => {
+export const getJobListHandler: EventHandler = authHandler(async (req, ctx) => {
+  const { authUser } = ctx;
   const items = await jobListDB.findAll(authUser.id);
 
   const body = {
@@ -31,7 +32,7 @@ export const getJobListHandler: EventHandler = authHandler(async (authUser) => {
   };
 
   return {
-    statusCode: 200,
-    body: JSON.stringify(body),
+    status: 200,
+    body: body,
   };
 });

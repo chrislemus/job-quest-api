@@ -109,7 +109,7 @@
 //   spec.paths = { ...paths, ['/v1']: undefined as any };
 
 //   return {
-//     statusCode: 200,
+//     status: 200,
 //     headers: { 'Content-Type': 'text/html' },
 //     body: `<!DOCTYPE html>
 //   <html>

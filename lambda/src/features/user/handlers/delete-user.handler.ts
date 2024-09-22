@@ -9,7 +9,7 @@ export const deleteUserHandlerSpec: BuildOpenApiSpecArgOperationObj = {
   },
 };
 
-export const deleteUserHandler: EventHandler = async (event, ctx) => {
+export const deleteUserHandler: EventHandler = async (event) => {
   // const queryParams = {};
   // if (event.multiValueQueryStringParameters) {
   //   Object.entries(event.multiValueQueryStringParameters).forEach(
@@ -22,7 +22,7 @@ export const deleteUserHandler: EventHandler = async (event, ctx) => {
   // event['queryParams'] = queryParams;
   console.log(event);
   return {
-    statusCode: 200,
-    body: JSON.stringify({ event, custom: 'GETSuserDeletelephandler' }),
+    status: 200,
+    body: { event, custom: 'GETSuserDeletelephandler' },
   };
 };

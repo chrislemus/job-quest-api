@@ -8,7 +8,7 @@ import { getAllJobList } from './job-list.e2e-spec';
 //   T2 extends ZodTypeDef,
 //   T3,
 //   T6 extends ZodType<T1, T2, T3>,
-// >(statusCode: number, dataSchema: T6) {
+// >(status: number, dataSchema: T6) {
 //   return z
 //     .object({
 //       status: z.literal(statusCode),

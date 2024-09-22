@@ -2,11 +2,11 @@ import _ from 'lodash';
 import { OpenAPIV3 } from 'openapi-types';
 import { z, ZodObject } from 'zod';
 import { zodToJson, zodToParamJson } from './zod-json-formatters.util';
-import { corsHandler, corsOpenApi } from '../cors.handler';
+import { EventHandler } from '../types';
 
 export type OpenAPIV3Internal = OpenAPIV3.Document<{
   // zodSchema?: ZodTypeAny;
-  handlerFn?: (...args: any[]) => any;
+  handlerFn?: EventHandler;
   zodQueryParamsSchema?: ZodObject<any, any>;
   zodPathParamsSchema?: ZodObject<any, any>;
   responses: Required<
@@ -78,7 +78,32 @@ export function buildController(controller: {
       _.set(controller, newPath, pathConfig);
     }
 
-    // pathConfig.options = { ...corsOpenApi }; // no need for handlerFn
+    _.forIn(pathConfig, function (methodConfig, _httpMethod) {
+      if (!methodConfig) throw new Error('No method config');
+      const { handlerFn, requestBody } = methodConfig;
+
+      const hasJsonReqBody = !!requestBody?.content['application/json'];
+
+      if (hasJsonReqBody && !!handlerFn) {
+        methodConfig.handlerFn = async (req, ...args) => {
+          const { body } = req;
+          if (body && typeof body === 'string') req.body = JSON.parse(body);
+
+          const res = await handlerFn(req, ...args);
+
+          if (res.body && typeof res.body === 'object') {
+            res.body = JSON.stringify(res.body);
+            const existingHeaders = res.headers || {};
+            res.headers = {
+              'Content-Type': 'application/json',
+              ...existingHeaders,
+            };
+          }
+
+          return res;
+        };
+      }
+    });
   });
 
   return controller;

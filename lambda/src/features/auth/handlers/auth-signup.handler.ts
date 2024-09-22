@@ -28,8 +28,8 @@ export const authSignupHandlerSpec: BuildOpenApiSpecArgOperationObj = {
   },
 };
 
-export const authSignupHandler: EventHandler = async (event) => {
-  const res = await AuthSignupReqBodyDto.spa(JSON.parse(event.body || '{}'));
+export const authSignupHandler: EventHandler = async (req) => {
+  const res = await AuthSignupReqBodyDto.spa(req.body);
   if (res.error) return apiError(res.error);
 
   const user = await userDB.create(res.data);
@@ -38,7 +38,7 @@ export const authSignupHandler: EventHandler = async (event) => {
   const tokens = await getTokens(user);
 
   return {
-    statusCode: 200,
-    body: JSON.stringify(tokens),
+    status: 200,
+    body: tokens,
   };
 };

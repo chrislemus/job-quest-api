@@ -1,5 +1,5 @@
 export class ApiNotFoundResponse {
-  statusCode: 404;
+  status: 404;
   error: 'sdefw';
   messages: string[];
 }

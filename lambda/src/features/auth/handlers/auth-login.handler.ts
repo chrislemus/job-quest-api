@@ -56,7 +56,7 @@ export const authLoginHandlerSpec: BuildOpenApiSpecArgOperationObj = {
 // });
 
 export const authLoginHandler: EventHandler = async (event) => {
-  const res = AuthLoginReqBodyDto.safeParse(JSON.parse(event.body || '{}'));
+  const res = AuthLoginReqBodyDto.safeParse(event.body);
   if (res.error) return apiError(res.error);
   const user = await userDB.findByEmail(res.data.email);
 
@@ -66,9 +66,9 @@ export const authLoginHandler: EventHandler = async (event) => {
   if (!isMatch) throw unauthorizedException();
 
   const tokens = await getTokens(user);
-  const body = JSON.stringify(tokens);
+  const body = tokens;
   return {
-    statusCode: 200,
+    status: 200,
     body,
   };
 };

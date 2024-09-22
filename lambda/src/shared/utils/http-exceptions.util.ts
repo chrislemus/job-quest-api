@@ -1,9 +1,9 @@
 export class ExceptionError extends Error {
-  statusCode: number;
+  status: number;
   error?: string;
-  constructor(statusCode: number, message: string, error?: string) {
+  constructor(status: number, message: string, error?: string) {
     super(message);
-    this.statusCode = statusCode;
+    this.status = status;
     this.error = error;
   }
 }

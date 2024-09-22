@@ -17,8 +17,9 @@ const config: Configuration = {
   },
   entry: async () => {
     const entries = {
-      // apiSpec: './src/api-spec.ts',
-      ['api/index']: './src/app.module.ts',
+      'api-spec.config': './src/api-spec.config.ts',
+      'app.express.module': './src/app.express.module.ts',
+      ['api/index']: './src/app.lambda.module.ts',
     };
 
     // for (const file of readAllFiles(path.join(__dirname, 'src'))) {

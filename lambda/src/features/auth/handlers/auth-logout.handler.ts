@@ -11,13 +11,14 @@ export const authLogoutHandlerSpec: BuildOpenApiSpecArgOperationObj = {
   },
 };
 
-export const authLogoutHandler: EventHandler = authHandler(async (authUser) => {
+export const authLogoutHandler: EventHandler = authHandler(async (req, ctx) => {
+  const { authUser } = ctx;
   await userDB.update({
     id: authUser.id,
     refreshToken: undefined,
   });
 
   return {
-    statusCode: 200,
+    status: 200,
   };
 });

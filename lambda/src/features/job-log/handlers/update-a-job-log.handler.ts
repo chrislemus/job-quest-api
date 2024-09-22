@@ -55,8 +55,8 @@
 //     const job = await jobDB.getUnique(userId, jobId);
 
 //     return {
-//       statusCode: 200,
-//       body: JSON.stringify(job),
+//       status: 200,
+//       body: job,
 //     };
 //   },
 // );

@@ -1,0 +1,12 @@
+{
+  "ignore": [".git", "node_modules/**/node_modules"],
+  "watch": ["dist/api", "dist/app.express.module.js"],
+  "ext": "js",
+  "env": {
+    "NODE_ENV": "development",
+    "TABLE_NAME": "JobQuest-dev",
+    "JWT_SECRET": "tempLocalJwt",
+    "JWT_REFRESH_SECRET": "tempLocalJwtRT",
+    "DB_URL": "http://localhost:8000"
+  }
+}

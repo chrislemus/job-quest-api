@@ -8,7 +8,7 @@ export function apiError(error: z.ZodError) {
     return formattedMessage;
   });
   return {
-    statusCode: 400,
-    body: JSON.stringify({ messages: validationErrors }),
+    status: 400,
+    body: { messages: validationErrors },
   };
 }

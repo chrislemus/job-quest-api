@@ -18,13 +18,14 @@ export const getUserProfileHandlerSpec: BuildOpenApiSpecArgOperationObj = {
 };
 
 export const getUserProfileHandler: EventHandler = authHandler(
-  async (authUser) => {
+  async (req, ctx) => {
+    const { authUser } = ctx;
     const user = await userDB.queryUnique(authUser.id);
     const body = UserProfileResBodyDto.parse(user);
 
     return {
-      statusCode: 200,
-      body: JSON.stringify(body),
+      status: 200,
+      body: body,
     };
   },
 );

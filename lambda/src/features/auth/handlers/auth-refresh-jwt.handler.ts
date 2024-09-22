@@ -21,9 +21,9 @@ export const authRefreshJwtHandlerSpec: BuildOpenApiSpecArgOperationObj = {
   },
 };
 
-export const authRefreshJwtHandler: EventHandler = async (event) => {
+export const authRefreshJwtHandler: EventHandler = async (req) => {
   try {
-    const refreshToken = event.headers.Authorization?.split(' ')[1];
+    const refreshToken = req.headers.Authorization?.split(' ')[1];
     if (!refreshToken) throw new Error('No token provided');
     const payload = jwt.verify(
       refreshToken,
@@ -37,10 +37,10 @@ export const authRefreshJwtHandler: EventHandler = async (event) => {
     if (!isMatch) throw new Error('Refresh token mismatch');
 
     const tokens = await getTokens(payload);
-    const body = JSON.stringify(tokens);
-    return { statusCode: 200, body };
+    const body = tokens;
+    return { status: 200, body };
   } catch (error) {
     console.error(error);
-    return { statusCode: 401 };
+    return { status: 401 };
   }
 };

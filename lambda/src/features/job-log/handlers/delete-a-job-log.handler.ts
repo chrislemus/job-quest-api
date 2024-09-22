@@ -18,7 +18,7 @@
 
 // export const deleteAJobHandler: EventHandler = async (event) => {
 //   return {
-//     statusCode: 200,
-//     body: JSON.stringify({ event, custom: 'GETSignuphandler' }),
+//     status: 200,
+//     body: { event, custom: 'GETSignuphandler' },
 //   };
 // };

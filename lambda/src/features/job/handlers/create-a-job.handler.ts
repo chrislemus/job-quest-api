@@ -30,33 +30,32 @@ export const createAJobHandlerSpec: BuildOpenApiSpecArgOperationObj = {
   },
 };
 
-export const createAJobHandler: EventHandler = authHandler(
-  async (authUser, event, ctx) => {
-    const res = CreateJobDto.safeParse(JSON.parse(event.body || '{}'));
-    if (res.error) return apiError(res.error);
-    const reqBody = res.data;
+export const createAJobHandler: EventHandler = authHandler(async (req, ctx) => {
+  const { authUser } = ctx;
+  const res = CreateJobDto.safeParse(req.body);
+  if (res.error) return apiError(res.error);
+  const reqBody = res.data;
 
-    const { jobListId, jobListRank, ...jobData } = reqBody;
+  const { jobListId, jobListRank, ...jobData } = reqBody;
 
-    const jobListUpdates = await jobListDataUtil.getJobListData(
-      authUser.id,
-      jobListId,
-      jobListRank,
-    );
+  const jobListUpdates = await jobListDataUtil.getJobListData(
+    authUser.id,
+    jobListId,
+    jobListRank,
+  );
 
-    const job = await jobDB.create({
-      userId: authUser.id,
-      ...jobData,
-      ...jobListUpdates,
-    });
+  const job = await jobDB.create({
+    userId: authUser.id,
+    ...jobData,
+    ...jobListUpdates,
+  });
 
-    if (!job) throw internalServerException();
+  if (!job) throw internalServerException();
 
-    const body = JobDto.parse(job);
-    // const
-    return {
-      statusCode: 200,
-      body: JSON.stringify(body),
-    };
-  },
-);
+  const body = JobDto.parse(job);
+  // const
+  return {
+    status: 200,
+    body: body,
+  };
+});

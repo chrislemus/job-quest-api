@@ -35,7 +35,7 @@ import { EventHandler } from './types';
 //   //   passthroughBehavior: 'never',
 //   //   responses: {
 //   //     default: {
-//   //       statusCode: 200,
+//   //       status: 200,
 //   //       responseParameters: {
 //   //         'method.response.header.Access-Control-Allow-Headers':
 //   //           "'Content-Type,X-Amz-Date,Authorization,X-Api-Key'",
@@ -87,7 +87,7 @@ export const corsOpenApi: BuildOpenApiSpecArgOperationObj = {
     passthroughBehavior: 'never',
     responses: {
       default: {
-        statusCode: '200',
+        status: '200',
         responseParameters: {
           'method.response.header.Access-Control-Allow-Headers':
             "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'",
@@ -98,9 +98,9 @@ export const corsOpenApi: BuildOpenApiSpecArgOperationObj = {
     },
   },
 };
-export const corsHandler: EventHandler = async (event, ctx) => {
+export const corsHandler: EventHandler = async (event) => {
   return {
-    statusCode: 200,
+    status: 200,
     headers: {
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': '*',

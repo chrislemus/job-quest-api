@@ -28,12 +28,13 @@ export const updateAJobListHandlerSpec: BuildOpenApiSpecArgOperationObj = {
 };
 
 export const updateAJobListHandler: EventHandler = authHandler(
-  async (authUser, event) => {
-    const res = JobListIdPathParamsDto.safeParse(event.pathParameters);
+  async (req, ctx) => {
+    const { authUser } = ctx;
+    const res = JobListIdPathParamsDto.safeParse(req.pathParams);
     if (res.error) return apiError(res.error);
     const jobListId = res.data.id;
 
-    const res2 = UpdateJobListDto.safeParse(JSON.parse(event.body || '{}'));
+    const res2 = UpdateJobListDto.safeParse(JSON.parse(req.body || '{}'));
     if (res2.error) return apiError(res2.error);
     const { label } = res2.data;
 
@@ -45,8 +46,8 @@ export const updateAJobListHandler: EventHandler = authHandler(
 
     const body = JobListDto.parse(jobList);
     return {
-      statusCode: 200,
-      body: JSON.stringify(body),
+      status: 200,
+      body: body,
     };
   },
 );

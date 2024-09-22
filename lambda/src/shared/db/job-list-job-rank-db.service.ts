@@ -114,7 +114,7 @@ async function getTopAndBottomJobListRanks(
   )) as QueryCommandOutput<JobListJobRankItem>;
 
   const ranks = res.Items?.map((item) => item.jobListRank);
-  return { topRank: ranks?.[1], bottomRank: ranks?.[0] };
+  return { topRank: ranks?.[0], bottomRank: ranks?.[1] };
 }
 
 function getTopAndBottomJobListRanksQueryInput(
@@ -134,12 +134,13 @@ function getTopAndBottomJobListRanksQueryInput(
     jobListRank: jobListRank?.rank || '',
   });
 
-  return {
+  const input = {
     TableName,
     Limit: 2,
     KeyConditionExpression: `pk = :pk And ${skCondition}`,
     ExpressionAttributeValues: getExpAttrValues(jobListRankCK),
   } as QueryCommandInput;
+  return input;
 }
 
 function deleteCmdInput(
@@ -294,7 +295,6 @@ export const jobListJobRankDB = {
   putCmdInput,
   updateCmdInput,
   deleteCmdInput,
-  getTopAndBottomJobListRanksQueryInput,
   getTopAndBottomJobListRanks,
   findAll,
   hasJobsAssigned,

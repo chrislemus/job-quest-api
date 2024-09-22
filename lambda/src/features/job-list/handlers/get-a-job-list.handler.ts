@@ -1,12 +1,12 @@
 import { EventHandler } from '@/shared/types';
+import { JobListDto, JobListIdPathParamsDto } from '../dto';
+import { jobListDB } from '@/shared/db/job-list-db.service';
+import { authHandler } from '@/features/auth';
 import {
   apiError,
   BuildOpenApiSpecArgOperationObj,
   notFoundException,
 } from '@/shared';
-import { JobListDto, JobListIdPathParamsDto } from '../dto';
-import { jobListDB } from '@/shared/db/job-list-db.service';
-import { authHandler } from '@/features/auth';
 
 export const getAJobListHandlerSpec: BuildOpenApiSpecArgOperationObj = {
   zodPathParamsSchema: JobListIdPathParamsDto,
@@ -24,8 +24,9 @@ export const getAJobListHandlerSpec: BuildOpenApiSpecArgOperationObj = {
 };
 
 export const getAJobListHandler: EventHandler = authHandler(
-  async (authUser, event) => {
-    const res = JobListIdPathParamsDto.safeParse(event.pathParameters);
+  async (req, ctx) => {
+    const { authUser } = ctx;
+    const res = JobListIdPathParamsDto.safeParse(req.pathParams);
     if (res.error) return apiError(res.error);
 
     const jobList = await jobListDB.queryUnique(authUser.id, res.data.id);
@@ -33,8 +34,8 @@ export const getAJobListHandler: EventHandler = authHandler(
 
     const body = JobListDto.parse(jobList);
     return {
-      statusCode: 200,
-      body: JSON.stringify(body),
+      status: 200,
+      body: body,
     };
   },
 );

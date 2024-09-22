@@ -27,36 +27,31 @@ export const updateAJobHandlerSpec: BuildOpenApiSpecArgOperationObj = {
   },
 };
 
-export const updateAJobHandler: EventHandler = authHandler(
-  async (authUser, event) => {
-    const pathParams = JobIdPathParamsDto.safeParse(event.pathParameters);
-    if (pathParams.error) return apiError(pathParams.error);
-    const body = UpdateJobDto.safeParse(JSON.parse(event.body || '{}'));
-    if (body.error) return apiError(body.error);
-    const jobId = pathParams.data.id;
-    const userId = authUser.id;
-    const { jobListId, jobListRank, ...jobData } = body.data;
+export const updateAJobHandler: EventHandler = authHandler(async (req, ctx) => {
+  const { authUser } = ctx;
+  const pathParams = JobIdPathParamsDto.safeParse(req.pathParams);
+  if (pathParams.error) return apiError(pathParams.error);
+  const body = UpdateJobDto.safeParse(JSON.parse(req.body || '{}'));
+  if (body.error) return apiError(body.error);
+  const jobId = pathParams.data.id;
+  const userId = authUser.id;
+  const { jobListId, jobListRank, ...jobData } = body.data;
 
-    const jobListUpdates = jobListId
-      ? await jobListDataUtil.getJobListData(
-          authUser.id,
-          jobListId,
-          jobListRank,
-        )
-      : {};
+  const jobListUpdates = jobListId
+    ? await jobListDataUtil.getJobListData(authUser.id, jobListId, jobListRank)
+    : {};
 
-    await jobDB.update({
-      userId,
-      id: jobId,
-      ...jobData,
-      ...jobListUpdates,
-    });
+  await jobDB.update({
+    userId,
+    id: jobId,
+    ...jobData,
+    ...jobListUpdates,
+  });
 
-    const job = await jobDB.getUnique(userId, jobId);
+  const job = await jobDB.getUnique(userId, jobId);
 
-    return {
-      statusCode: 200,
-      body: JSON.stringify(job),
-    };
-  },
-);
+  return {
+    status: 200,
+    body: job,
+  };
+});

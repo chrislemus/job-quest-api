@@ -1,9 +1,9 @@
-import { getRawHandlersMetaData } from './';
+// import { getRawHandlersMetaData } from './';
 import path from 'path';
 import Webpack from 'webpack';
 import fs from 'fs';
-import { buildAppHandler } from './app-handler.util';
-import { buildApiSpecHandler } from './spec-handler.util';
+// import { buildAppHandler } from './app-handler.util';
+// import { buildApiSpecHandler } from './spec-handler.util';
 
 export class ServerlessPlugin {
   rootPath: string;
@@ -23,7 +23,7 @@ export class ServerlessPlugin {
       const { rootPath } = this;
 
       const { apiSpec } = await import(
-        `${path.resolve(rootPath, 'dist/api/index.js')}`
+        `${path.resolve(rootPath, 'dist/api-spec.config.js')}`
       );
       fs.writeFileSync(
         path.resolve(rootPath, 'dist/api-spec.json'),
@@ -33,8 +33,8 @@ export class ServerlessPlugin {
   }
 }
 
-export async function buildLambdaHandlers(rootPath: string) {
-  const rawHandlersMetadata = getRawHandlersMetaData(rootPath);
-  const callbacks = [buildAppHandler, buildApiSpecHandler];
-  await Promise.all(callbacks.map((cb) => cb(rootPath, rawHandlersMetadata)));
-}
+// export async function buildLambdaHandlers(rootPath: string) {
+//   const rawHandlersMetadata = getRawHandlersMetaData(rootPath);
+//   const callbacks = [buildAppHandler, buildApiSpecHandler];
+//   await Promise.all(callbacks.map((cb) => cb(rootPath, rawHandlersMetadata)));
+// }

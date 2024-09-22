@@ -26,8 +26,9 @@ export const createJobListHandlerSpec: BuildOpenApiSpecArgOperationObj = {
 };
 
 export const createJobListHandler: EventHandler = authHandler(
-  async (authUser, event) => {
-    const res = CreateJobListDto.safeParse(JSON.parse(event.body || '{}'));
+  async (req, ctx) => {
+    const { authUser } = ctx;
+    const res = CreateJobListDto.safeParse(JSON.parse(req.body || '{}'));
     if (res.error) return apiError(res.error);
 
     const { label } = res.data;
@@ -39,12 +40,8 @@ export const createJobListHandler: EventHandler = authHandler(
 
     const body = JobListDto.parse(jobList);
     return {
-      statusCode: 201,
-      body: JSON.stringify(body),
+      status: 201,
+      body: body,
     };
-    // return {
-    //   statusCode: 200,
-    //   body: JSON.stringify({ event, custom: 'GETSignuphandler' }),
-    // };
   },
 );
