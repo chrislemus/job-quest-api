@@ -34,6 +34,8 @@ import {
 // const TableName = 'JobQuest-Job';
 
 export type JobCount = {
+  id: string;
+  userId: string;
   count: number;
 };
 
@@ -74,7 +76,8 @@ async function totalJobCount(userId: string, allowCreate = true) {
 function createJobCount(userId: string) {
   const TableName = appConfig.tableName;
   const jobCountCK = getJobCountCK({ userId });
-  const Item = { ...jobCountCK, count: 0 };
+  const id = uuid();
+  const Item: JobCount = { ...jobCountCK, userId, id, count: 0 };
   const ConditionExpression =
     'attribute_not_exists(pk) AND attribute_not_exists(sk)';
   const command = new PutCommand({ TableName, Item, ConditionExpression });
@@ -95,10 +98,12 @@ async function create(job: Omit<Job, 'id'>) {
 
   const { jobListId, jobListRank, userId } = job;
   const jobId = uuid();
+  const jobRankId = uuid();
   const jobCK = getJobCK({ userId, jobId });
   const jobItem: JobItem = { id: jobId, ...job, ...jobCK };
 
   const jobListJobRankPutCmdInput = jobListJobRankDB.putCmdInput({
+    id: jobRankId,
     jobId,
     jobListId,
     jobListRank,
@@ -225,8 +230,11 @@ async function update(job: RequireFields<Partial<Job>, 'id' | 'userId'>) {
       const jobListRankMismatch = res.jobListRank !== data.jobListRank;
       const jobListIdMismatch = res.jobListId !== data.jobListId;
       if (jobListRankMismatch || jobListIdMismatch) {
+        const jobRankId = uuid();
+
         const JobListRankTransactItems = jobListJobRankDB.updateCmdInput(
           {
+            id: jobRankId,
             jobId: res.id,
             jobListId: res.jobListId,
             jobListRank: res.jobListRank,

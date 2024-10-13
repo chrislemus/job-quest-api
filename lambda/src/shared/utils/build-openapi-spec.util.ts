@@ -82,27 +82,27 @@ export function buildController(controller: {
       if (!methodConfig) throw new Error('No method config');
       const { handlerFn, requestBody } = methodConfig;
 
+      if (!handlerFn) throw new Error('No handler function defined');
       const hasJsonReqBody = !!requestBody?.content['application/json'];
 
-      if (hasJsonReqBody && !!handlerFn) {
-        methodConfig.handlerFn = async (req, ...args) => {
-          const { body } = req;
-          if (body && typeof body === 'string') req.body = JSON.parse(body);
+      methodConfig.handlerFn = async (req, ...args) => {
+        const { body } = req;
+        if (hasJsonReqBody && body && typeof body === 'string')
+          req.body = JSON.parse(body);
 
-          const res = await handlerFn(req, ...args);
+        const res = await handlerFn(req, ...args);
 
-          if (res.body && typeof res.body === 'object') {
-            res.body = JSON.stringify(res.body);
-            const existingHeaders = res.headers || {};
-            res.headers = {
-              'Content-Type': 'application/json',
-              ...existingHeaders,
-            };
-          }
+        if (res.body && typeof res.body === 'object') {
+          res.body = JSON.stringify(res.body);
+          const existingHeaders = res.headers || {};
+          res.headers = {
+            'Content-Type': 'application/json',
+            ...existingHeaders,
+          };
+        }
 
-          return res;
-        };
-      }
+        return res;
+      };
     });
   });
 

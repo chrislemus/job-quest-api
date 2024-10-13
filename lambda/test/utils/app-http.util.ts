@@ -1,13 +1,23 @@
 import axios, { AxiosError } from 'axios';
 
 export const appHttp = axios.create({
-  baseURL: 'http://localhost:3000',
   // baseURL: 'http://localhost:3000/v1',
-  // baseURL: 'http://127.0.0.1/:3000/v1',
+  baseURL: 'http://127.0.0.1:3000/v1',
 });
 
 appHttp.interceptors.response.use(
   (response) => {
+    const hasJsonBody = (response.headers['content-type'] || '').includes(
+      'application/json',
+    );
+
+    if (hasJsonBody && typeof response.data === 'string') {
+      console.log('Parsing response data');
+      console.log({ resData: response.data });
+      response.data = JSON.parse(response.data);
+      console.log({ resData: response.data });
+    }
+
     return response;
   },
   (error: AxiosError) => {

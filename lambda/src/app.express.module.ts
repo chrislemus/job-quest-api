@@ -28,8 +28,20 @@ Obj.entries(apiSpecPreformatted.paths).forEach(([path, methods]) => {
 
 async function invokeHandler(req: Request, handlerFn: EventHandler) {
   const { body, headers, query: queryParams, params: pathParams } = req;
-  const res = await handlerFn({ body, queryParams, pathParams, headers }, {});
-  return res;
+
+  // Express uses lowercase headers (preserving case)
+  if (headers.authorization) headers.Authorization = headers.authorization;
+
+  try {
+    const res = await handlerFn({ body, queryParams, pathParams, headers }, {});
+    return res;
+  } catch (error) {
+    console.error(error);
+    return {
+      status: 500,
+      body: JSON.stringify({ message: 'Internal Server Error  ' }),
+    };
+  }
 }
 
 const port = 3005;

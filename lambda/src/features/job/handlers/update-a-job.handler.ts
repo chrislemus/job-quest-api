@@ -31,7 +31,7 @@ export const updateAJobHandler: EventHandler = authHandler(async (req, ctx) => {
   const { authUser } = ctx;
   const pathParams = JobIdPathParamsDto.safeParse(req.pathParams);
   if (pathParams.error) return apiError(pathParams.error);
-  const body = UpdateJobDto.safeParse(JSON.parse(req.body || '{}'));
+  const body = UpdateJobDto.safeParse(req.body);
   if (body.error) return apiError(body.error);
   const jobId = pathParams.data.id;
   const userId = authUser.id;

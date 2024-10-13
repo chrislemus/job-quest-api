@@ -33,7 +33,7 @@ export const createAJobLogHandlerSpec: BuildOpenApiSpecArgOperationObj = {
 export const createAJobLogHandler: EventHandler = authHandler(
   async (req, ctx) => {
     const { authUser } = ctx;
-    const res = CreateAJobLogDto.safeParse(JSON.parse(req.body || '{}'));
+    const res = CreateAJobLogDto.safeParse(req.body);
     if (res.error) return apiError(res.error);
     const reqBody = res.data;
 

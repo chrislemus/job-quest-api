@@ -34,7 +34,7 @@ export const updateAJobListHandler: EventHandler = authHandler(
     if (res.error) return apiError(res.error);
     const jobListId = res.data.id;
 
-    const res2 = UpdateJobListDto.safeParse(JSON.parse(req.body || '{}'));
+    const res2 = UpdateJobListDto.safeParse(req.body);
     if (res2.error) return apiError(res2.error);
     const { label } = res2.data;
 

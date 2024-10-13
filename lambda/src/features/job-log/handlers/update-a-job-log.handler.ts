@@ -31,7 +31,7 @@
 //   async (authUser, event) => {
 //     const pathParams = JobIdPathParamsDto.safeParse(event.pathParameters);
 //     if (pathParams.error) return apiError(pathParams.error);
-//     const body = UpdateJobDto.safeParse(JSON.parse(event.body || '{}'));
+//     const body = UpdateJobDto.safeParse(req.body );
 //     if (body.error) return apiError(body.error);
 //     const jobId = pathParams.data.id;
 //     const userId = authUser.id;

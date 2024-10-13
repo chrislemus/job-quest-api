@@ -37,8 +37,8 @@ export function getJobListCK(input: JobListCKInput) {
 }
 
 export type UserCK = ReturnType<typeof createUserCK>;
-type UserCKInput = { userId: string };
+type UserCKInput = { id: string };
 export function createUserCK(input: UserCKInput) {
-  const { userId } = input;
-  return { pk: `user#${userId}`, sk: `"info"` } as const;
+  const { id } = input;
+  return { pk: `user#${id}`, sk: `"info"` } as const;
 }

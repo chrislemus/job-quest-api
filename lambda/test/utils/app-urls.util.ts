@@ -4,7 +4,7 @@ import { CreateUserReqSchemaInput } from '../mocks/user.mock';
 export const appUrl = {
   auth: {
     signup: {
-      path: '/v1/auth/signup',
+      path: '/auth/signup',
       method: 'POST',
       reqConfig<T extends CreateUserReqSchemaInput>(data: T) {
         return {
@@ -15,7 +15,7 @@ export const appUrl = {
       },
     },
     login: {
-      path: '/v1/auth/login',
+      path: '/auth/login',
       method: 'POST',
       reqConfig<T extends { email: string; password: string }>(credentials: T) {
         return {
@@ -26,7 +26,7 @@ export const appUrl = {
       },
     },
     refresh: {
-      path: '/v1/auth/refresh',
+      path: '/auth/refresh',
       method: 'POST',
       reqConfig<T extends string>(refreshToken: T) {
         const { path, method } = this;
@@ -38,8 +38,8 @@ export const appUrl = {
       },
     },
     logout: {
-      fullpath: '/v1/auth/logout',
-      path: '/v1/auth/logout',
+      fullPath: '/auth/logout',
+      path: '/auth/logout',
       method: 'POST',
       reqConfig<T extends string>(accessToken: T) {
         return {
@@ -52,7 +52,7 @@ export const appUrl = {
   },
   user: {
     profile: {
-      path: '/v1/user/profile',
+      path: '/user/profile',
       method: 'GET',
       reqConfig<T extends string>(accessToken: T) {
         return {
@@ -63,7 +63,7 @@ export const appUrl = {
       },
     },
     delete: {
-      path: '/v1/user',
+      path: '/user',
       method: 'DELETE',
       reqConfig(config: { userId: string; accessToken: string }) {
         return {
@@ -76,7 +76,7 @@ export const appUrl = {
   },
   jobList: {
     create: {
-      path: '/v1/job-list',
+      path: '/job-list',
       method: 'POST',
       reqConfig(data: { label: string }) {
         return {
@@ -87,7 +87,7 @@ export const appUrl = {
       },
     },
     getAll: {
-      path: '/v1/job-list',
+      path: '/job-list',
       method: 'GET',
       reqConfig() {
         return {
@@ -97,7 +97,7 @@ export const appUrl = {
       },
     },
     getById: {
-      path: '/v1/job-list',
+      path: '/job-list',
       method: 'GET',
       reqConfig(jobListId: string) {
         return {
@@ -107,7 +107,7 @@ export const appUrl = {
       },
     },
     update: {
-      path: '/v1/job-list',
+      path: '/job-list',
       method: 'PATCH',
       reqConfig(data: { id: string; label: string }) {
         const { id, ...res } = data;
@@ -119,7 +119,7 @@ export const appUrl = {
       },
     },
     delete: {
-      path: '/v1/job-list',
+      path: '/job-list',
       method: 'DELETE',
       reqConfig(jobId: string) {
         return {
@@ -131,7 +131,7 @@ export const appUrl = {
   },
   job: {
     create: {
-      path: '/v1/job',
+      path: '/job',
       method: 'POST',
       reqConfig(data: {
         jobListId: string;

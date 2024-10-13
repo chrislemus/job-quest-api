@@ -17,11 +17,12 @@ import {
   ScanCommandOutput,
 } from './types';
 
-type UserDBEntity = Omit<UserDto, 'id'> & { userId: string } & UserCK;
+type UserDBEntity = UserDto & UserCK;
+// type UserDBEntity = Omit<UserDto, 'id'> & { userId: string } & UserCK;
 
 function createUserRes<T extends UserDBEntity>(data: T) {
   return {
-    id: data.userId,
+    id: data.id,
     email: data.email,
     firstName: data.firstName,
     lastName: data.lastName,
@@ -35,16 +36,16 @@ function createUserRes<T extends UserDBEntity>(data: T) {
 
 async function create(user: Omit<UserDto, 'id' | 'refreshToken'>) {
   const TableName = appConfig.tableName;
-  const userId = uuid();
-  const userCk = createUserCK({ userId });
+  const id = uuid();
+  const userCk = createUserCK({ id });
 
-  const Item: UserDBEntity = { userId, ...user, ...userCk };
-
+  const Item: UserDBEntity = { id, ...user, ...userCk };
+  console.log({ Item });
   const command = new PutCommand({ TableName, Item });
 
   await dbClient().send(command);
 
-  const data = await queryUnique(userId);
+  const data = await queryUnique(id);
   return data;
 }
 
@@ -54,7 +55,7 @@ function update(user: RequireFields<Partial<UserDto>, 'id'>) {
   if (!Object.keys(data).length) {
     throw new Error('No data to update');
   }
-  const userCK = createUserCK({ userId: id });
+  const userCK = createUserCK({ id });
   const ExpressionAttributeValues = {};
   let UpdateExpression = 'SET';
   for (const key in data) {
@@ -80,9 +81,9 @@ function update(user: RequireFields<Partial<UserDto>, 'id'>) {
   return dbClient().send(command) as Promise<PutCommandOutput<UserDBEntity>>;
 }
 
-async function queryUnique(userId: string): Promise<UserDto> {
+async function queryUnique(id: string): Promise<UserDto> {
   const TableName = appConfig.tableName;
-  const Key = createUserCK({ userId });
+  const Key = createUserCK({ id });
   const command = new GetCommand({ TableName, Key });
 
   const { Item: data } = (await dbClient().send(
@@ -96,7 +97,7 @@ async function queryUnique(userId: string): Promise<UserDto> {
 
 async function findByEmail(email: string) {
   const TableName = appConfig.tableName;
-  const userPartialCK = createUserCK({ userId: '' });
+  const userPartialCK = createUserCK({ id: '' });
   // improve this query
   // improve this query
   // improve this query
@@ -125,9 +126,9 @@ async function findByEmail(email: string) {
   return userDB ? createUserRes(userDB) : undefined;
 }
 
-async function deleteUser(userId: string) {
+async function deleteUser(id: string) {
   const TableName = appConfig.tableName;
-  const userCK = createUserCK({ userId });
+  const userCK = createUserCK({ id });
   // clean up all user data
   // clean up all user data
   // clean up all user data
@@ -144,7 +145,7 @@ async function deleteUser(userId: string) {
 
   (await dbClient().send(command)) as DeleteCommandOutput<UserDBEntity>;
 
-  return { id: userId };
+  return { id };
 }
 
 // query(userId: string, email: string) {

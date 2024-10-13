@@ -7,12 +7,13 @@ import { QueryCommandOutput } from './types';
 import { getExpAttrValues, removeCK } from './db-util';
 import { getJobListJobRankCK, JobListJobRankCK } from './composite-key.util';
 import dbClient from './dynamo-db-document-client.service';
-import { appConfig } from '@/shared';
+import { appConfig, uuid } from '@/shared';
 import { JobListRankDto } from '@/features/job/dto';
 
 // import { JobListJobRankItem } from './job-list-db.service';
 
 export type JobListJobRank = {
+  id: string;
   jobListId: string;
   jobListRank: string;
   jobId: string;
@@ -88,10 +89,12 @@ function updateCmdInput(
     throw new Error('No updates to perform');
   }
 
+  const id = uuid();
   const TransactItems: TransactWriteCommandInput['TransactItems'] = [
     {
       Put: putCmdInput({
         ...jobListJobRankNew,
+        id,
         jobId: jobListJobRankOld.jobId,
       }),
     },
