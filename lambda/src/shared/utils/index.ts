@@ -6,3 +6,4 @@ export * from './uuid.util';
 export * from './http-exceptions.util';
 export * from './fmt-query-params.util';
 export * from './object.util';
+export * from './format-handler-error.util';

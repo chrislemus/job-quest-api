@@ -1,5 +1,5 @@
 import { authHandler } from '@/features/auth';
-import { apiError, BuildOpenApiSpecArgOperationObj } from '@/shared';
+import { apiParse, BuildOpenApiSpecArgOperationObj } from '@/shared';
 import { EventHandler } from '@/shared/types';
 import { CreateJobListDto, JobListDto } from '../dto';
 import { jobListDB } from '@/shared/db/job-list-db.service';
@@ -27,15 +27,12 @@ export const createJobListHandlerSpec: BuildOpenApiSpecArgOperationObj = {
 
 export const createJobListHandler: EventHandler = authHandler(
   async (req, ctx) => {
-    const { authUser } = ctx;
-    const res = CreateJobListDto.safeParse(req.body);
-    if (res.error) return apiError(res.error);
-
-    const { label } = res.data;
+    const userId = ctx.authUser.id;
+    const reqBody = await apiParse(CreateJobListDto, req.body);
 
     const jobList = await jobListDB.create({
-      userId: authUser.id,
-      label,
+      userId,
+      label: reqBody.label,
     });
 
     const body = JobListDto.parse(jobList);

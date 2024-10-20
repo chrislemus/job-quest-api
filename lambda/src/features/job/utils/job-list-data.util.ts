@@ -1,39 +1,54 @@
 import { internalServerException } from '@/shared';
 import { LexoRank } from 'lexorank';
-import { JobListRankDto } from './dto';
-import { jobListJobRankDB } from '@/shared/db/job-list-job-rank-db.service';
+import { JobListRankDto } from '../dto';
+import { JobQuestDBService } from '@/core/database';
 
 async function getJobListData(
   userId: string,
   jobListId: string,
   jobListRankConfig?: JobListRankDto,
 ): Promise<{
-  jobListRank: string;
+  jobRank: string;
   jobListId: string;
 }> {
   const getData = async () => {
     const config = { jobListId, jobListRankConfig };
-    const jobListRanks = await jobListJobRankDB.getTopAndBottomJobListRanks(
-      jobListId,
-      jobListRankConfig,
-    );
+    const jobListRanksDbRes = await JobQuestDBService.entities.jobRank.query
+      .jobRank({
+        jobListId,
+        // jobRank: jobListRankConfig?.rank,
+      })
+      .where((attr, op) => {
+        const rank = jobListRankConfig?.rank;
+        if (!rank) return '';
+        if (jobListRankConfig?.placement === 'bottom') {
+          return op.gte(attr.jobRank, rank);
+        }
+        const condition = op.lte(attr.jobRank, rank);
+        console.log({ condition });
+        return condition;
+      })
+      .go({ limit: 2 });
+    console.log({ jobListRanksDbRes });
+    const jobListRanksDbResData = jobListRanksDbRes.data;
+    console.log({ jobListRanksDbResData });
+    const topRank = jobListRanksDbRes.data[0]?.jobRank;
+    const bottomRank = jobListRanksDbRes.data[1]?.jobRank;
+    const jobListRanks = { topRank, bottomRank };
 
     const data = await getRankPlacement({ ...config, jobListRanks });
     return data;
   };
 
   let res = await getData();
-
   if (res === 'rebalance required') {
     await rebalanceDB(jobListId, userId);
+    res = await getData();
   }
-
-  res = await getData();
 
   if (res === 'rebalance required') {
     console.error('Rebalance required after 2nd attempt');
-
-    throw internalServerException('failed to rebalance job list ranks');
+    throw internalServerException('failed to rebalance job ranks');
   }
 
   return res;
@@ -45,7 +60,7 @@ async function getRankPlacement(config: {
   jobListRanks: { topRank?: string; bottomRank?: string };
 }): Promise<
   | {
-      jobListRank: string;
+      jobRank: string;
       jobListId: string;
     }
   | 'rebalance required'
@@ -67,7 +82,7 @@ async function getRankPlacement(config: {
     const [tRank, bRank] = [topRank, bottomRank].map((r) => r.getDecimal());
     const decimalRank = rank.between(tRank, bRank);
     const newRank = rank.from(bucket, decimalRank).toString();
-    return { jobListRank: newRank, jobListId };
+    return { jobRank: newRank, jobListId };
   }
 
   // condition must return a value
@@ -78,12 +93,12 @@ async function getRankPlacement(config: {
 
     const limitReached = newRank.isMax() || newRank.isMin();
     if (limitReached) return rebalanceRes;
-    return { jobListId, jobListRank: newRank.toString() };
+    return { jobListId, jobRank: newRank.toString() };
   }
 
   const currentBucket = rank.middle().getBucket();
-  const jobListRank = rank.initial(currentBucket).toString();
-  return { jobListRank, jobListId };
+  const jobRank = rank.initial(currentBucket).toString();
+  return { jobRank, jobListId };
 }
 
 async function rebalanceDB(jobListId: string, userId: string) {

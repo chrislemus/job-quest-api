@@ -11,19 +11,19 @@ export const AuthSignupReqBodyDto = z
       return await hashValue(password);
     }),
     email: UserDto.shape.email.superRefine(async (email, ctx) => {
-      const code = z.ZodIssueCode.custom;
-      try {
-        const existingUser = await userDB.findByEmail(email);
-        if (!!existingUser) {
-          const message = 'User with this email already exists';
-          ctx.addIssue({ code, message });
-        }
-      } catch (error) {
-        console.error(error);
-        const message = 'Error validating user email';
-        ctx.addIssue({ code, message });
-      }
-      return z.NEVER;
+      // const code = z.ZodIssueCode.custom;
+      // try {
+      //   const existingUser = await userDB.findByEmail(email);
+      //   if (!!existingUser) {
+      //     const message = 'User with this email already exists';
+      //     ctx.addIssue({ code, message });
+      //   }
+      // } catch (error) {
+      //   console.error(error);
+      //   const message = 'Error validating user email';
+      //   ctx.addIssue({ code, message });
+      // }
+      // return z.NEVER;
     }),
   })
   .transform((data) => {

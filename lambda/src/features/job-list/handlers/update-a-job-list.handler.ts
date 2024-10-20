@@ -1,5 +1,5 @@
 import { EventHandler } from '@/shared/types';
-import { apiError, BuildOpenApiSpecArgOperationObj } from '@/shared';
+import { apiParse, BuildOpenApiSpecArgOperationObj } from '@/shared';
 import { JobListDto, UpdateJobListDto, JobListIdPathParamsDto } from '../dto';
 import { authHandler } from '@/features/auth';
 import { jobListDB } from '@/shared/db/job-list-db.service';
@@ -30,18 +30,15 @@ export const updateAJobListHandlerSpec: BuildOpenApiSpecArgOperationObj = {
 export const updateAJobListHandler: EventHandler = authHandler(
   async (req, ctx) => {
     const { authUser } = ctx;
-    const res = JobListIdPathParamsDto.safeParse(req.pathParams);
-    if (res.error) return apiError(res.error);
-    const jobListId = res.data.id;
+    const pathParams = await apiParse(JobListIdPathParamsDto, req.pathParams);
+    const jobListId = pathParams.id;
 
-    const res2 = UpdateJobListDto.safeParse(req.body);
-    if (res2.error) return apiError(res2.error);
-    const { label } = res2.data;
+    const reqBody = await apiParse(UpdateJobListDto, req.body);
 
     const jobList = await jobListDB.update({
       id: jobListId,
       userId: authUser.id,
-      label,
+      label: reqBody.label,
     });
 
     const body = JobListDto.parse(jobList);

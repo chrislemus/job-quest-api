@@ -1,29 +1,29 @@
 export class ExceptionError extends Error {
   status: number;
-  error?: string;
-  constructor(status: number, message: string, error?: string) {
+  error?: string | string[];
+  constructor(status: number, message: string, error?: string | string[]) {
     super(message);
     this.status = status;
     this.error = error;
   }
 }
 
-export function notFoundException(message?: string) {
-  return new ExceptionError(404, 'Not found', message);
+export function notFoundException(error?: string | string[]) {
+  return new ExceptionError(404, 'Not found', error);
 }
 
-export function unauthorizedException(message?: string) {
-  return new ExceptionError(401, 'Unauthorized', message);
+export function unauthorizedException(error?: string | string[]) {
+  return new ExceptionError(401, 'Unauthorized', error);
 }
 
-export function conflictException(message?: string) {
-  return new ExceptionError(409, 'Conflict', message);
+export function conflictException(error?: string | string[]) {
+  return new ExceptionError(409, 'Conflict', error);
 }
 
-export function badRequestException(message?: string) {
-  return new ExceptionError(400, 'Bad request', message);
+export function badRequestException(error?: string | string[]) {
+  return new ExceptionError(400, 'Bad request', error);
 }
 
-export function internalServerException(message?: string) {
-  return new ExceptionError(500, 'Internal server error', message);
+export function internalServerException(error?: string | string[]) {
+  return new ExceptionError(500, 'Internal server error', error);
 }

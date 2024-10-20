@@ -3,7 +3,7 @@ import { JobListDto, JobListIdPathParamsDto } from '../dto';
 import { jobListDB } from '@/shared/db/job-list-db.service';
 import { authHandler } from '@/features/auth';
 import {
-  apiError,
+  apiParse,
   BuildOpenApiSpecArgOperationObj,
   notFoundException,
 } from '@/shared';
@@ -26,10 +26,9 @@ export const getAJobListHandlerSpec: BuildOpenApiSpecArgOperationObj = {
 export const getAJobListHandler: EventHandler = authHandler(
   async (req, ctx) => {
     const { authUser } = ctx;
-    const res = JobListIdPathParamsDto.safeParse(req.pathParams);
-    if (res.error) return apiError(res.error);
+    const pathParams = await apiParse(JobListIdPathParamsDto, req.pathParams);
 
-    const jobList = await jobListDB.queryUnique(authUser.id, res.data.id);
+    const jobList = await jobListDB.queryUnique(authUser.id, pathParams.id);
     if (!jobList) throw notFoundException();
 
     const body = JobListDto.parse(jobList);

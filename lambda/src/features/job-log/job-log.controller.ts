@@ -11,18 +11,28 @@ import { buildController } from '@/shared';
 //   updateAJobListHandler,
 //   updateAJobListHandlerSpec,
 // } from './handlers';
+// import {
+//   createAJobLogHandler,
+//   createAJobLogHandlerSpec,
+// } from './handlers/create-a-job-log.handler';
+// import {
+//   getAJobLogHandler,
+//   getAJobLogHandlerSpec,
+// } from './handlers/get-a-job-log.handler';
+// import {
+//   getJobLogsHandler,
+//   getJobLogsHandlerSpec,
+// } from './handlers/get-job-logs.handler';
 import {
-  createAJobLogHandler,
-  createAJobLogHandlerSpec,
-} from './handlers/create-a-job-log.handler';
-import {
-  getAJobLogHandler,
-  getAJobLogHandlerSpec,
-} from './handlers/get-a-job-log.handler';
-import {
+  deleteAJobLogHandler,
+  deleteAJobLogHandlerSpec,
   getJobLogsHandler,
   getJobLogsHandlerSpec,
-} from './handlers/get-job-logs.handler';
+  getAJobLogHandler,
+  getAJobLogHandlerSpec,
+  createAJobLogHandler,
+  createAJobLogHandlerSpec,
+} from './handlers';
 
 export const jobLogController = buildController({
   'job-log': {
@@ -43,8 +53,8 @@ export const jobLogController = buildController({
       // not done
       // not done
       // not done
-      handlerFn: getAJobLogHandler,
-      ...getAJobLogHandlerSpec,
+      handlerFn: deleteAJobLogHandler,
+      ...deleteAJobLogHandlerSpec,
     },
     get: {
       handlerFn: getAJobLogHandler,

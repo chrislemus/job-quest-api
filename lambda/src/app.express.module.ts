@@ -1,8 +1,16 @@
 import express, { Request } from 'express';
 import bodyParser from 'body-parser';
-import { Obj } from './shared';
+import { formatHandlerError, Obj } from './shared';
 import { apiSpecPreformatted } from './api-spec.config';
 import { EventHandler } from './shared/types';
+import {
+  dynamodb,
+  initializeTable,
+  JobQuestDBService,
+  loadTableUtil,
+  tableDefinition,
+} from './core/database';
+import { createMockData } from './core/database/test/create-mock-data.util';
 
 const app = express();
 app.use(bodyParser.json());
@@ -36,15 +44,30 @@ async function invokeHandler(req: Request, handlerFn: EventHandler) {
     const res = await handlerFn({ body, queryParams, pathParams, headers }, {});
     return res;
   } catch (error) {
-    console.error(error);
-    return {
-      status: 500,
-      body: JSON.stringify({ message: 'Internal Server Error  ' }),
-    };
+    console.log({ error });
+    return formatHandlerError(error);
   }
 }
 
-const port = 3005;
-app.listen(port, () => {
-  console.log(`Server running at http://localhost:${port}/`);
-});
+async function main() {
+  await initializeTable({
+    definition: tableDefinition,
+    dropOnExists: false,
+    dynamodb,
+  });
+  // const data = createMockData();
+  // await loadTableUtil(data);
+
+  // const users = await JobQuestDBService.entities.user.find({}).go({});
+  // console.log(users);
+  // console.log('\n\n\n');
+  // const usersScan = await JobQuestDBService.entities.user.scan.where((attr, op) => op.eq(attr.email ===)).go();
+  // console.log({ usersScan });
+  console.log('\n\n\n');
+
+  const port = 3005;
+  app.listen(port, () => {
+    console.log(`Server running at http://localhost:${port}/`);
+  });
+}
+main();

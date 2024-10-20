@@ -1,9 +1,13 @@
 import { EventHandler } from '@/shared/types';
-import { apiError, BuildOpenApiSpecArgOperationObj } from '@/shared';
+import {
+  apiParse,
+  BuildOpenApiSpecArgOperationObj,
+  internalServerException,
+} from '@/shared';
 import { JobDto, JobIdPathParamsDto, UpdateJobDto } from '../dto';
 import { authHandler } from '@/features/auth';
-import { jobDB } from '@/shared/db/job-db.service';
-import { jobListDataUtil } from '../job-list-data.util';
+import { jobListDataUtil } from '../utils';
+import { JobQuestDBService } from '@/core/database';
 
 export const updateAJobHandlerSpec: BuildOpenApiSpecArgOperationObj = {
   zodPathParamsSchema: JobIdPathParamsDto,
@@ -28,30 +32,57 @@ export const updateAJobHandlerSpec: BuildOpenApiSpecArgOperationObj = {
 };
 
 export const updateAJobHandler: EventHandler = authHandler(async (req, ctx) => {
-  const { authUser } = ctx;
-  const pathParams = JobIdPathParamsDto.safeParse(req.pathParams);
-  if (pathParams.error) return apiError(pathParams.error);
-  const body = UpdateJobDto.safeParse(req.body);
-  if (body.error) return apiError(body.error);
-  const jobId = pathParams.data.id;
-  const userId = authUser.id;
-  const { jobListId, jobListRank, ...jobData } = body.data;
+  const userId = ctx.authUser.id;
+  const pathParams = await apiParse(JobIdPathParamsDto, req.pathParams);
+  const reqBody = await apiParse(UpdateJobDto, req.body);
+
+  const jobId = pathParams.id;
+  const { jobListId, jobRank, ...jobData } = reqBody;
 
   const jobListUpdates = jobListId
-    ? await jobListDataUtil.getJobListData(authUser.id, jobListId, jobListRank)
-    : {};
+    ? await jobListDataUtil.getJobListData(userId, jobListId, jobRank)
+    : null;
+  console.log({ jobListUpdates });
+  const jobUpdates = { ...jobData, jobListUpdates };
+  if (jobListUpdates) Object.assign(jobUpdates, jobListUpdates);
 
-  await jobDB.update({
-    userId,
-    id: jobId,
-    ...jobData,
-    ...jobListUpdates,
-  });
+  let jobRankToDelete: { jobListId: string; jobRank: string } | null = null;
+  if (jobListUpdates) {
+    const { data: oldJob } = await JobQuestDBService.entities.job
+      .get({ userId, jobId })
+      .go();
+    if (!oldJob) throw internalServerException();
+    jobRankToDelete = { jobListId: oldJob.jobListId, jobRank: oldJob.jobRank };
+  }
 
-  const job = await jobDB.getUnique(userId, jobId);
+  const jobDbRes = await JobQuestDBService.transaction
+    .write((e) => {
+      const updates = [
+        e.job
+          .patch({ userId, jobId })
+          .set({ ...jobUpdates })
+          .commit(),
+      ];
+
+      if (jobListUpdates && jobRankToDelete) {
+        updates.push(e.jobRank.delete(jobRankToDelete).commit());
+        const { jobListId, jobRank } = jobListUpdates;
+        updates.push(e.jobRank.create({ jobListId, jobId, jobRank }).commit());
+      }
+      return updates;
+    })
+    .go();
+
+  if (jobDbRes.canceled) throw internalServerException();
+
+  // const job = await jobDB.getUnique(userId, jobId);
+  const { data: job } = await JobQuestDBService.entities.job
+    .get({ userId, jobId })
+    .go();
+  if (!job) throw internalServerException();
 
   return {
     status: 200,
-    body: job,
+    body: JobDto.parse(job),
   };
 });

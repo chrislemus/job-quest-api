@@ -1,9 +1,13 @@
 import { EventHandler } from '@/shared/types';
-import { apiError, BuildOpenApiSpecArgOperationObj } from '@/shared';
+import {
+  apiParse,
+  BuildOpenApiSpecArgOperationObj,
+  notFoundException,
+} from '@/shared';
 import { authHandler } from '@/features/auth';
 import { GetAJobLogPathParamsDto } from '../dto';
 import { JobLogEntity } from '../entities';
-import { jobLogDB } from '@/shared/db/job-log-db.service';
+import { JobQuestDBService } from '@/core/database';
 
 export const getAJobLogHandlerSpec: BuildOpenApiSpecArgOperationObj = {
   zodPathParamsSchema: GetAJobLogPathParamsDto,
@@ -20,15 +24,20 @@ export const getAJobLogHandlerSpec: BuildOpenApiSpecArgOperationObj = {
 };
 
 export const getAJobLogHandler: EventHandler = authHandler(async (req, ctx) => {
-  const { authUser } = ctx;
-  const res = GetAJobLogPathParamsDto.safeParse(req.pathParams);
-  if (res.error) return apiError(res.error);
-  const jobLog = await jobLogDB.getUnique(authUser.id, res.data.id);
-  console.log({ jobLog });
-  const resBody = JobLogEntity.parse(jobLog);
-  console.log({ resBody });
+  const userId = ctx.authUser.id;
+  const pathParams = await apiParse(GetAJobLogPathParamsDto, req.pathParams);
+
+  const { data: jobLog } = await JobQuestDBService.entities.jobLog
+    .get({
+      jobLogId: pathParams.id,
+      userId,
+    })
+    .go();
+
+  if (!jobLog) return notFoundException('Job log not found');
+
   return {
     status: 200,
-    body: resBody,
+    body: jobLog,
   };
 });

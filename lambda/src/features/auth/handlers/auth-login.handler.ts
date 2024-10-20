@@ -1,6 +1,5 @@
-import { userDB } from '@/shared/db/user-db.service';
 import {
-  apiError,
+  apiParse,
   unauthorizedException,
   BuildOpenApiSpecArgOperationObj,
 } from '@/shared';
@@ -8,6 +7,7 @@ import { EventHandler } from '@/shared/types';
 import { AuthLoginReqBodyDto, JwtDto } from '@/features/auth/dto';
 import { getTokens } from '@/features/auth/utils';
 import bcrypt from 'bcryptjs';
+import { JobQuestDBService } from '@/core/database';
 
 export const authLoginHandlerSpec: BuildOpenApiSpecArgOperationObj = {
   description: '',
@@ -32,37 +32,22 @@ export const authLoginHandlerSpec: BuildOpenApiSpecArgOperationObj = {
     401: { description: '' },
   },
 };
-// export const openapi = buildOpenapOperationalObj({
-//   security: [],
-//   requestBody: {
-//     required: true,
-//     content: {
-//       'application/json': {
-//         zodSchema: { authLoginReqBodySchema },
-//       },
-//     },
-//   },
-//   responses: {
-//     200: {
-//       description: 'new working?',
-//       content: {
-//         'application/json': {
-//           zodSchema: { jwtSchema },
-//         },
-//       },
-//     },
-//     401: { description: '' },
-//   },
-// });
 
 export const authLoginHandler: EventHandler = async (event) => {
-  const res = AuthLoginReqBodyDto.safeParse(event.body);
-  if (res.error) return apiError(res.error);
-  const user = await userDB.findByEmail(res.data.email);
+  const reqBody = await apiParse(AuthLoginReqBodyDto, event.body);
 
-  // try {
+  const { data: userList } = await JobQuestDBService.entities.user.query
+    .userByEmail({ email: reqBody.email })
+    .go();
+  if (userList.length !== 1) {
+    console.error('login user count not 1');
+    console.error(userList);
+    throw unauthorizedException();
+  }
+  const user = userList[0];
+
   if (!user?.password) throw unauthorizedException();
-  const isMatch = await bcrypt.compare(res.data.password, user.password);
+  const isMatch = await bcrypt.compare(reqBody.password, user.password);
   if (!isMatch) throw unauthorizedException();
 
   const tokens = await getTokens(user);

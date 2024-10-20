@@ -7,6 +7,7 @@ import { getTokens } from '@/features/auth/utils';
 import { userDB } from '@/shared/db/user-db.service';
 import bcrypt from 'bcryptjs';
 import { JwtPayload } from '@/features/auth/types';
+import { JobQuestDBService } from '@/core/database';
 
 export const authRefreshJwtHandlerSpec: BuildOpenApiSpecArgOperationObj = {
   responses: {
@@ -30,7 +31,10 @@ export const authRefreshJwtHandler: EventHandler = async (req) => {
       appConfig.jwtRefreshSecret,
     ) as JwtPayload;
 
-    const dbUser = await userDB.queryUnique(payload.id);
+    // const dbUser = await userDB.queryUnique(payload.id);
+    const { data: dbUser } = await JobQuestDBService.entities.user
+      .get({ userId: payload.id })
+      .go();
     if (!dbUser?.refreshToken) throw new Error('User refresh token not found');
 
     const isMatch = await bcrypt.compare(refreshToken, dbUser.refreshToken);

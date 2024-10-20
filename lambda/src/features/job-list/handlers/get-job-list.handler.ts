@@ -1,8 +1,8 @@
-import { jobListDB } from '@/shared/db/job-list-db.service';
 import { BuildOpenApiSpecArgOperationObj } from '@/shared';
 import { EventHandler } from '@/shared/types';
 import { GetJobListsQueryParamsDto, JobListPageResDto } from '../dto';
 import { authHandler } from '@/features/auth';
+import { JobQuestDBService } from '@/core/database';
 
 export const getJobListHandlerSpec: BuildOpenApiSpecArgOperationObj = {
   zodQueryParamsSchema: GetJobListsQueryParamsDto,
@@ -20,7 +20,9 @@ export const getJobListHandlerSpec: BuildOpenApiSpecArgOperationObj = {
 
 export const getJobListHandler: EventHandler = authHandler(async (req, ctx) => {
   const { authUser } = ctx;
-  const items = await jobListDB.findAll(authUser.id);
+  const { data: items } = await JobQuestDBService.entities.jobList.query
+    .jobList({ userId: authUser.id })
+    .go({ pages: 'all' });
 
   const body = {
     items,

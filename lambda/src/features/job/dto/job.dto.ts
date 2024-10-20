@@ -12,9 +12,10 @@ export const JobDto = z.object({
   salary: z.string().optional(),
   description: z.string().optional(),
   color: z.string().optional(),
-  jobListRank: z.string().min(1),
+  jobRank: z.string().min(1),
   jobListId: JobListDto.shape.id,
   userId: UserDto.shape.id,
 });
 
 export const { PageResOfJobDto } = createPageResDto({ JobDto });
+export type PageResOfJobDto = typeof PageResOfJobDto;

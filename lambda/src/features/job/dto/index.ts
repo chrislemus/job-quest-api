@@ -5,3 +5,5 @@ export * from './job-page-res.dto';
 export * from './create-job.dto';
 export * from './job-id-path-params.dto';
 export * from './update-job.dto';
+export * from './job-ranks-page-res.dto';
+export * from './job-ranks-query-params.dto';

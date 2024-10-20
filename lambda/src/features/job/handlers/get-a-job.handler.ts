@@ -1,8 +1,12 @@
 import { EventHandler } from '@/shared/types';
-import { apiError, BuildOpenApiSpecArgOperationObj } from '@/shared';
 import { JobDto, JobIdPathParamsDto } from '../dto';
 import { authHandler } from '@/features/auth';
-import { jobDB } from '@/shared/db/job-db.service';
+import { JobQuestDBService } from '@/core/database';
+import {
+  apiParse,
+  BuildOpenApiSpecArgOperationObj,
+  notFoundException,
+} from '@/shared';
 
 export const getAJobHandlerSpec: BuildOpenApiSpecArgOperationObj = {
   zodPathParamsSchema: JobIdPathParamsDto,
@@ -19,10 +23,15 @@ export const getAJobHandlerSpec: BuildOpenApiSpecArgOperationObj = {
 };
 
 export const getAJobHandler: EventHandler = authHandler(async (req, ctx) => {
-  const { authUser } = ctx;
-  const res = JobIdPathParamsDto.safeParse(req.pathParams);
-  if (res.error) return apiError(res.error);
-  const job = await jobDB.getUnique(authUser.id, res.data.id);
+  const userId = ctx.authUser.id;
+  const pathParams = await apiParse(JobIdPathParamsDto, req.pathParams);
+
+  const jobId = pathParams.id;
+
+  const { data: job } = await JobQuestDBService.entities.job
+    .get({ userId, jobId })
+    .go();
+  if (!job) throw notFoundException('Job not found');
 
   return {
     status: 200,

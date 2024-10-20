@@ -1,12 +1,11 @@
-import { BuildOpenApiSpecArgOperationObj } from '@/shared';
+import { apiParse, BuildOpenApiSpecArgOperationObj } from '@/shared';
 import { EventHandler } from '@/shared/types';
 import { authHandler } from '@/features/auth';
-import { JobLogPageResDto } from '../dto';
-import { jobLogDB } from '@/shared/db/job-log-db.service';
-import { JobLogEntity } from '../entities';
+import { GetJobLogsQueryParamsDto, JobLogPageResDto } from '../dto';
+import { JobQuestDBService } from '@/core/database';
 
 export const getJobLogsHandlerSpec: BuildOpenApiSpecArgOperationObj = {
-  // zodQueryParamsSchema: GetJobsQueryParamsDto,
+  zodQueryParamsSchema: GetJobLogsQueryParamsDto,
   responses: {
     200: {
       description: '',
@@ -20,13 +19,14 @@ export const getJobLogsHandlerSpec: BuildOpenApiSpecArgOperationObj = {
 };
 
 export const getJobLogsHandler: EventHandler = authHandler(async (req, ctx) => {
-  const { authUser } = ctx;
-  // const res = GetJobsQueryParamsDto.safeParse(event.queryStringParameters);
-  // if (res.error) return apiError(res.error);
-  const items: JobLogEntity[] = await jobLogDB.findAll(authUser.id);
+  const queryParams = await apiParse(GetJobLogsQueryParamsDto, req.queryParams);
+
+  const dbRes = await JobQuestDBService.entities.jobLog.query
+    .jobLogByJobId({ jobId: queryParams.jobId })
+    .go();
 
   return {
     status: 200,
-    body: { items },
+    body: { items: dbRes.data },
   };
 });

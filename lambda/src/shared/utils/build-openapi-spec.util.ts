@@ -2,7 +2,7 @@ import _ from 'lodash';
 import { OpenAPIV3 } from 'openapi-types';
 import { z, ZodObject } from 'zod';
 import { zodToJson, zodToParamJson } from './zod-json-formatters.util';
-import { EventHandler } from '../types';
+import { EventHandler, Prettify } from '../types';
 
 export type OpenAPIV3Internal = OpenAPIV3.Document<{
   // zodSchema?: ZodTypeAny;
@@ -39,8 +39,10 @@ const zodSchemaPath = `${mediaPath}.zodSchema`;
 
 export type BuildOpenApiSpecReturn = ReturnType<typeof buildOpenapiSpec>;
 export type BuildOpenApiSpecArg = Parameters<typeof buildOpenapiSpec>[0];
-export type BuildOpenApiSpecArgOperationObj = NonNullable<
-  NonNullable<BuildOpenApiSpecArg['paths'][string]>[OpenAPIV3.HttpMethods]
+export type BuildOpenApiSpecArgOperationObj = Prettify<
+  NonNullable<
+    NonNullable<BuildOpenApiSpecArg['paths'][string]>[OpenAPIV3.HttpMethods]
+  >
 >;
 
 // const aaaa: Pick<BuildOpenApiSpecArg, 'paths'> = {
@@ -58,16 +60,19 @@ export type BuildOpenApiSpecArgOperationObj = NonNullable<
 //   return spec as const
 // }
 
-export function buildController(controller: {
-  [path: string]: {
-    [httpMethod in OpenAPIV3.HttpMethods]?: NonNullable<
-      BuildOpenApiSpecArg['paths'][string]
-    >[httpMethod];
+export function buildController(
+  controller: {
+    [path: string]: {
+      [httpMethod in OpenAPIV3.HttpMethods]?: NonNullable<
+        BuildOpenApiSpecArg['paths'][string]
+      >[httpMethod];
 
-    // [method: string]: BuildOpenApiSpecArgOperationObj;
-    // get: BuildOpenApiSpecArg['paths'][string][OpenAPIV3.HttpMethods];
-  };
-}) {
+      // [method: string]: BuildOpenApiSpecArgOperationObj;
+      // get: BuildOpenApiSpecArg['paths'][string][OpenAPIV3.HttpMethods];
+    };
+  },
+  config?: { tags?: string[] },
+) {
   _.forIn(controller, function (pathConfig, currentPath) {
     let newPath = currentPath;
     if (!currentPath.startsWith('/')) newPath = `/${newPath}`;
@@ -80,6 +85,7 @@ export function buildController(controller: {
 
     _.forIn(pathConfig, function (methodConfig, _httpMethod) {
       if (!methodConfig) throw new Error('No method config');
+      if (config?.tags) methodConfig.tags = config.tags;
       const { handlerFn, requestBody } = methodConfig;
 
       if (!handlerFn) throw new Error('No handler function defined');

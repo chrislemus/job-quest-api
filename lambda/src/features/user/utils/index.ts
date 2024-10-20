@@ -1,10 +1,21 @@
-import { jobListDB } from '@/shared/db/job-list-db.service';
+// import { jobListDB } from '@/shared/db/job-list-db.service';
 import { UserDto } from '../dto';
+import { JobQuestDBService } from '@/core/database';
+import { CreateJobListItem } from '@/core/database/models/job-list.model';
 
 export async function createNewUserStarterData(user: UserDto) {
   const jobListLabels = ['Queue', 'Applied', 'Interview', 'Offer', 'Rejected'];
-  const jobLists = jobListLabels.map((label) => ({ label }));
-  await jobListDB.createMany(user.id, jobLists);
+  const jobLists: CreateJobListItem[] = jobListLabels.map((label, idx) => ({
+    label,
+    order: idx + 1,
+    userId: user.id,
+  }));
+  // await jobListDB.createMany(user.id, jobLists);
+  await JobQuestDBService.transaction
+    .write((entity) => [
+      ...jobLists.map((data) => entity.jobList.create(data).commit()),
+    ])
+    .go();
   console.log('partial implementation');
   console.log('partial implementation');
   console.log('partial implementation');

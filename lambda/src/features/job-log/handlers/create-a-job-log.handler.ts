@@ -2,12 +2,13 @@ import { authHandler } from '@/features/auth';
 import { EventHandler } from '@/shared/types';
 import { CreateAJobLogDto } from '../dto';
 import { JobLogEntity } from '../entities';
-import { jobLogDB } from '@/shared/db/job-log-db.service';
 import {
-  apiError,
+  apiParse,
   BuildOpenApiSpecArgOperationObj,
   internalServerException,
+  uuid,
 } from '@/shared';
+import { JobQuestDBService } from '@/core/database';
 
 export const createAJobLogHandlerSpec: BuildOpenApiSpecArgOperationObj = {
   responses: {
@@ -32,12 +33,28 @@ export const createAJobLogHandlerSpec: BuildOpenApiSpecArgOperationObj = {
 
 export const createAJobLogHandler: EventHandler = authHandler(
   async (req, ctx) => {
-    const { authUser } = ctx;
-    const res = CreateAJobLogDto.safeParse(req.body);
-    if (res.error) return apiError(res.error);
-    const reqBody = res.data;
+    const userId = ctx.authUser.id;
+    const reqBody = await apiParse(CreateAJobLogDto, req.body);
 
-    const jobLog = await jobLogDB.create(authUser.id, reqBody);
+    const jobLogId = uuid();
+    await JobQuestDBService.transaction
+      .write((e) => {
+        return [
+          e.jobLog.create({ ...reqBody, jobLogId, userId }).commit(),
+          e.job
+            .check({ userId, jobId: reqBody.jobId })
+            .where((attr, op) => op.eq(attr.userId, userId))
+            .commit(),
+        ];
+      })
+      .go();
+
+    const { data: jobLog } = await JobQuestDBService.entities.jobLog
+      .get({
+        jobLogId,
+        userId,
+      })
+      .go();
 
     if (!jobLog) throw internalServerException();
 

@@ -5,9 +5,9 @@ import { JobDto } from './job.dto';
 export const CreateJobBaseDto = JobDto.omit({
   id: true,
   userId: true,
-  jobListRank: true,
+  jobRank: true,
 }).extend({
-  jobListRank: JobListRankDto.optional(),
+  jobRank: JobListRankDto.optional(),
 });
 
 type CreateJobBaseDto = z.output<typeof CreateJobBaseDto>;
@@ -16,10 +16,10 @@ export const jobListRankSuperRefine = (
   val: CreateJobBaseDto,
   ctx: z.RefinementCtx,
 ) => {
-  if (!!val.jobListRank && !val.jobListId) {
+  if (!!val.jobRank && !val.jobListId) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
-      message: 'jobListId is required when updating jobListRank',
+      message: 'jobListId is required when updating jobRank',
       path: ['jobListId'],
     });
   }

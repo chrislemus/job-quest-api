@@ -5,6 +5,22 @@ export function getJobCK(input: JobCKInput) {
   return { pk: `user#${userId}#job`, sk: `job#${jobId}` } as const;
 }
 
+export type JobListCK = ReturnType<typeof getJobListCK>;
+type JobListCKInput = { userId: string; jobListId: string };
+export function getJobListCK(input: JobListCKInput) {
+  const { userId, jobListId } = input;
+  return { pk: `user#${userId}#jobList`, sk: `jobList#${jobListId}` } as const;
+}
+export type JobListJobRankCK = ReturnType<typeof getJobListJobRankCK>;
+type JobListJobRankCKInput = { jobListId: string; jobListRank: string };
+export function getJobListJobRankCK(input: JobListJobRankCKInput) {
+  const { jobListId, jobListRank } = input;
+  return {
+    pk: `jobList#${jobListId}#jobRank`,
+    sk: `jobRank#${jobListRank}`,
+  } as const;
+}
+
 export type JobLogCK = ReturnType<typeof getJobLogCK>;
 type JobLogCKInput = { userId: string; jobLogId: string };
 export function getJobLogCK(input: JobLogCKInput) {
@@ -17,23 +33,6 @@ type JobCountCKInput = { userId: string };
 export function getJobCountCK(input: JobCountCKInput) {
   const { userId } = input;
   return { pk: `user#${userId}#jobCount`, sk: `"count"` } as const;
-}
-
-export type JobListJobRankCK = ReturnType<typeof getJobListJobRankCK>;
-type JobListJobRankCKInput = { jobListId: string; jobListRank: string };
-export function getJobListJobRankCK(input: JobListJobRankCKInput) {
-  const { jobListId, jobListRank } = input;
-  return {
-    pk: `jobList#${jobListId}#jobRank`,
-    sk: `jobRank#${jobListRank}`,
-  } as const;
-}
-
-export type JobListCK = ReturnType<typeof getJobListCK>;
-type JobListCKInput = { userId: string; jobListId: string };
-export function getJobListCK(input: JobListCKInput) {
-  const { userId, jobListId } = input;
-  return { pk: `user#${userId}#jobList`, sk: `jobList#${jobListId}` } as const;
 }
 
 export type UserCK = ReturnType<typeof createUserCK>;

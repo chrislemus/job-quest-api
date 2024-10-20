@@ -1,8 +1,8 @@
-import { userDB } from '@/shared/db/user-db.service';
 import { BuildOpenApiSpecArgOperationObj } from '@/shared';
 import { EventHandler } from '@/shared/types';
 import { UserProfileResBodyDto } from '../dto';
 import { authHandler } from '@/features/auth';
+import { JobQuestDBService } from '@/core/database';
 
 export const getUserProfileHandlerSpec: BuildOpenApiSpecArgOperationObj = {
   responses: {
@@ -20,7 +20,11 @@ export const getUserProfileHandlerSpec: BuildOpenApiSpecArgOperationObj = {
 export const getUserProfileHandler: EventHandler = authHandler(
   async (req, ctx) => {
     const { authUser } = ctx;
-    const user = await userDB.queryUnique(authUser.id);
+
+    // const user = await userDB.queryUnique(authUser.id);
+    const { data: user } = await JobQuestDBService.entities.user
+      .get({ userId: authUser.id })
+      .go();
     const body = UserProfileResBodyDto.parse(user);
 
     return {

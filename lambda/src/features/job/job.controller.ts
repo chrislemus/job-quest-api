@@ -10,6 +10,8 @@ import {
   deleteAJobHandlerSpec,
   updateAJobHandler,
   updateAJobHandlerSpec,
+  getJobRanksHandler,
+  getJobRanksHandlerSpec,
 } from './handlers';
 
 export const jobController = buildController({
@@ -21,6 +23,12 @@ export const jobController = buildController({
     post: {
       handlerFn: createAJobHandler,
       ...createAJobHandlerSpec,
+    },
+  },
+  'job/job-rank': {
+    get: {
+      handlerFn: getJobRanksHandler,
+      ...getJobRanksHandlerSpec,
     },
   },
   'job/{id}': {
